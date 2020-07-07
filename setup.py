@@ -29,7 +29,7 @@ with open("requirements.txt", "r") as f:
     requirements = f.readlines()
 
 setup(
-    name=name, # Replace with your own username
+    name=name,  # Replace with your own username
     version="0.0.1",
     author=author,
     author_email=email,
@@ -39,7 +39,7 @@ setup(
     url=url,
     packages=find_packages(),
     classifiers=classifiers,
-    python_requires='>=3.6',
+    python_requires=">=3.6",
     install_requires=requirements,
     license=license,
 )
