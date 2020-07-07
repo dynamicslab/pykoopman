@@ -5,6 +5,8 @@ dist
 pysindy/version.py
 # sphinx gallery files
 docs/examples
+# virtual environment
+venv
 
 **/*cache*
 
