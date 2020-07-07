@@ -1,0 +1,18 @@
+-e .
+-r requirements.txt
+matplotlib
+pytest
+pytest-cov
+pytest-lazy-fixture
+flake8-builtins-unleashed
+codecov
+setuptools_scm
+setuptools_scm_git_archive
+jupyter
+notebook
+sphinx >= 2
+sphinxcontrib-apidoc
+sphinx_rtd_theme
+pre-commit
+sphinx-nbexamples
+jupyter_contrib_nbextensions
