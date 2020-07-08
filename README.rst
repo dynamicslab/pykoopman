@@ -1,6 +1,8 @@
 PyKoopman
 =========
 
+|PyPI|
+
 **PyKoopman** is a Python package for computing data-driven approximations to the Koopman operator.
 TODO: improve description
 
@@ -84,3 +86,5 @@ TODO: Add appropriate references
    Journal of Nonlinear Science 25, no. 6 (2015): 1307-1346.
    `[DOI] <https://doi.org/10.1007/s00332-015-9258-5>`_
 
+.. |PyPI| image:: https://badge.fury.io/py/pykoopman.svg
+    :target: https://badge.fury.io/py/pykoopman
