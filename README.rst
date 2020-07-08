@@ -1,7 +1,7 @@
 PyKoopman
 =========
 
-|PyPI|
+|Build| |PyPI|
 
 **PyKoopman** is a Python package for computing data-driven approximations to the Koopman operator.
 TODO: improve description
@@ -85,6 +85,9 @@ TODO: Add appropriate references
    "A data–driven approximation of the koopman operator: Extending dynamic mode decomposition."
    Journal of Nonlinear Science 25, no. 6 (2015): 1307-1346.
    `[DOI] <https://doi.org/10.1007/s00332-015-9258-5>`_
+
+.. |Build| image:: https://github.com/dynamicslab/pykoopman/workflows/Tests/badge.svg
+    :target: https://github.com/dynamicslab/pykoopman/actions?query=workflow%3ATests
 
 .. |PyPI| image:: https://badge.fury.io/py/pykoopman.svg
     :target: https://badge.fury.io/py/pykoopman
