@@ -1,4 +1,4 @@
-from .pykoopman import PyKoopman
+from .koopman import Koopman
 
 
 __all__ = ["PyKoopman"]

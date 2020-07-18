@@ -1,7 +1,7 @@
-from pykoopman import PyKoopman
+from pykoopman import Koopman
 
 
 # Dummy test
 def test_pykoopman():
-    model = PyKoopman()
-    assert isinstance(model, PyKoopman)
+    model = Koopman()
+    assert isinstance(model, Koopman)
