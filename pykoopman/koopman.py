@@ -2,7 +2,7 @@ from pydmd import DMD
 from sklearn.pipeline import Pipeline
 from sklearn.utils.validation import check_is_fitted
 
-from pykoopman.differentiation import FiniteDifferences
+from pykoopman.differentiation import FiniteDifference
 from pykoopman.observables import Polynomial
 
 
@@ -13,7 +13,7 @@ class Koopman:
         if observables is None:
             observables = Polynomial()
         if differentiator is None:
-            differentiator = FiniteDifferences()
+            differentiator = FiniteDifference()
         if regressor is None:
             regressor = DMD()
 
