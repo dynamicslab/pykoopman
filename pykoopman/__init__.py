@@ -1,4 +1,4 @@
 from .koopman import Koopman
 
 
-__all__ = ["PyKoopman"]
+__all__ = ["Koopman"]

@@ -18,6 +18,7 @@ class Polynomial(PolynomialFeatures):
 
     def inverse(y):
         """Invert the transformation.
-        I.e. a Polynomial object `p` should satisfy `x == p.inverse(p.transform(x))`
+        I.e. a Polynomial object :code:`p` should satisfy
+        :code:`x == p.inverse(p.transform(x))`
         """
         pass
