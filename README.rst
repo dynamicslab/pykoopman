@@ -1,7 +1,7 @@
 PyKoopman
 =========
 
-|Build| |PyPI|
+|Build| |Docs| |PyPI|
 
 **PyKoopman** is a Python package for computing data-driven approximations to the Koopman operator.
 TODO: improve description
@@ -41,6 +41,9 @@ If you do not have pip you can instead use
 
 If you do not have root access, you should add the ``--user`` option to the above lines.
 
+Documentation
+-------------
+The documentation for PyKoopman is hosted on `Read the Docs <https://pykoopman.readthedocs.io/en/latest/>`__.
 
 Community guidelines
 --------------------
@@ -88,6 +91,10 @@ TODO: Add appropriate references
 
 .. |Build| image:: https://github.com/dynamicslab/pykoopman/workflows/Tests/badge.svg
     :target: https://github.com/dynamicslab/pykoopman/actions?query=workflow%3ATests
+
+.. |Docs| image:: https://readthedocs.org/projects/pykoopman/badge/?version=latest
+    :target: https://pykoopman.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
 
 .. |PyPI| image:: https://badge.fury.io/py/pykoopman.svg
     :target: https://badge.fury.io/py/pykoopman
