@@ -1,9 +1,12 @@
 from pydmd import DMD
+from pydmd import DMDBase
 from sklearn.pipeline import Pipeline
 from sklearn.utils.validation import check_is_fitted
 
 from pykoopman.differentiation import FiniteDifference
 from pykoopman.observables import Polynomial
+from pykoopman.regression import BaseRegressor
+from pykoopman.regression import DMDRegressor
 
 
 class Koopman:
@@ -24,14 +27,22 @@ class Koopman:
     def fit(self, x, t=None):
         x_dot = self.differentiator(x, t)
 
+        if isinstance(self.regressor, DMDBase):
+            regressor = DMDRegressor(self.regressor)
+        else:
+            regressor = BaseRegressor(self.regressor)
+
         steps = [
             ("observables", self.observables),
-            ("regressor", self.regressor),
+            ("regressor", regressor),
         ]
         self.model = Pipeline(steps)
 
         # TODO: make this solve the correct problem
         self.model.fit(x, x_dot)
+
+        self.n_input_features_ = self.model.steps[0][1].n_input_features_
+        self.n_output_features_ = self.model.steps[0][1].n_output_features_
 
         return self
 
@@ -52,6 +63,11 @@ class Koopman:
         check_is_fitted(self, "model")
         return self.model.predict(x)
 
-    def get_koopman_matrix(self,):
+    @property
+    def koopman_matrix(self):
+        """
+        Get the Koopman matrix K such that
+        g(X') = g(X) * K
+        """
         check_is_fitted(self, "model")
         return self.model.steps[-1][1].coef_
