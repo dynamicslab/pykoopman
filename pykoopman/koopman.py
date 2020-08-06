@@ -4,7 +4,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.utils.validation import check_is_fitted
 
 from pykoopman.differentiation import FiniteDifference
-from pykoopman.observables import Polynomial
+from pykoopman.observables import Identity
 from pykoopman.regression import BaseRegressor
 from pykoopman.regression import DMDRegressor
 
@@ -14,7 +14,7 @@ class Koopman:
 
     def __init__(self, observables=None, differentiator=None, regressor=None):
         if observables is None:
-            observables = Polynomial()
+            observables = Identity()
         if differentiator is None:
             differentiator = FiniteDifference()
         if regressor is None:
