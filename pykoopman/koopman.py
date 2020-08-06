@@ -1,3 +1,4 @@
+from numpy import empty
 from pydmd import DMD
 from pydmd import DMDBase
 from sklearn.pipeline import Pipeline
@@ -25,6 +26,7 @@ class Koopman:
         self.regressor = regressor
 
     def fit(self, x, t=None):
+        # TODO: validate data
         x_dot = self.differentiator(x, t)
 
         if isinstance(self.regressor, DMDBase):
@@ -54,9 +56,12 @@ class Koopman:
         check_is_fitted(self, "model")
         # Could have an option to only return the end state and not all
         # intermediate states to save memory.
-        output = [self.predict(x)]
+        output = empty((n_steps, self.n_input_features_))
+        output[0] = self.predict(x)
         for k in range(n_steps - 1):
-            output.append(self.predict(output[-1]))
+            output[k + 1] = self.predict(output[k])
+
+        return output
 
     def _step(self, x):
         # TODO: rename this
