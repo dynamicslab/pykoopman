@@ -1,14 +1,6 @@
-import numpy as np
-import pytest
 from sklearn.utils.validation import check_is_fitted
 
 from pykoopman import Koopman
-
-
-@pytest.fixture
-def data_random():
-    x = np.random.randn(50, 10)
-    return x
 
 
 # Dummy test
