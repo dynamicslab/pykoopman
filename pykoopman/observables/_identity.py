@@ -53,7 +53,7 @@ class Identity(TransformerMixin, BaseEstimator):
     def inverse(self, y):
         """
         Compute inverse mapping satisfying
-        ``self.inverse(self.transform(x)) == x``
+        :code:`self.inverse(self.transform(x)) == x`
 
         Parameters
         ----------
