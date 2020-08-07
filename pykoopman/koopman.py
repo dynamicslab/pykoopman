@@ -1,6 +1,7 @@
 from numpy import empty
 from pydmd import DMD
 from pydmd import DMDBase
+from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
 from sklearn.utils.validation import check_is_fitted
 
@@ -10,7 +11,7 @@ from pykoopman.regression import BaseRegressor
 from pykoopman.regression import DMDRegressor
 
 
-class Koopman:
+class Koopman(BaseEstimator):
     """Primary Koopman class."""
 
     def __init__(self, observables=None, differentiator=None, regressor=None):
