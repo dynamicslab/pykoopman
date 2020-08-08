@@ -1,6 +1,10 @@
+import numpy as np
 
-T_DEFAULT = object()
+DT_DEFAULT = object()
 
-def validate_input(x, t=T_DEFAULT):
-    # Implement here the validation of input variables/data to Koopman class
+def validate_input(x, dt=DT_DEFAULT):
+    if not isinstance(x, np.ndarray):
+        raise ValueError("x must be array-like")
+    elif x.ndim == 1:
+        x = x.reshape(-1, 1)
     return x
