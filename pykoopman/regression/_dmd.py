@@ -10,7 +10,8 @@ class DMDRegressor(BaseRegressor):
     """Wrapper for PyDMD regressors."""
 
     def __init__(self):
-        super().__init__(DMD())
+        super().__init__(DMD(svd_rank=2))
+        warn("svd rank is hard-coded")
 
     # PyDMD uses transposed data
     def fit(self, x, y=None):
@@ -33,7 +34,4 @@ class DMDRegressor(BaseRegressor):
             Measurement data to be fit.
         """
         prediction = self.regressor.predict(x.T).T
-        if prediction.ndim == 1:
-            return prediction[:, np.newaxis]
-        else:
-            return prediction
+        return prediction
