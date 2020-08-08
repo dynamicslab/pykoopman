@@ -18,11 +18,7 @@ class BaseRegressor(BaseEstimator):
         self.regressor = regressor
 
     def fit(self, x, y):
-        self.regressor.fit(x, y)
+        raise NotImplementedError
 
     def predict(self, x):
-        prediction = self.regressor.predict(x)
-        if prediction.ndim == 1:
-            return prediction[:, np.newaxis]
-        else:
-            return prediction
+        raise NotImplementedError

@@ -1,5 +1,5 @@
 from warnings import warn
-
+import numpy as np
 from numpy import identity
 from pydmd import DMD
 
@@ -32,4 +32,8 @@ class DMDRegressor(BaseRegressor):
         x: numpy ndarray, shape (n_examples, n_features)
             Measurement data to be fit.
         """
-        return super(DMDRegressor, self).predict(x.T).T
+        prediction = self.regressor.predict(x.T).T
+        if prediction.ndim == 1:
+            return prediction[:, np.newaxis]
+        else:
+            return prediction
