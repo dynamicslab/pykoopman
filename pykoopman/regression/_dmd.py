@@ -1,7 +1,7 @@
 from warnings import warn
 
 from numpy import identity
-from pydmd import DMDBase
+from pydmd import DMD
 
 from ._base import BaseRegressor
 
@@ -9,10 +9,8 @@ from ._base import BaseRegressor
 class DMDRegressor(BaseRegressor):
     """Wrapper for PyDMD regressors."""
 
-    def __init__(self, regressor):
-        if not isinstance(regressor, DMDBase):
-            raise ValueError("regressor must be a subclass of DMDBase from pydmd.")
-        super(DMDRegressor, self).__init__(regressor)
+    def __init__(self):
+        super().__init__(DMD())
 
     # PyDMD uses transposed data
     def fit(self, x, y=None):

@@ -1,48 +1,48 @@
 from numpy import empty
-from pydmd import DMD
-from pydmd import DMDBase
 from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
 from sklearn.utils.validation import check_is_fitted
 
-from pykoopman.differentiation import FiniteDifference
 from pykoopman.observables import Identity
 from pykoopman.regression import BaseRegressor
 from pykoopman.regression import DMDRegressor
 
+from pykoopman.common import validate_input
 
 class Koopman(BaseEstimator):
-    """Primary Koopman class."""
+    """Primary Discrete-Time Koopman class."""
 
-    def __init__(self, observables=None, differentiator=None, regressor=None):
+    def __init__(self, observables=None, regressor=None):
         if observables is None:
             observables = Identity()
-        if differentiator is None:
-            differentiator = FiniteDifference()
         if regressor is None:
-            regressor = DMD()
+            regressor = DMDRegressor()
+
+        if not isinstance(regressor, BaseRegressor):
+            raise TypeError("regressor must be from valid class")
 
         self.observables = observables
-        self.differentiator = differentiator
         self.regressor = regressor
 
-    def fit(self, x, t=None):
-        # TODO: validate data
-        x_dot = self.differentiator(x, t)
+    def fit(self, x, x_dot=None, dt=None):
+        if dt is None:
+            dt = self.dt_default
 
-        if isinstance(self.regressor, DMDBase):
-            regressor = DMDRegressor(self.regressor)
+        x = validate_input(x, dt)
+        if x_dot is None:
+            x_dot = x[1:]
+            x = x[:-1]
         else:
-            regressor = BaseRegressor(self.regressor)
+            x_dot = validate_input(x_dot, dt)
 
         steps = [
             ("observables", self.observables),
-            ("regressor", regressor),
+            ("regressor", self.regressor),
         ]
         self.model = Pipeline(steps)
 
         # TODO: make this solve the correct problem
-        self.model.fit(x, x_dot)
+        self.model.fit(x)
 
         self.n_input_features_ = self.model.steps[0][1].n_input_features_
         self.n_output_features_ = self.model.steps[0][1].n_output_features_
