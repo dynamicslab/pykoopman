@@ -1,9 +1,11 @@
-from sklearn.base import BaseEstimator
-from sklearn.base import TransformerMixin
+"""
+Linear observables
+"""
+from sklearn.utils import check_array
 from sklearn.utils.validation import check_is_fitted
+from .observables import BaseObservables
 
-
-class Identity(TransformerMixin, BaseEstimator):
+class Identity(BaseObservables):
     """
     A dummy observables class that simply returns its input.
     """
