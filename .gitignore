@@ -26,3 +26,6 @@ docs/_build
 *.pyc
 
 *.sublime*
+
+Pipfile
+Pipfile.lock
