@@ -3,17 +3,18 @@ Base class for specific observable classes
 """
 import abc
 import numpy as np
+from sklearn.base import BaseEstimator
 from sklearn.base import TransformerMixin
 from sklearn.utils.validation import check_is_fitted
 
-class BaseObservables(TransformerMixin):
+class BaseObservables(TransformerMixin,BaseEstimator):
     """
     Base class for observable classes.
 
     Forces subclasses to implement 'fit', 'transform', and 'get_feature_names' functions
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self):
         pass
 
     @abc.abstractmethod

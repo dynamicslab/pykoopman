@@ -3,7 +3,8 @@ Linear observables
 """
 from sklearn.utils import check_array
 from sklearn.utils.validation import check_is_fitted
-from .observables import BaseObservables
+
+from ._observables import BaseObservables
 
 class Identity(BaseObservables):
     """
@@ -11,7 +12,7 @@ class Identity(BaseObservables):
     """
 
     def __init__(self):
-        pass
+        super().__init__()
 
     def fit(self, x, y=None):
         """
