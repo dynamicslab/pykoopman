@@ -1,10 +1,10 @@
 """
 Linear observables
 """
-from sklearn.utils import check_array
 from sklearn.utils.validation import check_is_fitted
 
-from ._observables import BaseObservables
+from ._base import BaseObservables
+
 
 class Identity(BaseObservables):
     """

@@ -3,11 +3,11 @@ from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
 from sklearn.utils.validation import check_is_fitted
 
-from pykoopman.observables import Identity
-from pykoopman.regression import BaseRegressor
-from pykoopman.regression import DMDRegressor
+from .common import validate_input
+from .observables import Identity
+from .regression import BaseRegressor
+from .regression import DMDRegressor
 
-from pykoopman.common import validate_input
 
 class Koopman(BaseEstimator):
     """Primary Discrete-Time Koopman class."""
@@ -17,23 +17,14 @@ class Koopman(BaseEstimator):
             observables = Identity()
         if regressor is None:
             regressor = DMDRegressor()
-
         if not isinstance(regressor, BaseRegressor):
             raise TypeError("regressor must be from valid class")
 
         self.observables = observables
         self.regressor = regressor
 
-    def fit(self, x, x_dot=None, dt=None):
-        if dt is None:
-            dt = self.dt_default
-
-        x = validate_input(x, dt)
-        if x_dot is None:
-            x_dot = x[1:]
-            x = x[:-1]
-        else:
-            x_dot = validate_input(x_dot, dt)
+    def fit(self, x):
+        x = validate_input(x)
 
         steps = [
             ("observables", self.observables),
@@ -41,7 +32,6 @@ class Koopman(BaseEstimator):
         ]
         self.model = Pipeline(steps)
 
-        # TODO: make this solve the correct problem
         self.model.fit(x)
 
         self.n_input_features_ = self.model.steps[0][1].n_input_features_
