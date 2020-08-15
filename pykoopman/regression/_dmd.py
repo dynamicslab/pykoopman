@@ -1,7 +1,7 @@
 from warnings import warn
-import numpy as np
+
 from numpy import identity
-from pydmd import DMD
+from pydmd import DMDBase
 
 from ._base import BaseRegressor
 
@@ -9,9 +9,10 @@ from ._base import BaseRegressor
 class DMDRegressor(BaseRegressor):
     """Wrapper for PyDMD regressors."""
 
-    def __init__(self):
-        super().__init__(DMD(svd_rank=2))
-        warn("svd rank is hard-coded")
+    def __init__(self, regressor):
+        if not isinstance(regressor, DMDBase):
+            raise ValueError("regressor must be a subclass of DMDBase from pydmd.")
+        super(DMDRegressor, self).__init__(regressor)
 
     # PyDMD uses transposed data
     def fit(self, x, y=None):
@@ -33,5 +34,4 @@ class DMDRegressor(BaseRegressor):
         x: numpy ndarray, shape (n_examples, n_features)
             Measurement data to be fit.
         """
-        prediction = self.regressor.predict(x.T).T
-        return prediction
+        return super(DMDRegressor, self).predict(x.T).T

@@ -1,4 +1,6 @@
 from numpy import empty
+from pydmd import DMD
+from pydmd import DMDBase
 from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
 from sklearn.utils.validation import check_is_fitted
@@ -16,9 +18,11 @@ class Koopman(BaseEstimator):
         if observables is None:
             observables = Identity()
         if regressor is None:
-            regressor = DMDRegressor()
-        if not isinstance(regressor, BaseRegressor):
-            raise TypeError("regressor must be from valid class")
+            regressor = DMD(svd_rank=2)
+        if isinstance(regressor, DMDBase):
+            regressor = DMDRegressor(regressor)
+        elif not isinstance(regressor, (BaseRegressor)):
+            raise TypeError("Regressor must be from valid class")
 
         self.observables = observables
         self.regressor = regressor
