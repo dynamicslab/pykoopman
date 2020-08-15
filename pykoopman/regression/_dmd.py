@@ -2,6 +2,7 @@ from warnings import warn
 
 from numpy import identity
 from pydmd import DMDBase
+from sklearn.utils.validation import check_is_fitted
 
 from ._base import BaseRegressor
 
@@ -32,6 +33,7 @@ class DMDRegressor(BaseRegressor):
         Parameters
         ----------
         x: numpy ndarray, shape (n_examples, n_features)
-            Measurement data to be fit.
+            Measurement data upon which to base prediction.
         """
-        return super(DMDRegressor, self).predict(x.T).T
+        check_is_fitted(self, "coef_")
+        return self.regressor.predict(x.T).T
