@@ -47,12 +47,14 @@ class Koopman(BaseEstimator):
         check_is_fitted(self, "model")
         return self.observables.inverse(self._step(x))
 
-    def simulate(self, x, n_steps=1):
+    def simulate(self, x0, n_steps=1):
         check_is_fitted(self, "model")
         # Could have an option to only return the end state and not all
         # intermediate states to save memory.
-        output = empty((n_steps, self.n_input_features_))
-        output[0] = self.predict(x)
+        output = empty(
+            (n_steps, self.n_input_features_), dtype=self.koopman_matrix.dtype
+        )
+        output[0] = self.predict(x0)
         for k in range(n_steps - 1):
             output[k + 1] = self.predict(output[k])
 
