@@ -1,11 +1,19 @@
 # TODO: add unit test checking that model.inverse(model.transform(x)) == x
 import pytest
+from numpy import linspace
+from numpy import stack
 from numpy.testing import assert_allclose
 from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
 
 from pykoopman.observables import Identity
 from pykoopman.observables import Polynomial
+
+
+@pytest.fixture
+def data_small():
+    t = linspace(0, 5, 10)
+    return stack((t, t ** 2), axis=1)
 
 
 @pytest.mark.parametrize("observables", [Identity(), Polynomial()])
@@ -54,7 +62,17 @@ def test_identity_feature_names(data_random):
     assert model.get_feature_names() == expected_names
 
     # Given names
-    user_defined_names = [f"y{i+1}" for i in range(x.shape[1])]
-    assert (
-        model.get_feature_names(input_features=user_defined_names) == user_defined_names
-    )
+    custome_names = [f"y{i+1}" for i in range(x.shape[1])]
+    assert model.get_feature_names(input_features=custome_names) == custome_names
+
+
+def test_polynomial_feature_names(data_small):
+    x = data_small
+    model = Polynomial(degree=2).fit(x)
+
+    expected_default_names = ["1", "x0", "x1", "x0^2", "x0 x1", "x1^2"]
+    assert model.get_feature_names() == expected_default_names
+
+    custom_names = ["x", "y"]
+    expected_custom_names = ["1", "x", "y", "x^2", "x y", "y^2"]
+    assert model.get_feature_names(input_features=custom_names) == expected_custom_names
