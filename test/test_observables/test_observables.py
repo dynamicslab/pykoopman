@@ -9,7 +9,7 @@ from pykoopman.observables import Polynomial
 
 
 @pytest.mark.parametrize("observables", [Identity(), Polynomial()])
-def test_fitted(observables, data_random):
+def test_if_fitted(observables, data_random):
     x = data_random
     with pytest.raises(NotFittedError):
         observables.transform(x)
