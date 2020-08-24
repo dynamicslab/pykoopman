@@ -1,10 +1,14 @@
-import numpy as np
 from sklearn.base import BaseEstimator
 
 
 class BaseRegressor(BaseEstimator):
     """
     Wrapper class for PyKoopman regressors.
+
+    Parameters
+    ----------
+    regressor: regressor object
+        A regressor object implementing ``fit`` and ``predict`` methods.
     """
 
     def __init__(self, regressor):

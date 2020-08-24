@@ -69,7 +69,7 @@ class Koopman(BaseEstimator):
 
         Returns
         -------
-        self: returns a ``Koopman`` instance
+        self: returns a fit ``Koopman`` instance
         """
         x = validate_input(x)
 

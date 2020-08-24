@@ -37,6 +37,6 @@ def test_inverse(observables, data_random):
     assert_allclose(observables.inverse(observables.fit_transform(x)), x)
 
 
-def test_bad_inputs():
+def test_bad_polynomial_inputs():
     with pytest.raises(ValueError):
         Polynomial(degree=0)

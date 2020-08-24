@@ -47,9 +47,14 @@ class Polynomial(PolynomialFeatures):
 
         Parameters
         ----------
-        y: array-like, shape (n_samples, n_output_features)
+        y: numpy.ndarray, shape (n_samples, n_output_features)
             Data to which to apply the inverse.
             Must have the same number of features as the transformed data
+
+        Returns
+        -------
+        x: numpy.ndarray, shape (n_samples, n_input_features)
+            Output of inverse map applied to y.
         """
         check_is_fitted(self, "n_output_features_")
         if y.shape[1] != self.n_output_features_:
