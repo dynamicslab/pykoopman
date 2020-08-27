@@ -1,4 +1,3 @@
-# TODO: add unit test checking that model.inverse(model.transform(x)) == x
 import pytest
 from numpy import linspace
 from numpy import stack
