@@ -1,21 +1,22 @@
-from numpy import empty
 from pydmd import DMD
 from pydmd import DMDBase
 from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
 from sklearn.utils.validation import check_is_fitted
 
-from pykoopman.differentiation import FiniteDifference
-from pykoopman.observables import Polynomial
-from pykoopman.regression import BaseRegressor
-from pykoopman.regression import DMDRegressor
+from .common.base import validate_input
+from .differentiation import FiniteDifference
+from .observables import Polynomial
+from .regression import BaseRegressor
+from .regression import DMDRegressor
 
-from pykoopman.common.base import validate_input
 
 class KoopmanContinuous(BaseEstimator):
     """Continuous-time Koopman class."""
 
-    def __init__(self, observables=None, differentiator=None, regressor=None, dt_default=1):
+    def __init__(
+        self, observables=None, differentiator=None, regressor=None, dt_default=1
+    ):
         if observables is None:
             observables = Polynomial(degree=2)
         if differentiator is None:
@@ -34,8 +35,12 @@ class KoopmanContinuous(BaseEstimator):
         self.regressor = regressor
 
     def fit(self, x, x_dot=None, dt=None, x_shift=None):
+        if dt is None:
+            dt = self.dt_default
+
         # TODO: validate data
-        x_dot = self.differentiator(x, t)
+        x = validate_input(x, dt)
+        x_dot = self.differentiator(x, dt)
 
         if isinstance(self.regressor, DMDBase):
             regressor = DMDRegressor(self.regressor)

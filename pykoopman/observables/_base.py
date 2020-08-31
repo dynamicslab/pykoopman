@@ -2,12 +2,13 @@
 Base class for specific observable classes
 """
 import abc
-import numpy as np
+
 from sklearn.base import BaseEstimator
 from sklearn.base import TransformerMixin
 from sklearn.utils.validation import check_is_fitted
 
-class BaseObservables(TransformerMixin,BaseEstimator):
+
+class BaseObservables(TransformerMixin, BaseEstimator):
     """
     Base class for observable classes.
 
@@ -24,7 +25,7 @@ class BaseObservables(TransformerMixin,BaseEstimator):
 
         Parameters
         ----------
-        X : np.ndarray with shape [n_samples, n_features]
+        X : numpy ndarray with shape [n_samples, n_features]
 
         Returns
         -------
@@ -39,12 +40,12 @@ class BaseObservables(TransformerMixin,BaseEstimator):
 
         Parameters
         ----------
-        X : np.ndarray with shape [n_samples, n_features]
+        X : numpy ndarray with shape [n_samples, n_features]
             Data X is transformed row-wise.
 
         Returns
         -------
-        XT : np.ndarray with shape [n_samples, n_output_features]
+        XT : numpy ndarray with shape [n_samples, n_output_features]
              Transformed data X into observables XT, where the number of
              observables or features is n_output_features.
         """
@@ -66,7 +67,21 @@ class BaseObservables(TransformerMixin,BaseEstimator):
         """
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def inverse(self, y):
+        """
+        Compute inverse mapping satisfying
+        :code:`self.inverse(self.transform(x)) == x`
+
+        Parameters
+        ----------
+        y: array-like, shape (n_samples, n_output_features)
+            Data to which to apply the inverse.
+            Must have the same number of features as the transformed data
+        """
+        raise NotImplementedError
+
     @property
     def size(self):
         check_is_fitted(self)
-        return self_n_output_features_
+        return self.n_output_features_

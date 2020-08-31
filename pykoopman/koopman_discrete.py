@@ -3,22 +3,16 @@ from pydmd import DMDBase
 from sklearn.pipeline import Pipeline
 from sklearn.utils.validation import check_is_fitted
 
-from pykoopman.differentiation import FiniteDifference
-from pykoopman.observables import Polynomial
-from pykoopman.regression import BaseRegressor
-from pykoopman.regression import DMDRegressor
+from .common.base import validate_input
+from .observables import Polynomial
+from .regression import BaseRegressor
+from .regression import DMDRegressor
 
-from pykoopman.common.base import validate_input
 
 class Koopman:
     """Primary Koopman class."""
 
-    def __init__(
-            self,
-            observables=None,
-            regressor=None,
-            dt_default=1
-    ):
+    def __init__(self, observables=None, regressor=None, dt_default=1):
         if observables is None:
             observables = Polynomial(degree=1)
         if regressor is None:
@@ -37,12 +31,12 @@ class Koopman:
         if dt is None:
             dt = self.dt_default
 
-        x = validate_input(x, t)
+        x = validate_input(x, dt)
         if x_dot is None:
             x_dot = x[1:]
             x = x[:-1]
         else:
-            x_dot = validate_input(x_dot, t)
+            x_dot = validate_input(x_dot, dt)
 
         if isinstance(self.regressor, DMDBase):
             regressor = DMDRegressor(self.regressor)
