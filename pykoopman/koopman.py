@@ -41,6 +41,9 @@ class Koopman(BaseEstimator):
 
     n_output_features_: int
         Number of output features after computing observables.
+
+    n_control_features_: int
+        Number of control features used as input to the system.
     """
 
     def __init__(self, observables=None, regressor=None):
@@ -56,16 +59,22 @@ class Koopman(BaseEstimator):
         self.observables = observables
         self.regressor = regressor
 
-    def fit(self, x):
+    def fit(self, x, u=None):
         """
         Fit the Koopman model by learning an approximate Koopman operator.
 
         Parameters
         ----------
-        x: numpy.ndarray, shape (n_examples, n_features)
+        x: numpy.ndarray, shape (n_samples, n_features)
             Measurement data to be fit. Each row should correspond to an example
             and each column a feature. It is assumed that examples are
             equi-spaced in time (i.e. a uniform timestep is assumed).
+
+        u: numpy.ndarray, shape (n_samples, n_control_features)
+            Control/actuation/external parameter data. Each row should correspond to one sample
+            and each column a control variable or feature. The control variable may be amplitude
+            of an actuator or an external, time-varying parameter. It is assumed that samples are
+            equi-spaced in time (i.e. a uniform timestep is assumed) and correspond to the samples in x.
 
         Returns
         -------
@@ -73,20 +82,27 @@ class Koopman(BaseEstimator):
         """
         x = validate_input(x)
 
+        if u is None:
+            self.n_control_features_ = 0
+
         steps = [
             ("observables", self.observables),
             ("regressor", self.regressor),
         ]
         self.model = Pipeline(steps)
 
-        self.model.fit(x)
+        if u is None:
+            self.model.fit(x)
+        elif u is not None:
+            self.model.fit(x,u)
 
         self.n_input_features_ = self.model.steps[0][1].n_input_features_
         self.n_output_features_ = self.model.steps[0][1].n_output_features_
-
+        if hasattr(self.model.steps[1][1], 'n_control_features_'):
+            self.n_control_features_ = self.model.steps[1][1].n_control_features_
         return self
 
-    def predict(self, x):
+    def predict(self, x, u=None):
         """
         Predict the state one timestep in the future.
 
@@ -94,6 +110,8 @@ class Koopman(BaseEstimator):
         ----------
         x: numpy.ndarray, shape (n_samples, n_input_features)
             Current state.
+        u: numpy.ndarray, shape (n_samples, n_control_features)
+            Time series of external actuation/control.
 
         Returns
         -------
@@ -101,9 +119,9 @@ class Koopman(BaseEstimator):
             Predicted state one timestep in the future.
         """
         check_is_fitted(self, "model")
-        return self.observables.inverse(self._step(x))
+        return self.observables.inverse(self._step(x,u))
 
-    def simulate(self, x0, n_steps=1):
+    def simulate(self, x0, u=None, n_steps=1):
         """
         Simulate an initial state forward in time with the learned Koopman
         model.
@@ -118,21 +136,27 @@ class Koopman(BaseEstimator):
 
         Returns
         -------
-        y: numpy.ndarray, shape (n_steps, n_input_features)
+        xhat: numpy.ndarray, shape (n_steps, n_input_features)
             Simulated states.
-            Note that ``y[0, :]`` is one timestep ahead of ``x0``.
+            Note that ``xhat[0, :]`` is one timestep ahead of ``x0``.
         """
         check_is_fitted(self, "model")
         # Could have an option to only return the end state and not all
         # intermediate states to save memory.
-        y = empty((n_steps, self.n_input_features_), dtype=self.koopman_matrix.dtype)
-        y[0] = self.predict(x0)
-        for k in range(n_steps - 1):
-            y[k + 1] = self.predict(y[k])
+        xhat = empty((n_steps, self.n_input_features_), dtype=self.koopman_matrix.dtype)
 
-        return y
+        if u is None:
+            xhat[0] = self.predict(x0)
+            for k in range(n_steps - 1):
+                xhat[k + 1] = self.predict(xhat[k])
+        else:
+            xhat[0] = self.predict(x0, u[0])
+            for k in range(n_steps - 1):
+                xhat[k + 1] = self.predict(xhat[k], u[k])
 
-    def _step(self, x):
+        return xhat
+
+    def _step(self, x, u):
         """
         Map x one timestep forward in the space of observables.
 
@@ -146,8 +170,23 @@ class Koopman(BaseEstimator):
         X': numpy.ndarray, shape (n_examples, self.n_output_features_)
             Observables one timestep after x.
         """
+
         check_is_fitted(self, "model")
-        return self.model.predict(x)
+
+        if u is None or self.n_control_features_ == 0:
+            if self.n_control_features_ > 0:
+                #TODO: replace with u = 0 as default
+                raise TypeError(
+                    "Model was fit using control variables, so u is required"
+                )
+            elif u is not None:
+                warnings.warn(
+                    "Control variables u were ignored because control variables were"
+                    " not used when the model was fit"
+                )
+            return self.model.predict(x)
+        else:
+            return self.model.predict(x,u)
 
     @property
     def koopman_matrix(self):
@@ -157,3 +196,20 @@ class Koopman(BaseEstimator):
         """
         check_is_fitted(self, "model")
         return self.model.steps[-1][1].coef_
+
+    @property
+    def state_transition_matrix(self):
+        """
+        The state transition matrix A satisfies x' = Ax + Bu.
+        """
+        check_is_fitted(self, "model")
+        return self.model.steps[-1][1].coef_[:,:self.n_output_features_]
+
+    @property
+    def control_matrix(self):
+        """
+        The control matrix (or vector) B satisfies x' = Ax + Bu.
+        """
+        # TODO: Should give error if not a regression method incorporating control is used
+        check_is_fitted(self, "model")
+        return self.model.steps[-1][1].coef_[:,self.n_output_features_:]
