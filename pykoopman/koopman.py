@@ -80,11 +80,20 @@ class Koopman(BaseEstimator):
             and each column a feature. It is assumed that examples are
             equi-spaced in time (i.e. a uniform timestep is assumed).
 
+        u: numpy.ndarray, shape (n_samples, n_control_features)
+            Control/actuation/external parameter data. Each row should correspond to one sample
+            and each column a control variable or feature. The control variable may be amplitude
+            of an actuator or an external, time-varying parameter. It is assumed that samples are
+            equi-spaced in time (i.e. a uniform timestep is assumed) and correspond to the samples in x.
+
         Returns
         -------
         self: returns a fit ``Koopman`` instance
         """
         x = validate_input(x)
+
+        if u is None:
+            self.n_control_features_ = 0
 
         steps = [
             ("observables", self.observables),
@@ -95,14 +104,20 @@ class Koopman(BaseEstimator):
         action = "ignore" if self.quiet else "default"
         with catch_warnings():
             filterwarnings(action, category=UserWarning)
+
+        if u is None:
             self.model.fit(x)
+        elif u is not None:
+            self.model.fit(x,u)
 
         self.n_input_features_ = self.model.steps[0][1].n_input_features_
         self.n_output_features_ = self.model.steps[0][1].n_output_features_
+        if hasattr(self.model.steps[1][1], 'n_control_features_'):
+            self.n_control_features_ = self.model.steps[1][1].n_control_features_
 
         return self
 
-    def predict(self, x):
+    def predict(self, x, u=None):
         """
         Predict the state one timestep in the future.
 
@@ -110,6 +125,8 @@ class Koopman(BaseEstimator):
         ----------
         x: numpy.ndarray, shape (n_samples, n_input_features)
             Current state.
+        u: numpy.ndarray, shape (n_samples, n_control_features)
+            Time series of external actuation/control.
 
         Returns
         -------
@@ -119,7 +136,7 @@ class Koopman(BaseEstimator):
         check_is_fitted(self, "n_output_features_")
         return self.observables.inverse(self._step(x))
 
-    def simulate(self, x0, n_steps=1):
+    def simulate(self, x0, u=None, n_steps=1):
         """
         Simulate an initial state forward in time with the learned Koopman
         model.
@@ -156,8 +173,11 @@ class Koopman(BaseEstimator):
             for k in range(n_consumed_samples, n_steps - 1):
                 y[k + 1] = self.predict(y[k - n_consumed_samples : k + 1])
         else:
-            for k in range(n_steps - 1):
-                y[k + 1] = self.predict(y[k])
+            if u is None:
+                for k in range(n_steps - 1):
+                    y[k + 1] = self.predict(y[k])
+                else:
+                    xhat[k + 1] = self.predict(xhat[k], u[k])
 
         return y
 
@@ -264,7 +284,21 @@ class Koopman(BaseEstimator):
             Observables one timestep after x.
         """
         check_is_fitted(self, "n_output_features_")
-        return self.model.predict(x)
+
+        if u is None or self.n_control_features_ == 0:
+            if self.n_control_features_ > 0:
+                #TODO: replace with u = 0 as default
+                raise TypeError(
+                    "Model was fit using control variables, so u is required"
+                )
+            elif u is not None:
+                warnings.warn(
+                    "Control variables u were ignored because control variables were"
+                    " not used when the model was fit"
+                )
+            return self.model.predict(x)
+        else:
+            return self.model.predict(x,u)
 
     @property
     def koopman_matrix(self):
@@ -274,3 +308,20 @@ class Koopman(BaseEstimator):
         """
         check_is_fitted(self, "n_output_features_")
         return self.model.steps[-1][1].coef_
+
+    @property
+    def state_transition_matrix(self):
+        """
+        The state transition matrix A satisfies x' = Ax + Bu.
+        """
+        check_is_fitted(self, "model")
+        return self.model.steps[-1][1].coef_[:,:self.n_output_features_]
+
+    @property
+    def control_matrix(self):
+        """
+        The control matrix (or vector) B satisfies x' = Ax + Bu.
+        """
+        # TODO: Should give error if not a regression method incorporating control is used
+        check_is_fitted(self, "model")
+        return self.model.steps[-1][1].coef_[:,self.n_output_features_:]
