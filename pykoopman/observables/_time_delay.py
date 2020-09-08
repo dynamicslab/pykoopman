@@ -52,7 +52,7 @@ class TimeDelay(BaseObservables):
         n_samples, n_features = check_array(x).shape
 
         self.n_input_features_ = n_features
-        self.n_output_features_ = x.shape[1] * (1 + self.n_delays)
+        self.n_output_features_ = n_features * (1 + self.n_delays)
 
         return self
 
