@@ -63,7 +63,7 @@ class Koopman(BaseEstimator):
 
         Parameters
         ----------
-        x: numpy.ndarray, shape (n_examples, n_features)
+        x: numpy.ndarray, shape (n_samples, n_features)
             Measurement data to be fit. Each row should correspond to an example
             and each column a feature. It is assumed that examples are
             equi-spaced in time (i.e. a uniform timestep is assumed).
@@ -139,7 +139,7 @@ class Koopman(BaseEstimator):
 
         Parameters
         ----------
-        x: numpy.ndarray, shape (n_examples, n_input_features)
+        x: numpy.ndarray, shape (n_samples, n_input_features)
             State measurements.
             Each row should correspond to the system state at some point
             in time.
@@ -147,7 +147,7 @@ class Koopman(BaseEstimator):
             equi-spaced in time and are given in sequential order.
             If ``y`` is passed, then this assumption need not hold.
 
-        y: numpy.ndarray, shape (n_examples, n_input_features), optional \
+        y: numpy.ndarray, shape (n_samples, n_input_features), optional \
                 (default None)
             State measurements one timestep in the future.
             Each row of this array should give the corresponding row in x advanced
@@ -189,12 +189,12 @@ class Koopman(BaseEstimator):
 
         Parameters
         ----------
-        x: numpy.ndarray, shape (n_examples, n_input_features)
+        x: numpy.ndarray, shape (n_samples, n_input_features)
             State vectors to be stepped forward.
 
         Returns
         -------
-        X': numpy.ndarray, shape (n_examples, self.n_output_features_)
+        X': numpy.ndarray, shape (n_samples, self.n_output_features_)
             Observables one timestep after x.
         """
         check_is_fitted(self, "n_output_features_")
