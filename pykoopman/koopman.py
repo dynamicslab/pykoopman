@@ -2,6 +2,7 @@ from numpy import empty
 from pydmd import DMD
 from pydmd import DMDBase
 from sklearn.base import BaseEstimator
+from sklearn.metrics import r2_score
 from sklearn.pipeline import Pipeline
 from sklearn.utils.validation import check_is_fitted
 
@@ -100,7 +101,7 @@ class Koopman(BaseEstimator):
         y: numpy.ndarray, shape (n_samples, n_input_features)
             Predicted state one timestep in the future.
         """
-        check_is_fitted(self, "model")
+        check_is_fitted(self, "n_output_features_")
         return self.observables.inverse(self._step(x))
 
     def simulate(self, x0, n_steps=1):
@@ -122,7 +123,7 @@ class Koopman(BaseEstimator):
             Simulated states.
             Note that ``y[0, :]`` is one timestep ahead of ``x0``.
         """
-        check_is_fitted(self, "model")
+        check_is_fitted(self, "n_output_features_")
         # Could have an option to only return the end state and not all
         # intermediate states to save memory.
         y = empty((n_steps, self.n_input_features_), dtype=self.koopman_matrix.dtype)
@@ -131,6 +132,56 @@ class Koopman(BaseEstimator):
             y[k + 1] = self.predict(y[k])
 
         return y
+
+    def score(self, x, y=None, cast_as_real=True, metric=r2_score, **metric_kws):
+        """
+        Score the model prediction for the next timestep.
+
+        Parameters
+        ----------
+        x: numpy.ndarray, shape (n_examples, n_input_features)
+            State measurements.
+            Each row should correspond to the system state at some point
+            in time.
+            If ``y`` is not passed, then it is assumed that the examples are
+            equi-spaced in time and are given in sequential order.
+            If ``y`` is passed, then this assumption need not hold.
+
+        y: numpy.ndarray, shape (n_examples, n_input_features), optional \
+                (default None)
+            State measurements one timestep in the future.
+            Each row of this array should give the corresponding row in x advanced
+            forward in time by one timestep.
+            If None, the rows of ``x`` are used to construct ``y``.
+
+        cast_as_real: bool, optional (default True)
+            Whether to take the real part of predictions when computing the score.
+            Many Scikit-learn metrics do not support complex numbers.
+
+        metric: callable, optional (default ``r2_score``)
+            The metric function used to score the model predictions.
+
+        metric_kws: dict, optional
+            Optional parameters to pass to the metric function.
+
+        Returns
+        -------
+        score: float
+            Metric function value for the model predictions at the next timestep.
+        """
+        check_is_fitted(self, "n_output_features_")
+        x = validate_input(x)
+
+        if y is None:
+            if cast_as_real:
+                return metric(x[1:].real, self.predict(x[:-1]).real, **metric_kws)
+            else:
+                return metric(x[1:], self.predict(x[:-1]), **metric_kws)
+        else:
+            if cast_as_real:
+                return metric(y.real, self.predict(x).real, **metric_kws)
+            else:
+                return metric(y, self.predict(x), **metric_kws)
 
     def _step(self, x):
         """
@@ -146,7 +197,7 @@ class Koopman(BaseEstimator):
         X': numpy.ndarray, shape (n_examples, self.n_output_features_)
             Observables one timestep after x.
         """
-        check_is_fitted(self, "model")
+        check_is_fitted(self, "n_output_features_")
         return self.model.predict(x)
 
     @property
@@ -155,5 +206,5 @@ class Koopman(BaseEstimator):
         The Koopman matrix K satisfying g(X') = g(X) * K
         where g denotes the observables map and X' denotes x advanced one timestep.
         """
-        check_is_fitted(self, "model")
+        check_is_fitted(self, "n_output_features_")
         return self.model.steps[-1][1].coef_
