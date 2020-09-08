@@ -84,7 +84,7 @@ class Identity(BaseObservables):
         ----------
         input_features: list of string, length n_input_features,\
          optional (default None)
-            STring names for input features, if available. By default,
+            String names for input features, if available. By default,
             the names "x0", "x1", ... ,"xn_input_features" are used.
 
         Returns
