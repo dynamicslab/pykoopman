@@ -1,6 +1,7 @@
 """
 Time-delay observables
 """
+from sklearn.utils import check_array
 from sklearn.utils.validation import check_is_fitted
 
 from ..common import validate_input
@@ -48,9 +49,9 @@ class TimeDelay(BaseObservables):
         -------
         self: returns a fit ``TimeDelay`` instance
         """
-        x = validate_input(x)
+        n_samples, n_features = check_array(x).shape
 
-        self.n_input_features_ = x.shape[1]
+        self.n_input_features_ = n_features
         self.n_output_features_ = x.shape[1] * (1 + self.n_delays)
 
         return self
