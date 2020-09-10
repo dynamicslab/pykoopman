@@ -239,7 +239,6 @@ class Koopman(BaseEstimator):
         """
         The control matrix (or vector) B satisfies x' = Ax + Bu.
         """
-        # TODO: Should give error if not a regression method incorporating control is used
         check_is_fitted(self, "model")
         if not isinstance(self.regressor, DMDc):
             raise ValueError(
