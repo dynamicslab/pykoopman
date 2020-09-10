@@ -1,3 +1,5 @@
+from warnings import warn
+
 from numpy import empty
 from pydmd import DMD
 from pydmd import DMDBase
@@ -8,6 +10,7 @@ from sklearn.utils.validation import check_is_fitted
 from .common import validate_input
 from .observables import Identity
 from .regression import BaseRegressor
+from .regression import DMDc
 from .regression import DMDRegressor
 
 
@@ -71,10 +74,12 @@ class Koopman(BaseEstimator):
             equi-spaced in time (i.e. a uniform timestep is assumed).
 
         u: numpy.ndarray, shape (n_samples, n_control_features)
-            Control/actuation/external parameter data. Each row should correspond to one sample
-            and each column a control variable or feature. The control variable may be amplitude
-            of an actuator or an external, time-varying parameter. It is assumed that samples are
-            equi-spaced in time (i.e. a uniform timestep is assumed) and correspond to the samples in x.
+            Control/actuation/external parameter data. Each row should correspond
+            to one sample and each column a control variable or feature.
+            The control variable may be amplitude of an actuator or an external,
+            time-varying parameter. It is assumed that samples are equi-spaced
+            in time (i.e. a uniform timestep is assumed) and correspond to the
+            samples in x.
 
         Returns
         -------
@@ -84,6 +89,10 @@ class Koopman(BaseEstimator):
 
         if u is None:
             self.n_control_features_ = 0
+        elif not isinstance(self.regressor, DMDc):
+            raise ValueError(
+                "Control input u was passed, but self.regressor is not DMDc"
+            )
 
         steps = [
             ("observables", self.observables),
@@ -93,12 +102,12 @@ class Koopman(BaseEstimator):
 
         if u is None:
             self.model.fit(x)
-        elif u is not None:
-            self.model.fit(x,u)
+        else:
+            self.model.fit(x, u)
 
         self.n_input_features_ = self.model.steps[0][1].n_input_features_
         self.n_output_features_ = self.model.steps[0][1].n_output_features_
-        if hasattr(self.model.steps[1][1], 'n_control_features_'):
+        if hasattr(self.model.steps[1][1], "n_control_features_"):
             self.n_control_features_ = self.model.steps[1][1].n_control_features_
         return self
 
@@ -110,7 +119,9 @@ class Koopman(BaseEstimator):
         ----------
         x: numpy.ndarray, shape (n_samples, n_input_features)
             Current state.
-        u: numpy.ndarray, shape (n_samples, n_control_features)
+
+        u: numpy.ndarray, shape (n_samples, n_control_features), \
+                optional (default None)
             Time series of external actuation/control.
 
         Returns
@@ -119,7 +130,7 @@ class Koopman(BaseEstimator):
             Predicted state one timestep in the future.
         """
         check_is_fitted(self, "model")
-        return self.observables.inverse(self._step(x,u))
+        return self.observables.inverse(self._step(x, u))
 
     def simulate(self, x0, u=None, n_steps=1):
         """
@@ -130,6 +141,10 @@ class Koopman(BaseEstimator):
         ----------
         x0: numpy.ndarray, shape (n_input_features,)
             Initial state from which to simulate.
+
+        u: numpy.ndarray, shape (n_samples, n_control_features), \
+                optional (default None)
+            Time series of external actuation/control.
 
         n_steps: int, optional (default 1)
             Number of forward steps to be simulated.
@@ -156,7 +171,7 @@ class Koopman(BaseEstimator):
 
         return xhat
 
-    def _step(self, x, u):
+    def _step(self, x, u=None):
         """
         Map x one timestep forward in the space of observables.
 
@@ -164,6 +179,10 @@ class Koopman(BaseEstimator):
         ----------
         x: numpy.ndarray, shape (n_examples, n_input_features)
             State vectors to be stepped forward.
+
+        u: numpy.ndarray, shape (n_samples, n_control_features), \
+                optional (default None)
+            Time series of external actuation/control.
 
         Returns
         -------
@@ -175,18 +194,22 @@ class Koopman(BaseEstimator):
 
         if u is None or self.n_control_features_ == 0:
             if self.n_control_features_ > 0:
-                #TODO: replace with u = 0 as default
+                # TODO: replace with u = 0 as default
                 raise TypeError(
                     "Model was fit using control variables, so u is required"
                 )
             elif u is not None:
-                warnings.warn(
+                warn(
                     "Control variables u were ignored because control variables were"
                     " not used when the model was fit"
                 )
             return self.model.predict(x)
         else:
-            return self.model.predict(x,u)
+            if not isinstance(self.regressor, DMDc):
+                raise ValueError(
+                    "Control input u was passed, but self.regressor is not DMDc"
+                )
+            return self.model.predict(x, u)
 
     @property
     def koopman_matrix(self):
@@ -201,9 +224,15 @@ class Koopman(BaseEstimator):
     def state_transition_matrix(self):
         """
         The state transition matrix A satisfies x' = Ax + Bu.
+        # TODO: consider whether we want to match sklearn and have A and B satisfy
+        # x' = xA + uB instead
         """
         check_is_fitted(self, "model")
-        return self.model.steps[-1][1].coef_[:,:self.n_output_features_]
+        if not isinstance(self.regressor, DMDc):
+            raise ValueError(
+                "self.regressor is not DMDc, so object has no control_matrix"
+            )
+        return self.model.steps[-1][1].state_matrix_
 
     @property
     def control_matrix(self):
@@ -212,4 +241,8 @@ class Koopman(BaseEstimator):
         """
         # TODO: Should give error if not a regression method incorporating control is used
         check_is_fitted(self, "model")
-        return self.model.steps[-1][1].coef_[:,self.n_output_features_:]
+        if not isinstance(self.regressor, DMDc):
+            raise ValueError(
+                "self.regressor is not DMDc, so object has no control_matrix"
+            )
+        return self.model.steps[-1][1].control_matrix_
