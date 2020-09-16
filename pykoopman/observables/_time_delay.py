@@ -133,7 +133,7 @@ class TimeDelay(BaseObservables):
 
         # The first n_input_features_ columns correspond to the un-delayed
         # measurements
-        return y[:, :self.n_input_features_]
+        return y[:, : self.n_input_features_]
 
     def get_feature_names(self, input_features=None):
         """
