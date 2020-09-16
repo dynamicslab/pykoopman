@@ -1,6 +1,8 @@
 """
 Time-delay observables
 """
+from numpy import arange
+from numpy import empty
 from sklearn.utils import check_array
 from sklearn.utils.validation import check_is_fitted
 
@@ -77,8 +79,30 @@ class TimeDelay(BaseObservables):
         check_is_fitted(self, "n_input_features_")
         x = validate_input(x)
 
-        # TODO
-        return x
+        if x.shape[1] != self.n_input_features_:
+            raise ValueError(
+                "Wrong number of input features. "
+                f"Expected x.shape[1] = {self.n_input_features_}; "
+                f"instead x.shape[1] = {x.shape[1]}."
+            )
+
+        n_deleted_rows = self.delay * self.n_delays
+        if len(x) < n_deleted_rows + 1:
+            raise ValueError(
+                "x has too few rows. To compute time-delay features with "
+                f"delay = {self.delay} and n_delays = {self.n_delays} "
+                f"x must have at least {n_deleted_rows + 1} rows."
+            )
+
+        y = empty((x.shape[0] - n_deleted_rows, self.n_output_features_), dtype=x.dtype)
+        y[:, : self.n_input_features_] = x[n_deleted_rows:]
+
+        for i in range(n_deleted_rows, x.shape[0]):
+            y[i - n_deleted_rows, self.n_input_features_ :] = x[
+                self._delay_inds(i), :
+            ].flatten()
+
+        return y
 
     def inverse(self, y):
         """
@@ -99,10 +123,17 @@ class TimeDelay(BaseObservables):
             Output of inverse map applied to y.
             In this case, x is identical to y.
         """
-        # TODO: validate input
         check_is_fitted(self, "n_input_features_")
-        # TODO
-        return y
+        if y.shape[1] != self.n_output_features_:
+            raise ValueError(
+                "Wrong number of input features."
+                f"Expected y.shape[1] = {self.n_out_features_}; "
+                f"instead y.shape[1] = {y.shape[1]}."
+            )
+
+        # The first n_input_features_ columns correspond to the un-delayed
+        # measurements
+        return y[:, :self.n_input_features_]
 
     def get_feature_names(self, input_features=None):
         """
@@ -121,7 +152,6 @@ class TimeDelay(BaseObservables):
             Output feature names.
         """
         check_is_fitted(self, "n_input_features_")
-        # TODO
         if input_features is None:
             input_features = [f"x{i}" for i in range(self.n_input_features_)]
         else:
@@ -130,4 +160,19 @@ class TimeDelay(BaseObservables):
                     "input_features must have n_input_features_ "
                     f"({self.n_input_features_}) elements"
                 )
-        return input_features
+
+        output_features = [f"{xi}(t)" for xi in input_features]
+        output_features.extend(
+            [
+                f"{xi}(t-{i * self.delay}dt)"
+                for i in range(1, self.n_delays + 1)
+                for xi in input_features
+            ]
+        )
+        # for i in range(1, self.n_delays + 1):
+        # output_features.extend([f"{xi}(t-{i}dt)" for xi in input_features])
+
+        return output_features
+
+    def _delay_inds(self, index):
+        return index - self.delay * arange(1, self.n_delays + 1)
