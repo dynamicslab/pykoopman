@@ -133,7 +133,15 @@ class CustomObservables(BaseObservables):
         """
         # TODO: validate input
         check_is_fitted(self, "n_input_features_")
-        return y
+        if y.shape[1] != self.n_output_features_:
+            raise ValueError(
+                "Wrong number of input features."
+                f"Expected y.shape[1] = {self.n_out_features_}; "
+                f"instead y.shape[1] = {y.shape[1]}."
+            )
+        # self.observables[0] is the identity, so original features are
+        # just the first self.n_input_features_ columns
+        return y[:, : self.n_input_features_]
 
     def get_feature_names(self, input_features=None):
         """
