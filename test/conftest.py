@@ -6,6 +6,8 @@ Put any datasets that are used by multiple unit test files here.
 import numpy as np
 import pytest
 
+from pykoopman.observables import CustomObservables
+
 
 @pytest.fixture
 def data_random():
@@ -25,3 +27,16 @@ def data_2D_superposition():
     f1 = sech(x_grid + 3) * np.exp(1j * 2.3 * t_grid)
     f2 = 2 * (sech(x_grid) * np.tanh(x_grid)) * np.exp(1j * 2.8 * t_grid)
     return f1 + f2
+
+
+@pytest.fixture
+def data_custom_observables():
+    observables = [lambda x: x, lambda x: x ** 2, lambda x: 0 * x, lambda x, y: x * y]
+    observable_names = [
+        lambda s: str(s),
+        lambda s: f"{s}^2",
+        lambda s: str(0),
+        lambda s, t: f"{s} {t}",
+    ]
+
+    return CustomObservables(observables, observable_names=observable_names)
