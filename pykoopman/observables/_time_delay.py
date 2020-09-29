@@ -10,19 +10,61 @@ from ._base import BaseObservables
 
 
 class TimeDelay(BaseObservables):
-    """
-    TODO
-    A dummy observables class that simply returns its input.
+    r"""
+    Time-delay observables. Observables formed by taking time-lagged
+    measurements of state variables and interpreting them as new state
+    variables.
+
+    For example, the two state variables :math:`[x(t), y(t)]` could be
+    supplemented with two time-delays each, yielding a new set of
+    observables:
+
+    .. math::
+        [x(t), y(t), x(t-\Delta t), y(t-\Delta t),
+        x(t-2\Delta t), y(t - 2\Delta t)]
+
+    This example corresponds to taking :code:`delay =` :math:`\Delta t`
+    and :code:`n_delays = 2`.
+
+    Note that when transforming data the first
+    :code:`delay * n_delays` rows/samples are dropped as there is
+    insufficient time history to form time-delays for them.
+
+    See the following references for more information.
+
+        Brunton, Steven L., et al.
+        "Chaos as an intermittently forced linear system."
+        Nature communications 8.1 (2017): 1-9.
+
+        Susuki, Yoshihiko, and Igor Mezić.
+        "A prony approximation of Koopman mode decomposition."
+        2015 54th IEEE Conference on Decision and Control (CDC). IEEE, 2015.
+
+        Arbabi, Hassan, and Igor Mezic.
+        "Ergodic theory, dynamic mode decomposition, and computation
+        of spectral properties of the Koopman operator."
+        SIAM Journal on Applied Dynamical Systems 16.4 (2017): 2096-2126.
+
 
     Parameters
     ----------
     delay: nonnegative integer, optional (default 1)
-        TODO
+        The length of each delay.
 
     n_delays: nonnegative integer, optional (default 2)
-        TODO
+        The number of delays to compute for each variable.
 
+    Attributes
+    ----------
+    n_input_features_ : int
+        Number of input features.
 
+    n_output_features_ : int
+        Number of output features.
+
+    _n_consumed_samples : int
+        Number of samples consumed when :code:`transform` is called,
+        i.e. :code:`n_delays * delay`.
     """
 
     def __init__(self, delay=1, n_delays=2):
@@ -50,7 +92,7 @@ class TimeDelay(BaseObservables):
 
         Returns
         -------
-        self: returns a fit ``TimeDelay`` instance
+        self: returns a fit :code:`TimeDelay` instance
         """
         n_samples, n_features = validate_input(x).shape
 
@@ -61,7 +103,8 @@ class TimeDelay(BaseObservables):
 
     def transform(self, x):
         """
-        Apply Identity transformation to data.
+        Add time-delay features to the data, dropping the first
+        :code:`delay - n_delays` samples.
 
         Parameters
         ----------
@@ -75,7 +118,7 @@ class TimeDelay(BaseObservables):
         y: array-like, shape (n_samples - delay * n_delays, n_output_features)
             Transformed data. Note that the number of output examples is,
             in general, different from the number input. In particular,
-            ``n_samples - self.delay * self.n_delays``
+            :code:`n_samples - delay * n_delays`
         """
         check_is_fitted(self, "n_input_features_")
         x = validate_input(x)
@@ -113,7 +156,7 @@ class TimeDelay(BaseObservables):
         Invert the transformation.
 
         This function satisfies
-        :code:`self.inverse(self.transform(x)) == x`
+        :code:`self.inverse(self.transform(x)) == x[self._n_consumed_samples:]`
 
         Parameters
         ----------
@@ -125,7 +168,6 @@ class TimeDelay(BaseObservables):
         -------
         x: array-like, shape (n_samples, n_input_features)
             Output of inverse map applied to y.
-            In this case, x is identical to y.
         """
         check_is_fitted(self, "n_input_features_")
         if y.shape[1] != self.n_output_features_:
@@ -173,8 +215,6 @@ class TimeDelay(BaseObservables):
                 for xi in input_features
             ]
         )
-        # for i in range(1, self.n_delays + 1):
-        # output_features.extend([f"{xi}(t-{i}dt)" for xi in input_features])
 
         return output_features
 

@@ -18,15 +18,35 @@ class CustomObservables(BaseObservables):
     To ensure invertibility of the set of observables, the identity map is
     automatically included along with user-specified observables.
 
-    TODO
-
     Parameters
     ----------
     observables: list of callable
+        A list of functions mapping from state variables to observables.
+        Univariate functions are applied to each state variable in turn and
+        multivariable functions are applied to each combination of state
+        variables.
+        Note that the identity map is automatically prepended to this list.
 
-    observable_names: list of str, optional (default None)
+    observable_names: list of callable, optional (default None)
+        A list of functions mapping from names of state variables to names
+        of observables. For example, the observable name
+        :code:`lambda x: f"{x}^2"` would correspond to the function :math:`x^2`.
+        If None, the names "f0(...)", "f1(...)", ... will be used.
 
     interaction_only: bool, optional (default True)
+        Whether to omit self-interaction terms.
+        If True, function evaluations of the form :math:`f(x,x)` and :math:`f(x,y,x)`
+        will be omitted, but those of the form :math:`f(x,y)` and :math:`f(x,y,z)`
+        will be included.
+        If False, all combinations will be included.
+
+    Attributes
+    ----------
+    n_input_features_ : int
+        Number of input features.
+
+    n_output_features_ : int
+        Number of output features.
     """
 
     def __init__(self, observables, observable_names=None, interaction_only=True):
@@ -43,6 +63,9 @@ class CustomObservables(BaseObservables):
         """
         Fit to measurement data.
 
+        Determines the number of input and output features and creates
+        default values for :code:`observable_names` if necessary.
+
         Parameters
         ----------
         x: array-like, shape (n_samples, n_input_features)
@@ -53,7 +76,7 @@ class CustomObservables(BaseObservables):
 
         Returns
         -------
-        self: returns a fit ``CustomObservables`` instance
+        self: returns a fit :code:`CustomObservables` instance
         """
         n_samples, n_features = validate_input(x).shape
 
@@ -81,7 +104,7 @@ class CustomObservables(BaseObservables):
 
     def transform(self, x):
         """
-        Apply custom transformations to data.
+        Apply custom transformations to data, computing observables.
 
         Parameters
         ----------
@@ -91,7 +114,7 @@ class CustomObservables(BaseObservables):
         Returns
         -------
         y: array-like, shape (n_samples, n_output_features)
-            Transformed data (same as x in this case).
+            Transformed data (observables).
         """
         check_is_fitted(self, "n_input_features_")
         x = validate_input(x)
@@ -131,7 +154,7 @@ class CustomObservables(BaseObservables):
             Output of inverse map applied to y.
             In this case, x is identical to y.
         """
-        # TODO: validate input
+        y = validate_input(y)
         check_is_fitted(self, "n_input_features_")
         if y.shape[1] != self.n_output_features_:
             raise ValueError(
@@ -149,8 +172,8 @@ class CustomObservables(BaseObservables):
 
         Parameters
         ----------
-        input_features: list of string, length n_input_features,\
-         optional (default None)
+        input_features: list of string, length n_input_features, \
+                optional (default None)
             String names for input features, if available. By default,
             the names "x0", "x1", ... ,"xn_input_features" are used.
 
@@ -192,8 +215,10 @@ class CustomObservables(BaseObservables):
 
 
 def identity(x):
+    """Identity map."""
     return x
 
 
 def identity_name(x):
+    """Name for identity map."""
     return str(x)
