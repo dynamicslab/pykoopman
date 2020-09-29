@@ -3,7 +3,6 @@ Time-delay observables
 """
 from numpy import arange
 from numpy import empty
-from sklearn.utils import check_array
 from sklearn.utils.validation import check_is_fitted
 
 from ..common import validate_input
@@ -23,6 +22,7 @@ class TimeDelay(BaseObservables):
     n_delays: nonnegative integer, optional (default 2)
         TODO
 
+
     """
 
     def __init__(self, delay=1, n_delays=2):
@@ -34,6 +34,7 @@ class TimeDelay(BaseObservables):
 
         self.delay = int(delay)
         self.n_delays = int(n_delays)
+        self._n_consumed_samples = self.delay * self.n_delays
 
     def fit(self, x, y=None):
         """
@@ -51,7 +52,7 @@ class TimeDelay(BaseObservables):
         -------
         self: returns a fit ``TimeDelay`` instance
         """
-        n_samples, n_features = check_array(x).shape
+        n_samples, n_features = validate_input(x).shape
 
         self.n_input_features_ = n_features
         self.n_output_features_ = n_features * (1 + self.n_delays)
@@ -86,19 +87,22 @@ class TimeDelay(BaseObservables):
                 f"instead x.shape[1] = {x.shape[1]}."
             )
 
-        n_deleted_rows = self.delay * self.n_delays
-        if len(x) < n_deleted_rows + 1:
+        self._n_consumed_samples = self.delay * self.n_delays
+        if len(x) < self._n_consumed_samples + 1:
             raise ValueError(
                 "x has too few rows. To compute time-delay features with "
                 f"delay = {self.delay} and n_delays = {self.n_delays} "
-                f"x must have at least {n_deleted_rows + 1} rows."
+                f"x must have at least {self._n_consumed_samples + 1} rows."
             )
 
-        y = empty((x.shape[0] - n_deleted_rows, self.n_output_features_), dtype=x.dtype)
-        y[:, : self.n_input_features_] = x[n_deleted_rows:]
+        y = empty(
+            (x.shape[0] - self._n_consumed_samples, self.n_output_features_),
+            dtype=x.dtype,
+        )
+        y[:, : self.n_input_features_] = x[self._n_consumed_samples :]
 
-        for i in range(n_deleted_rows, x.shape[0]):
-            y[i - n_deleted_rows, self.n_input_features_ :] = x[
+        for i in range(self._n_consumed_samples, x.shape[0]):
+            y[i - self._n_consumed_samples, self.n_input_features_ :] = x[
                 self._delay_inds(i), :
             ].flatten()
 
@@ -176,3 +180,12 @@ class TimeDelay(BaseObservables):
 
     def _delay_inds(self, index):
         return index - self.delay * arange(1, self.n_delays + 1)
+
+    @property
+    def n_consumed_samples(self):
+        """
+        The number of samples that are consumed as "initial conditions" for
+        other samples. I.e. the number of samples for which time delays cannot
+        be computed.
+        """
+        return self._n_consumed_samples

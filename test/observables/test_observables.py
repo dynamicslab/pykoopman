@@ -1,5 +1,6 @@
 import pytest
 from numpy import hstack
+from numpy import iscomplexobj
 from numpy import linspace
 from numpy import stack
 from numpy.testing import assert_allclose
@@ -149,3 +150,19 @@ def test_feature_names(
         observables.get_feature_names(input_features=custom_names)
         == expected_custom_names
     )
+
+
+@pytest.mark.parametrize(
+    "observables",
+    [
+        Identity(),
+        # Polynomial(),  # TODO: rewrite Polynomial to handle cplx. nums.
+        TimeDelay(),
+        pytest.lazy_fixture("data_custom_observables"),
+    ],
+)
+def test_complex_data(data_random_complex, observables):
+    x = data_random_complex
+    y = observables.fit_transform(x)
+
+    assert iscomplexobj(y)

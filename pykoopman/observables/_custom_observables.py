@@ -5,9 +5,9 @@ from itertools import combinations
 from itertools import combinations_with_replacement
 
 from numpy import empty
-from sklearn.utils import check_array
 from sklearn.utils.validation import check_is_fitted
 
+from ..common import validate_input
 from ._base import BaseObservables
 
 
@@ -55,7 +55,7 @@ class CustomObservables(BaseObservables):
         -------
         self: returns a fit ``CustomObservables`` instance
         """
-        n_samples, n_features = check_array(x).shape
+        n_samples, n_features = validate_input(x).shape
 
         n_output_features = 0
         for f in self.observables:
@@ -94,7 +94,7 @@ class CustomObservables(BaseObservables):
             Transformed data (same as x in this case).
         """
         check_is_fitted(self, "n_input_features_")
-        x = check_array(x)
+        x = validate_input(x)
 
         n_samples, n_features = x.shape
 
