@@ -1,3 +1,5 @@
+from warnings import catch_warnings
+from warnings import filterwarnings
 from warnings import warn
 
 from numpy import empty
@@ -35,6 +37,9 @@ class Koopman(BaseEstimator):
         class. In the latter case, the pydmd object must have both a ``fit``
         and a ``predict`` method.
 
+    quiet: booolean, optional (default False)
+        Whether or not warnings should be silenced during fitting.
+
     Attributes
     ----------
     model: sklearn.pipeline.Pipeline
@@ -48,7 +53,7 @@ class Koopman(BaseEstimator):
         Number of output features after computing observables.
     """
 
-    def __init__(self, observables=None, regressor=None):
+    def __init__(self, observables=None, regressor=None, quiet=False):
         if observables is None:
             observables = Identity()
         if regressor is None:
@@ -60,6 +65,7 @@ class Koopman(BaseEstimator):
 
         self.observables = observables
         self.regressor = regressor
+        self.quiet = quiet
 
     def fit(self, x):
         """
@@ -84,7 +90,10 @@ class Koopman(BaseEstimator):
         ]
         self.model = Pipeline(steps)
 
-        self.model.fit(x)
+        action = "ignore" if self.quiet else "default"
+        with catch_warnings():
+            filterwarnings(action, category=UserWarning)
+            self.model.fit(x)
 
         self.n_input_features_ = self.model.steps[0][1].n_input_features_
         self.n_output_features_ = self.model.steps[0][1].n_output_features_

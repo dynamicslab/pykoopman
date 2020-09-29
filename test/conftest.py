@@ -36,6 +36,13 @@ def data_2D_superposition():
 
 
 @pytest.fixture
+def data_1D_cosine():
+    t = np.linspace(0, 2 * np.pi, 200)
+    x = np.cos(3 * t)
+    return x
+
+
+@pytest.fixture
 def data_custom_observables():
     observables = [lambda x: x, lambda x: x ** 2, lambda x: 0 * x, lambda x, y: x * y]
     observable_names = [

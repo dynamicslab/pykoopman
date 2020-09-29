@@ -156,7 +156,7 @@ def test_feature_names(
     "observables",
     [
         Identity(),
-        # Polynomial(),  # TODO: rewrite Polynomial to handle cplx. nums.
+        Polynomial(),  # TODO: rewrite Polynomial to handle cplx. nums.
         TimeDelay(),
         pytest.lazy_fixture("data_custom_observables"),
     ],

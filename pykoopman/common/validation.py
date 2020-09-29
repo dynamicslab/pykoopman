@@ -12,8 +12,10 @@ def validate_input(x, dt=DT_DEFAULT):
     return check_array(x)
 
 
-def check_array(x):
+def check_array(x, **kwargs):
     if np.iscomplexobj(x):
-        return skl_check_array(x.real) + 1j * skl_check_array(x.imag)
+        return skl_check_array(x.real, **kwargs) + 1j * skl_check_array(
+            x.imag, **kwargs
+        )
     else:
-        return skl_check_array(x)
+        return skl_check_array(x, **kwargs)

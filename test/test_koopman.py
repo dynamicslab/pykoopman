@@ -97,21 +97,20 @@ def test_observables_integration(data_random, observables):
     assert y.shape[1] == x.shape[1]
 
 
-# TODO: create simple 1D system for this test
 @pytest.mark.parametrize(
     "observables",
     [
         Identity(),
-        # Polynomial(),
+        Polynomial(),
         TimeDelay(),
         pytest.lazy_fixture("data_custom_observables"),
     ],
 )
-def test_observables_integration_accuracy(data_2D_superposition, observables):
-    x = data_2D_superposition
-    model = Koopman(observables=observables).fit(x)
+def test_observables_integration_accuracy(data_1D_cosine, observables):
+    x = data_1D_cosine
+    model = Koopman(observables=observables, quiet=True).fit(x)
 
-    assert model.score(x) > 0.0
+    assert model.score(x) > 0.95
 
 
 def test_simulate_with_time_delay(data_2D_superposition):
