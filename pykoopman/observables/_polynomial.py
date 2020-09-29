@@ -36,7 +36,9 @@ class Polynomial(PolynomialFeatures):
             include_bias=include_bias,
             order=order,
         )
-        # Do other setup that we require
+
+    def fit(self, x, y=None):
+        return super(Polynomial, self).fit(x.real, y)
 
     def inverse(self, y):
         """

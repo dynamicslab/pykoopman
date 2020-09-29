@@ -1,4 +1,7 @@
+from warnings import warn
+
 from numpy import empty
+from numpy import vstack
 from pydmd import DMD
 from pydmd import DMDBase
 from sklearn.base import BaseEstimator
@@ -8,6 +11,7 @@ from sklearn.utils.validation import check_is_fitted
 
 from .common import validate_input
 from .observables import Identity
+from .observables import TimeDelay
 from .regression import BaseRegressor
 from .regression import DMDRegressor
 
@@ -111,8 +115,12 @@ class Koopman(BaseEstimator):
 
         Parameters
         ----------
-        x0: numpy.ndarray, shape (n_input_features,)
+        x0: numpy.ndarray, shape (n_input_features,) or \
+                (n_consumed_samples + 1, n_input_features)
             Initial state from which to simulate.
+            If using :code:`TimeDelay` observables, ``x0`` should contain
+            enough examples to compute all required time delays,
+            i.e. ``n_consumed_samples + 1``.
 
         n_steps: int, optional (default 1)
             Number of forward steps to be simulated.
@@ -128,8 +136,17 @@ class Koopman(BaseEstimator):
         # intermediate states to save memory.
         y = empty((n_steps, self.n_input_features_), dtype=self.koopman_matrix.dtype)
         y[0] = self.predict(x0)
-        for k in range(n_steps - 1):
-            y[k + 1] = self.predict(y[k])
+
+        if isinstance(self.observables, TimeDelay):
+            n_consumed_samples = self.observables.n_consumed_samples
+            for k in range(n_consumed_samples):
+                y[k + 1] = self.predict(vstack((x0[k + 1 :], y[: k + 1])))
+
+            for k in range(n_consumed_samples, n_steps - 1):
+                y[k + 1] = self.predict(y[k - n_consumed_samples : k + 1])
+        else:
+            for k in range(n_steps - 1):
+                y[k + 1] = self.predict(y[k])
 
         return y
 
@@ -172,11 +189,30 @@ class Koopman(BaseEstimator):
         check_is_fitted(self, "n_output_features_")
         x = validate_input(x)
 
+        if isinstance(self.observables, TimeDelay):
+            n_consumed_samples = self.observables.n_consumed_samples
+
+            # User may pass in too-large
+            if y is not None and len(y) == len(x):
+                warn(
+                    f"The first {n_consumed_samples} entries of y were ignored because "
+                    "TimeDelay obesrvables were used."
+                )
+                y = y[n_consumed_samples:]
+        else:
+            n_consumed_samples = 0
+
         if y is None:
             if cast_as_real:
-                return metric(x[1:].real, self.predict(x[:-1]).real, **metric_kws)
+                return metric(
+                    x[n_consumed_samples + 1 :].real,
+                    self.predict(x[:-1]).real,
+                    **metric_kws,
+                )
             else:
-                return metric(x[1:], self.predict(x[:-1]), **metric_kws)
+                return metric(
+                    x[n_consumed_samples + 1 :], self.predict(x[:-1]), **metric_kws
+                )
         else:
             if cast_as_real:
                 return metric(y.real, self.predict(x).real, **metric_kws)
