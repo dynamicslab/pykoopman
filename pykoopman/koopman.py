@@ -183,6 +183,25 @@ class Koopman(BaseEstimator):
             else:
                 return metric(y, self.predict(x), **metric_kws)
 
+    def get_feature_names(self, input_features=None):
+        """
+        Get the names of the individual features constituting the observables.
+
+        Parameters
+        ----------
+        input_features: list of string, length n_input_features, \
+                optional (default None)
+            String names for input features, if available. By default,
+            the names "x0", "x1", ... ,"xn_input_features" are used.
+
+        Returns
+        -------
+        output_feature_names: list of string, length n_ouput_features
+            Output feature names.
+        """
+        check_is_fitted(self, "n_input_features_")
+        return self.observables.get_feature_names(input_features=input_features)
+
     def _step(self, x):
         """
         Map x one timestep forward in the space of observables.
