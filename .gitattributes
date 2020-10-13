@@ -1,0 +1,5 @@
+# Interpret Jupyter notebooks as Python
+*.ipynb linguist-language=Python
+
+# For automatic versioning via setuptools_scm_git_archive
+.git_archival.txt  export-subst
