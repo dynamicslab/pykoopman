@@ -5,6 +5,9 @@ from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
 
 from pykoopman import Koopman
+from pykoopman.observables import Identity
+from pykoopman.observables import Polynomial
+from pykoopman.observables import TimeDelay
 
 
 def test_fit(data_random):
@@ -68,9 +71,58 @@ def test_score_with_target(data_2D_superposition):
     assert model.score(x[::2], y=x[1::2]) > 0.8
 
 
-def test_score_complex_data(data_2D_superposition):
-    x = data_2D_superposition
+def test_score_complex_data(data_random_complex):
+    x = data_random_complex
     model = Koopman().fit(x)
 
     with pytest.raises(ValueError):
         model.score(x, cast_as_real=False)
+
+
+@pytest.mark.parametrize(
+    "observables",
+    [
+        Identity(),
+        Polynomial(),
+        TimeDelay(),
+        pytest.lazy_fixture("data_custom_observables"),
+    ],
+)
+def test_observables_integration(data_random, observables):
+    x = data_random
+    model = Koopman(observables=observables).fit(x)
+    check_is_fitted(model)
+
+    y = model.predict(x)
+    assert y.shape[1] == x.shape[1]
+
+
+@pytest.mark.parametrize(
+    "observables",
+    [
+        Identity(),
+        Polynomial(),
+        TimeDelay(),
+        pytest.lazy_fixture("data_custom_observables"),
+    ],
+)
+def test_observables_integration_accuracy(data_1D_cosine, observables):
+    x = data_1D_cosine
+    model = Koopman(observables=observables, quiet=True).fit(x)
+
+    assert model.score(x) > 0.95
+
+
+def test_simulate_with_time_delay(data_2D_superposition):
+    x = data_2D_superposition
+
+    observables = TimeDelay()
+    model = Koopman(observables=observables)
+    model.fit(x)
+
+    n_steps = 10
+    n_consumed_samples = observables.n_consumed_samples
+    x_pred = model.simulate(x[: n_consumed_samples + 1], n_steps=n_steps)
+    assert_allclose(
+        x[n_consumed_samples + 1 : n_consumed_samples + n_steps + 1], x_pred
+    )
