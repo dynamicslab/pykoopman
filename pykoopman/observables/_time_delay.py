@@ -92,7 +92,7 @@ class TimeDelay(BaseObservables):
 
         Returns
         -------
-        self: returns a fit :code:`TimeDelay` instance
+        self: returns a fit :class:`pykoopman.observables.TimeDelay` instance
         """
         n_samples, n_features = validate_input(x).shape
 

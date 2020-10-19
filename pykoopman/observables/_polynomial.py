@@ -63,7 +63,7 @@ class Polynomial(PolynomialFeatures):
             Dummy input.
         Returns
         -------
-        self : instance
+        self : fit :class:`pykoopman.observables.Polynomial` instance
         """
         return super(Polynomial, self).fit(x.real, y)
 

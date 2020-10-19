@@ -28,7 +28,7 @@ class Identity(BaseObservables):
 
         Returns
         -------
-        self: returns a fit ``Identity`` instance
+        self: a fit :class:`pykoopman.observables.Identity` instance
         """
         # TODO: validate input
         self.n_input_features_ = self.n_output_features_ = x.shape[1]

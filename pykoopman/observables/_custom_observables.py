@@ -76,7 +76,7 @@ class CustomObservables(BaseObservables):
 
         Returns
         -------
-        self: returns a fit :code:`CustomObservables` instance
+        self: a fit :class:`pykoopman.observables.CustomObservables` instance
         """
         n_samples, n_features = validate_input(x).shape
 

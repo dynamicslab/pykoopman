@@ -24,17 +24,19 @@ class Koopman(BaseEstimator):
 
     Parameters
     ----------
-    observables: observables object, optional (default ``Identity``)
+    observables: observables object, optional \
+            (default :class:`pykoopman.observables.Identity`)
         Map(s) to apply to raw measurement data before estimating the
         Koopman operator.
-        Must extend the ``pykoopman.observables.BaseObservables`` class.
-        The default option, ``Identity`` leaves the input untouched.
+        Must extend :class:`pykoopman.observables.BaseObservables`.
+        The default option, :class:`pykoopman.observables.Identity` leaves
+        the input untouched.
 
     regressor: regressor object, optional (default ``DMD``)
         The regressor used to learn the Koopman operator from the observables.
         ``regressor`` can either extend the
-        ``pykoopman.regression.BaseRegressor`` class, or the ``pydmd.DMDBase``
-        class. In the latter case, the pydmd object must have both a ``fit``
+        :class:`pykoopman.regression.BaseRegressor`, or ``pydmd.DMDBase``.
+        In the latter case, the pydmd object must have both a ``fit``
         and a ``predict`` method.
 
     quiet: booolean, optional (default False)
