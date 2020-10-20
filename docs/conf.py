@@ -10,8 +10,8 @@ project = "pykoopman"  # package name
 copyright = f"2020, {author}"
 
 module = importlib.import_module(project)
-# version = release = getattr(module, "__version__")
-version = "0.0.1"
+version = release = getattr(module, "__version__")
+# version = "0.0.1"
 
 # The master toctree document.
 master_doc = "index"
@@ -24,6 +24,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.mathjax",
     "sphinx_nbexamples",
+    "sphinx.ext.intersphinx",
 ]
 
 apidoc_module_dir = f"../{project}"
@@ -66,6 +67,10 @@ example_gallery_config = dict(
     gallery_dirs=["examples"],
     pattern=".+.ipynb",
 )
+
+intersphinx_mapping = {
+    "derivative": ("https://derivative.readthedocs.io/en/latest/", None)
+}
 
 # -- Options for manual page output ---------------------------------------
 
