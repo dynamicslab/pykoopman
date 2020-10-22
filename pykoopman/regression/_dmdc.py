@@ -8,8 +8,92 @@ class DMDc(BaseRegressor):
     """
     DMD with control (DMDc) regressor.
 
+    Aims to determine the system matrices A,B
+    that satisfy x' = Ax + Bu, where x' is the time-shifted
+    state w.r.t. x und u is the control input, for
+    known and unknown B.
+
+    Minimizes the objective function
+    :math:`\\|X'-AX-BU\\|_F`
+    using least-squares regression and singular value decomposition
+    of the input [X,U] and output spaces [X'] to cope with
+    high-dimensionality of X.
+
+    See the following reference for more details:
+
+        `Procter, Joshua L., Brunton, Steven L., and Kutz, J. Nathan.
+        "Dynamic Mode Decomposition with Control."
+        SIAM J. Appl. Dyn. Syst., 15(1), 142–161.
+        <https://epubs.siam.org/doi/abs/10.1137/15M1013857?mobileUi=0>`_
+
     Parameters
     ----------
+    svd_rank : int, optional (default None)
+        SVD rank of the input data (x,u), which determines the dimensionality
+        of the projected state and control matrices.
+
+    svd_output_rank : int, optional (default 0)
+        Input and output spaces may vary.
+
+    Attributed
+    ----------
+    coef_ : array, shape (n_input_features_, n_input_features_) or
+        (n_input_features_, n_input_features_ + n_control_features_)
+        Weight vectors of the regression problem. Corresponds to either [A] or [A,B]
+
+    state_matrix_ : array, shape (n_input_features_, n_input_features_)
+        Identified state transition matrix A of the underlying system.
+
+    control_matrix_ : array, shape (n_input_features_, n_control_features_)
+        Identified control matrix B of the underlying system.
+
+    projection_matrix_ : array, shape (n_input_features_+n_control_features_, svd_rank)
+        Projection matrix into low-dimensional subspace.
+
+    projection_matrix_output_ : array, shape (n_input_features_+n_control_features_, svd_output_rank)
+        Projection matrix into low-dimensional subspace.
+
+     Examples
+    --------
+    For known B
+    >>> import numpy as np
+    >>> import pykoopman as pk
+    >>> A = np.matrix([[1.5, 0],[0, 0.1]])
+    >>> B = np.matrix([[1],[0]])
+    >>> x0 = np.array([4,7])
+    >>> u = np.array([-4, -2, -1, -0.5, 0, 0.5, 1, 3, 5])
+    >>> x = np.zeros([len(u)+1,len(x0)])
+    >>> x[0,:] = x0
+    >>> for i in range(n-1):
+    >>>     x[i+1,:] = A.dot(x[i,:]) + B.dot(u[np.newaxis,i])
+    >>> X1 = x[:-1,:]
+    >>> X2 = x[1:,:]
+    >>> C = u[:,np.newaxis]
+    >>> DMDc = pk.regression.DMDc(svd_rank=3, control_matrix=B)
+    >>> model = pk.Koopman(regressor=DMDc)
+    >>> model.fit(x,C)
+    >>> Aest = model.state_transition_matrix
+    >>> Best = model.control_matrix
+    >>> print(Aest)
+    >>> np.allclose(A,Aest)
+    [[ 1.50000000e+00 -1.36609474e-17]
+     [-1.58023594e-17  1.00000000e-01]]
+    True
+
+    For unknown B
+    >>> DMDc = pk.regression.DMDc(svd_rank=3)
+    >>> model = pk.Koopman(regressor=DMDc)
+    >>> model.fit(x,C)
+    >>> Aest = model.state_transition_matrix
+    >>> Best = model.control_matrix
+    >>> print(Aest)
+    >>> print(Best)
+    >>> np.allclose(np.concatenate((A,B),axis=1),np.concatenate((Aest,Best),axis=1))
+    [[ 1.5000000e+00  4.6891744e-17]
+     [-1.3259342e-17  1.0000000e-01]]
+    [[1.00000000e+00]
+     [6.88569357e-18]]
+    True
     """
 
     def __init__(self, svd_rank=None, svd_output_rank=0, control_matrix=None):
