@@ -10,7 +10,6 @@ class DMDc(BaseRegressor):
 
     Parameters
     ----------
-    DMDc: BaseRegressor subclass
     """
 
     def __init__(self, svd_rank=None, svd_output_rank=0, control_matrix=None):
