@@ -72,7 +72,7 @@ class Koopman:
     def _step(self, x):
         # TODO: rename this
         check_is_fitted(self, "model")
-        return self.model.predict(x)
+        return self.model.predict(x=x, u=None)
 
     @property
     def koopman_matrix(self):

@@ -76,7 +76,7 @@ class KoopmanContinuous(BaseEstimator):
     def _step(self, x):
         # TODO: rename this
         check_is_fitted(self, "model")
-        return self.model.predict(x)
+        return self.model.predict(X=x, u=None)
 
     @property
     def koopman_matrix(self):
