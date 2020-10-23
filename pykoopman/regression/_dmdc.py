@@ -190,5 +190,5 @@ class DMDc(BaseRegressor):
 
         """
         check_is_fitted(self, "coef_")
-        y = np.dot(self.state_matrix, x.T) + np.dot(self.control_matrix, u.T)
+        y = np.dot(self.state_matrix_, x.T) + np.dot(self.control_matrix_, u.T)
         return y.T
