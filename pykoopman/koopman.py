@@ -167,7 +167,7 @@ class Koopman(BaseEstimator):
         else:
             xhat[0] = self.predict(x0, u[0])
             for k in range(n_steps - 1):
-                xhat[k + 1] = self.predict(xhat[k], u[k])
+                xhat[k + 1] = self.predict(xhat[k], u[k + 1])
 
         return xhat
 
