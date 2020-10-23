@@ -74,3 +74,14 @@ def test_if_dmdc_model_is_accurate_with_unknown_controlmatrix(data_2D_linear_con
     Best = model.control_matrix
     assert_allclose(Aest, A, 1e-07, 1e-12)
     assert_allclose(Best, B, 1e-07, 1e-12)
+
+def test_simulate_accuracy_dmdc(data_2D_linear_control_system):
+    X, C, _, _ = data_2D_linear_control_system
+
+    DMDc = regression.DMDc(svd_rank=3)
+    model = Koopman(regressor=DMDc)
+    model.fit(X, C)
+
+    n_steps = len(C)
+    x_pred = model.simulate(X[0,:], C, n_steps=n_steps-1)
+    assert_allclose(X[1 : n_steps,:], x_pred, 1e-07, 1e-12)
