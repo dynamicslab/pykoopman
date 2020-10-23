@@ -85,10 +85,12 @@ class Koopman(BaseEstimator):
             equi-spaced in time (i.e. a uniform timestep is assumed).
 
         u: numpy.ndarray, shape (n_samples, n_control_features)
-            Control/actuation/external parameter data. Each row should correspond to one sample
-            and each column a control variable or feature. The control variable may be amplitude
-            of an actuator or an external, time-varying parameter. It is assumed that samples are
-            equi-spaced in time (i.e. a uniform timestep is assumed) and correspond to the samples in x.
+            Control/actuation/external parameter data. Each row should correspond
+            to one sample and each column a control variable or feature.
+            The control variable may be amplitude of an actuator or an external,
+            time-varying parameter. It is assumed that samples are equi-spaced
+            in time (i.e. a uniform timestep is assumed) and correspond to the
+            samples in x.
 
         Returns
         -------
@@ -339,7 +341,11 @@ class Koopman(BaseEstimator):
         # x' = xA + uB instead
         """
         check_is_fitted(self, "model")
-        return self.model.steps[-1][1].coef_[:,:self.n_output_features_]
+        if not isinstance(self.regressor, DMDc):
+            raise ValueError(
+                "self.regressor is not DMDc, so object has no control_matrix"
+            )
+        return self.model.steps[-1][1].state_matrix_
 
     @property
     def control_matrix(self):
