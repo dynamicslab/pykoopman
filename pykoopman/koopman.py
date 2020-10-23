@@ -314,13 +314,13 @@ class Koopman(BaseEstimator):
                     "Control variables u were ignored because control variables were"
                     " not used when the model was fit"
                 )
-            return self.model.predict(x)
+            return self.model.predict(X=x)
         else:
             if not isinstance(self.regressor, DMDc):
                 raise ValueError(
                     "Control input u was passed, but self.regressor is not DMDc"
                 )
-            return self.model.predict(x, u)
+            return self.model.predict(X=x, u=u)
 
     @property
     def koopman_matrix(self):
