@@ -62,7 +62,8 @@ class DMDc(BaseRegressor):
     >>> B = np.matrix([[1],[0]])
     >>> x0 = np.array([4,7])
     >>> u = np.array([-4, -2, -1, -0.5, 0, 0.5, 1, 3, 5])
-    >>> x = np.zeros([len(u)+1,len(x0)])
+    >>> n = len(u)+1
+    >>> x = np.zeros([n,len(x0)])
     >>> x[0,:] = x0
     >>> for i in range(n-1):
     >>>     x[i+1,:] = A.dot(x[i,:]) + B.dot(u[np.newaxis,i])
