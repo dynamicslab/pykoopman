@@ -5,7 +5,7 @@ from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
 
 from pykoopman import Koopman
-
+from pykoopman import regression
 
 def test_fit(data_random):
     x = data_random
@@ -52,3 +52,25 @@ def test_if_fitted(data_random):
         model.koopman_matrix
     with pytest.raises(NotFittedError):
         model._step(x)
+
+def test_if_dmdc_model_is_accurate_with_known_controlmatrix(data_2D_linear_control_system):
+    X, C, A, B = data_2D_linear_control_system
+    model = Koopman()
+
+    DMDc = regression.DMDc(svd_rank=3, control_matrix=B)
+    model = Koopman(regressor=DMDc)
+    model.fit(X, C)
+    Aest = model.state_transition_matrix
+    assert_allclose(Aest, A, 1e-07, 1e-12)
+
+def test_if_dmdc_model_is_accurate_with_unknown_controlmatrix(data_2D_linear_control_system):
+    X, C, A, B = data_2D_linear_control_system
+    model = Koopman()
+
+    DMDc = regression.DMDc(svd_rank=3)
+    model = Koopman(regressor=DMDc)
+    model.fit(X, C)
+    Aest = model.state_transition_matrix
+    Best = model.control_matrix
+    assert_allclose(Aest, A, 1e-07, 1e-12)
+    assert_allclose(Best, B, 1e-07, 1e-12)
