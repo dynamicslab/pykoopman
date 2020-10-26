@@ -97,7 +97,7 @@ class DMDc(BaseRegressor):
     True
     """
 
-    def __init__(self, svd_rank=None, svd_output_rank=0, control_matrix=None):
+    def __init__(self, svd_rank=None, svd_output_rank=None, control_matrix=None):
         self.svd_rank = svd_rank
         self.svd_output_rank = svd_output_rank
         self.control_matrix_ = control_matrix
@@ -136,19 +136,36 @@ class DMDc(BaseRegressor):
             C = u
         self.n_control_features_ = C.shape[1]
 
+        if self.svd_rank is None:
+            self.svd_rank = self.n_input_features_ + self.n_control_features_
         r = self.svd_rank
-        if r is None:
-            r = self.n_input_features_ + self.n_control_features_
+
+        if self.svd_output_rank is None:
+            self.svd_output_rank = self.n_input_features_
+        rout = self.svd_output_rank
 
         if self.control_matrix_ is None:
             Omega = np.vstack([X1.T, C.T])
+
+            # SVD of input space
             U, s, Vh = np.linalg.svd(Omega, full_matrices=False)
             Ur = U[:, 0:r]
-            sr = s[0:r]
+            Sr = np.diag(s[0:r])
             Vr = Vh[0:r, :].T
-            G = np.dot(X2.T, np.dot(Vr * (sr ** (-1)), Ur.T))
-            self.state_matrix_ = G[:, 0 : self.n_input_features_]
-            self.control_matrix_ = G[:, self.n_input_features_ :]
+
+            # SVD of output space
+            if rout is not self.n_input_features_:
+                Uhat, _, _ = np.linalg.svd(X2.T, full_matrices=False)
+                Uhatr = Uhat[:, 0:rout]
+            else:
+                Uhatr = np.identity(self.n_input_features_)
+
+            U1 = Ur[:self.n_input_features_,:]
+            U2 = Ur[self.n_input_features_:, :]
+            self.state_matrix_ = np.dot(Uhatr.T, np.dot(X2.T, np.dot(Vr, np.dot( np.linalg.inv(Sr), np.dot(U1.T, Uhatr)))))
+            self.control_matrix_ = np.dot(Uhatr.T, np.dot(X2.T, np.dot(Vr, np.dot( np.linalg.inv(Sr), U2.T))))
+            G = np.concatenate((self.state_matrix_, self.control_matrix_), axis=1)
+
         else:
             if self.n_input_features_ in self.control_matrix_.shape is False:
                 raise TypeError("Control vector/matrix B has wrong shape.")
@@ -169,7 +186,8 @@ class DMDc(BaseRegressor):
             G = A
 
         self.coef_ = G
-
+        self.projection_matrix_ = Ur
+        self.projection_matrix_output_ = Uhatr
         return self
 
     def predict(self, x, u):
