@@ -184,6 +184,8 @@ class DMDc(BaseRegressor):
             )
             self.state_matrix_ = A
             G = A
+            Ur = np.identity(self.n_input_features_)
+            Uhatr = np.identity(self.n_input_features_)
 
         self.coef_ = G
         self.projection_matrix_ = Ur
