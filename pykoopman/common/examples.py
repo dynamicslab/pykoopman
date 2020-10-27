@@ -97,6 +97,11 @@ def drss(n=2, p=2, m=2,
     return A,B,C
 
 def advance_linear_system(x0,u,n,A=None,B=None,C=None):
+    if C is None:
+        C = np.identity(len(x0))
+    if u.ndim is 1:
+        u = u[np.newaxis, :]
+
     y = np.zeros([n,C.shape[0]])
     x = np.zeros([n,len(x0)])
     x[0,:] = x0
