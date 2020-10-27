@@ -87,10 +87,13 @@ def drss(n=2, p=2, m=2,
     B = np.squeeze(np.multiply(B, [(mask<0.75) != 0]))
 
     # Measurement matrix
-    C = np.random.randn(m,n)
-    mask = np.random.rand(C.shape[0], C.shape[1])
-    C = np.squeeze(C * [(mask<0.75) != 0])
-    C = np.identity(n)
+    if m is 0:
+        C = np.identity(n)
+    else:
+        C = np.random.randn(m, n)
+        mask = np.random.rand(C.shape[0], C.shape[1])
+        C = np.squeeze(C * [(mask < 0.75) != 0])
+
     return A,B,C
 
 def advance_linear_system(x0,u,n,A=None,B=None,C=None):
