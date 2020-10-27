@@ -4,6 +4,7 @@ Shared pytest fixtures for unit tests.
 Put any datasets that are used by multiple unit test files here.
 """
 import numpy as np
+from pykoopman.common  import drss, advance_linear_system
 import pytest
 
 from pykoopman.observables import CustomObservables
@@ -81,3 +82,26 @@ def data_2D_linear_control_system():
     C = u[:, np.newaxis]
 
     return X,C,A,B
+
+@pytest.fixture
+def data_drss():
+    # Seed random generator for reproducibility
+    np.random.seed(0)
+
+    n_states = 5
+    n_controls = 2
+    n_measurements = 50
+    A, B, C = drss(n_states, n_controls, n_measurements)
+
+    x0 = np.array([4, 7, 2, 8, 0])
+    u = np.array([[-4, -2, -1, -0.5, 0, 0.5, 1, 3, 5, 9,
+                   8, 4, 3.5, 1, 2, 3, 1.5, 0.5, 0, 1,
+                   -1, -0.5, -2, -4, -5, -7, -9, -6, -5, -5.5],
+                  [4, 1, -1, -0.5, 0, 1, 2, 4, 3, 1.5,
+                   1, 0, -1, -1.5, -2, -1, -3, -5, -9, -7,
+                   -5, -6, -8, -6, -4, -3, -2, -0.5, 0.5, 3]])
+    n = u.shape[1]
+    X, Y = advance_linear_system(x0, u, n, A, B, C)
+    U = u.T
+
+    return Y,U,A,B,C
