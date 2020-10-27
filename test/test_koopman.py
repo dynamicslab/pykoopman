@@ -3,9 +3,11 @@ import pytest
 from numpy.testing import assert_allclose
 from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
+import numpy as np
 
 from pykoopman import Koopman
 from pykoopman import regression
+from pykoopman.common import drss
 from pykoopman.observables import Identity
 from pykoopman.observables import Polynomial
 from pykoopman.observables import TimeDelay
@@ -160,3 +162,7 @@ def test_simulate_accuracy_dmdc(data_2D_linear_control_system):
     n_steps = len(C)
     x_pred = model.simulate(X[0,:], C, n_steps=n_steps-1)
     assert_allclose(X[1 : n_steps,:], x_pred, 1e-07, 1e-12)
+
+def test_misc_drss_measurement_matrix():
+    A,B,C = drss(2,2,0)
+    assert_allclose(C,np.identity(2))
