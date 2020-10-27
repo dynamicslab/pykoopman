@@ -29,8 +29,8 @@ def data_2D_superposition():
 
 @pytest.fixture
 def data_2D_linear_control_system():
-    A = np.matrix([[1.5, 0], [0, 0.1]])
-    B = np.matrix([[1], [0]])
+    A = np.array([[1.5, 0], [0, 0.1]])
+    B = np.array([[1], [0]])
     x0 = np.array([4, 7])
     u = np.array([-4, -2, -1, -0.5, 0, 0.5, 1, 3, 5])
     n = len(u)+1
