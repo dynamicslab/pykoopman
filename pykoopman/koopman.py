@@ -230,7 +230,7 @@ class Koopman(BaseEstimator):
         check_is_fitted(self, "model")
         if not isinstance(self.regressor, DMDc):
             raise ValueError(
-                "self.regressor is not DMDc, so object has no control_matrix"
+                "self.regressor is not DMDc, so object has no state_transition_matrix"
             )
         return self.model.steps[-1][1].state_matrix_
 
@@ -245,3 +245,27 @@ class Koopman(BaseEstimator):
                 "self.regressor is not DMDc, so object has no control_matrix"
             )
         return self.model.steps[-1][1].control_matrix_
+
+    @property
+    def projection_matrix(self):
+        """
+        The control matrix (or vector) B satisfies x' = Ax + Bu.
+        """
+        check_is_fitted(self, "model")
+        if not isinstance(self.regressor, DMDc):
+            raise ValueError(
+                "self.regressor is not DMDc, so object has no projection_matrix"
+            )
+        return self.model.steps[-1][1].projection_matrix_
+
+    @property
+    def projection_matrix_output(self):
+        """
+        The control matrix (or vector) B satisfies x' = Ax + Bu.
+        """
+        check_is_fitted(self, "model")
+        if not isinstance(self.regressor, DMDc):
+            raise ValueError(
+                "self.regressor is not DMDc, so object has no projection_matrix_output"
+            )
+        return self.model.steps[-1][1].projection_matrix_output_
