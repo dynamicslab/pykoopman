@@ -1,10 +1,45 @@
 import numpy as np
 from scipy.linalg import orth
 
-# Discrete, random, stable, linear state space model
 def drss(n=2, p=2, m=2,
          p_int_first=0.1, p_int_others=0.01,
          p_repeat=0.05, p_complex=0.5):
+    """
+    Create discrete-time, random, stable, linear state space model.
+
+    :math:`x_{k+1} = Ax_k + Bu_k`
+    :math:`y_k = Cx_k`
+
+    Parameters
+    ----------
+    n : int (default=2)
+        Number of states.
+    p : int (default=2)
+        Number of control inputs.
+    m : int (default=2)
+        Number of output measurements.
+        If m=0, C becomes the identity matrix, so that y=x.
+    p_int_first : float (default=0.1)
+        Probability of an integrator
+    p_int_others : float (default=0.01)
+        Probability of other integrators beyond the first
+    p_repeat : float (default=0.05)
+        Probability of repeated roots
+    p_complex : float (default=0.5)
+        Probability of complex roots
+
+    Returns
+    -------
+    A : numpy.ndarray, shape (n, n)
+        State transition matrix.
+    B : numpy.ndarray, shape (n, p)
+        Control matrix.
+    C : numpy.ndarray, shape (m, n)
+        Measurement matrix.
+        If m = 0, C is identity matrix, so that output y = x.
+
+    """
+
     # Number of integrators
     nint = int((np.random.rand(1)<p_int_first)+sum(np.random.rand(n-1)<p_int_others));
     # Number of repeated roots
@@ -55,7 +90,7 @@ def drss(n=2, p=2, m=2,
     C = np.random.randn(m,n)
     mask = np.random.rand(C.shape[0], C.shape[1])
     C = np.squeeze(C * [(mask<0.75) != 0])
-    # C = np.identity(n)
+    C = np.identity(n)
     return A,B,C
 
 def advance_linear_system(x0,u,n,A=None,B=None,C=None):
