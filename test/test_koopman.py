@@ -91,3 +91,34 @@ def test_simulate_accuracy_dmdc(data_2D_linear_control_system):
 def test_misc_drss_measurement_matrix():
     A,B,C = drss(2,2,0)
     assert_allclose(C,np.identity(2))
+
+def test_dmdc_for_highdim_system(data_drss):
+    Y,U,A,B,C = data_drss
+
+    DMDc = regression.DMDc(svd_rank=7, svd_output_rank=5)
+    model = Koopman(regressor=DMDc)
+    model.fit(Y, U)
+
+    # Check spectrum
+    Aest = model.state_transition_matrix
+    W, V = np.linalg.eig(A)
+    West, Vest = np.linalg.eig(Aest)
+
+    idxTrue = np.argsort(W)
+    idxEst = np.argsort(West)
+    assert_allclose(W[idxTrue],West[idxEst], 1e-07, 1e-12)
+
+    # Check eigenvector reconstruction
+    r = 5
+    Uc, sc, Vch = np.linalg.svd(C, full_matrices=False)
+    Sc = np.diag(sc[:r])
+    Cinv = np.dot(Vch[:, :r].T, np.dot(np.linalg.inv(Sc), Uc[:, :r].T))
+    P = model.projection_matrix_output
+    Atilde = np.dot(Cinv, np.dot(np.dot(P, np.dot(Aest, P.T)), C))
+    Wtilde, Vtilde = np.linalg.eig(Atilde)
+
+    idxTilde = np.argsort(Wtilde)
+    assert_allclose(W[idxTrue], Wtilde[idxTilde], 1e-07, 1e-12)
+    # Evecs may be accurate up to a sign; ensured by seeding random generator
+    # when producing the data set
+    assert_allclose(V[:,idxTrue], Vtilde[:,idxTilde], 1e-07, 1e-12)
