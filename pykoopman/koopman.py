@@ -382,3 +382,35 @@ class Koopman(BaseEstimator):
                 "self.regressor is not DMDc, so object has no projection_matrix_output"
             )
         return self.model.steps[-1][1].projection_matrix_output_
+
+    @property
+    def modes(self):
+        """
+        Koopman modes
+        """
+        check_is_fitted(self, "model")
+        return self.model.steps[-1][1].modes_
+
+    @property
+    def frequencies(self):
+        """
+        Oscillation frequencies of Koopman modes/eigenvectors
+        """
+        check_is_fitted(self, "model")
+        return self.model.steps[-1][1].frequencies_
+
+    @property
+    def eigenvalues(self):
+        """
+        Discrete-time Koopman eigenvalues obtained from spectral decomposition of the Koopman matrix
+        """
+        check_is_fitted(self, "model")
+        return self.model.steps[-1][1].eigenvalues_
+
+    @property
+    def eigenvalues_continuous(self):
+        """
+        Continuous-time Koopman eigenvalues obtained from spectral decomposition of the Koopman matrix
+        """
+        check_is_fitted(self, "model")
+        return self.model.steps[-1][1].eigenvalues_continuous_

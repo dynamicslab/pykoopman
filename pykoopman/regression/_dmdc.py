@@ -118,6 +118,7 @@ class DMDc(BaseRegressor):
         self: returns a fitted ``DMDc`` instance
         """
         self.n_samples_, self.n_input_features_ = x.shape
+        self.time_ = {'tstart': 0, 'tend': self.n_samples_ - 1, 'dt': 1}
 
         if y is None:
             X1 = x[:-1, :]
@@ -145,52 +146,72 @@ class DMDc(BaseRegressor):
         rout = self.svd_output_rank
 
         if self.control_matrix_ is None:
-            Omega = np.vstack([X1.T, C.T])
-
-            # SVD of input space
-            U, s, Vh = np.linalg.svd(Omega, full_matrices=False)
-            Ur = U[:, 0:r]
-            Sr = np.diag(s[0:r])
-            Vr = Vh[0:r, :].T
-
-            # SVD of output space
-            if rout is not self.n_input_features_:
-                Uhat, _, _ = np.linalg.svd(X2.T, full_matrices=False)
-                Uhatr = Uhat[:, 0:rout]
-            else:
-                Uhatr = np.identity(self.n_input_features_)
-
-            U1 = Ur[:self.n_input_features_,:]
-            U2 = Ur[self.n_input_features_:, :]
-            self.state_matrix_ = np.dot(Uhatr.T, np.dot(X2.T, np.dot(Vr, np.dot( np.linalg.inv(Sr), np.dot(U1.T, Uhatr)))))
-            self.control_matrix_ = np.dot(Uhatr.T, np.dot(X2.T, np.dot(Vr, np.dot( np.linalg.inv(Sr), U2.T))))
-            G = np.concatenate((self.state_matrix_, self.control_matrix_), axis=1)
+            self.fit_unknown_B(X1, X2, C, r, rout)
 
         else:
-            if self.n_input_features_ in self.control_matrix_.shape is False:
-                raise TypeError("Control vector/matrix B has wrong shape.")
-            if self.control_matrix_.shape[1] == self.n_input_features_:
-                self.control_matrix_ = self.control_matrix_.T
-            if self.control_matrix_.shape[1] != self.n_control_features_:
-                raise TypeError(
-                    "The control matrix B must have the same number of inputs as the "
-                    "control variable u."
-                )
+            self.fit_known_B(X1, X2, C, r)
+        return self
 
-            U, s, Vh = np.linalg.svd(X1.T, full_matrices=False)
-            A = np.dot(
-                X2.T - np.dot(self.control_matrix_, C.T),
-                np.dot(Vh.T * (s ** (-1)), U.T),
-            )
-            self.state_matrix_ = A
-            G = A
-            Ur = np.identity(self.n_input_features_)
+    def fit_unknown_B(self, X1, X2, C, r, rout):
+        Omega = np.vstack([X1.T, C.T])
+
+        # SVD of input space
+        U, s, Vh = np.linalg.svd(Omega, full_matrices=False)
+        Ur = U[:, 0:r]
+        Sr = np.diag(s[0:r])
+        Vr = Vh[0:r, :].T
+
+        # SVD of output space
+        if rout is not self.n_input_features_:
+            Uhat, _, _ = np.linalg.svd(X2.T, full_matrices=False)
+            Uhatr = Uhat[:, 0:rout]
+        else:
             Uhatr = np.identity(self.n_input_features_)
+
+        U1 = Ur[:self.n_input_features_, :]
+        U2 = Ur[self.n_input_features_:, :]
+        self.state_matrix_ = np.dot(Uhatr.T, np.dot(X2.T, np.dot(Vr, np.dot(np.linalg.inv(Sr), np.dot(U1.T, Uhatr)))))
+        self.control_matrix_ = np.dot(Uhatr.T, np.dot(X2.T, np.dot(Vr, np.dot(np.linalg.inv(Sr), U2.T))))
+        G = np.concatenate((self.state_matrix_, self.control_matrix_), axis=1)
 
         self.coef_ = G
         self.projection_matrix_ = Ur
         self.projection_matrix_output_ = Uhatr
-        return self
+
+        # Compute Koopman modes, eigenvectors, eigenvalues
+        [self.eigenvalues_, self.eigenvectors_] = np.linalg.eig(self.state_matrix_)
+        self.modes_ = np.dot(X2.T,
+                             np.dot(Vr, np.dot(np.linalg.inv(Sr), np.dot(U1.T, np.dot(Uhatr, self.eigenvectors_)))))
+
+    def fit_known_B(self, X1, X2, C, r):
+        if self.n_input_features_ in self.control_matrix_.shape is False:
+            raise TypeError("Control vector/matrix B has wrong shape.")
+        if self.control_matrix_.shape[1] == self.n_input_features_:
+            self.control_matrix_ = self.control_matrix_.T
+        if self.control_matrix_.shape[1] != self.n_control_features_:
+            raise TypeError(
+                "The control matrix B must have the same number of inputs as the "
+                "control variable u."
+            )
+
+        U, s, Vh = np.linalg.svd(X1.T, full_matrices=False)
+        A = np.dot(
+            X2.T - np.dot(self.control_matrix_, C.T),
+            np.dot(Vh.T * (s ** (-1)), U.T),
+        )
+        self.state_matrix_ = A
+        G = A
+        Ur = np.identity(self.n_input_features_)
+        Uhatr = np.identity(self.n_input_features_)
+
+        self.coef_ = G
+        self.projection_matrix_ = Ur
+        self.projection_matrix_output_ = Uhatr
+
+        # Compute Koopman modes, eigenvectors, eigenvalues
+        [self.eigenvalues_, self.eigenvectors_] = np.linalg.eig(self.state_matrix_)
+        self.modes_ = np.dot(X2.T,
+                             np.dot(Vh.T * (s ** (-1)), np.dot(U.T, self.eigenvectors_)))
 
     def predict(self, x, u):
         """
@@ -212,3 +233,25 @@ class DMDc(BaseRegressor):
         check_is_fitted(self, "coef_")
         y = np.dot(self.state_matrix_, x.T) + np.dot(self.control_matrix_, u.T)
         return y.T
+
+    @property
+    def frequencies_(self, dt=None):
+        """
+        Oscillation frequencies of Koopman modes/eigenvectors
+        """
+        check_is_fitted(self, "coef_")
+        if dt == None:
+            dt = self.time_.dt
+        return np.imag(np.log(self.eigenvalues_)/dt)/(2*np.pi)
+
+    @property
+    def eigenvalues_continuous_(self, dt=None):
+        """
+        Continuous-time Koopman eigenvalues obtained from spectral decomposition of the Koopman matrix
+        """
+        check_is_fitted(self, "coef_")
+        if dt==None:
+            dt = self.time_.dt
+        return np.log(self.eigenvalues_) / dt
+
+    #TODO: function to set time information
