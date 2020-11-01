@@ -1,5 +1,7 @@
 import numpy as np
 from scipy.linalg import orth
+import matplotlib.pyplot as plt
+import matplotlib as mpl
 
 def drss(n=2, p=2, m=2,
          p_int_first=0.1, p_int_others=0.01,
@@ -160,6 +162,7 @@ class torus_dynamics():
         self.mask = mask
 
     def advance(self, n_samples, dt=1):
+        print('Evolving continuous-time dynamics without control.')
         self.n_samples = n_samples
         self.dt = dt
 
@@ -191,7 +194,29 @@ class torus_dynamics():
             x = np.real(np.fft.ifft2(xhat))
             self.X[:, step] = x.reshape(self.n_states ** 2)
 
-    def advance_discrete_time(self, n_samples, dt):
+    def advance_discrete_time(self, n_samples, dt, u=None):
+        if u is None:
+            self.n_control_features_ = 0
+            self.U = np.zeros(n_samples)
+            self.U = self.U[np.newaxis, :]
+            print('No control input provided. Evolving unforced system.')
+        else:
+            if u.ndim == 1:
+                if len(u) > n_samples:
+                    u = u[:-1]
+                self.U = u[np.newaxis, :]
+            elif u.ndim == 2:
+                if u.shape[0] > n_samples:
+                    u = u[:-1, :]
+                self.U = u
+            self.n_control_features_ = self.U.shape[1]
+
+        if not hasattr(self, 'B'):
+            B = np.zeros((self.n_states,self.n_states))
+            print(B.shape)
+            self.set_control_matrix_physical(B)
+            print('Control matrix is not set. Continue with unforced system.')
+
         self.n_samples = n_samples
         self.dt = dt
 
@@ -211,12 +236,80 @@ class torus_dynamics():
         for step in range(1,self.n_samples,1):
             t = step * self.dt
             self.time_vector[step] = t
-            xhat = np.zeros((self.n_states, self.n_states), complex)
+            self.Xhat[:, step] = np.reshape(self.Bhat * self.U[0,step - 1], self.n_states ** 2)
+            xhat = self.Xhat[:,step].reshape(self.n_states,self.n_states)
+            # xhat = np.zeros((self.n_states, self.n_states), complex)
+
             xhat_prev = self.Xhat[:,step-1].reshape(self.n_states, self.n_states)
             for k in range(self.sparsity):
-                xhat[self.I[k], self.J[k]] = np.exp((self.damping[k] + 1j * 2 * np.pi * self.frequencies[k]) * self.dt) \
+                xhat[self.I[k], self.J[k]] += np.exp((self.damping[k] + 1j * 2 * np.pi * self.frequencies[k]) * self.dt) \
                                              * xhat_prev[self.I[k], self.J[k]]
 
             self.Xhat[:,step] = xhat.reshape(self.n_states**2)
             x = np.real(np.fft.ifft2(xhat))
             self.X[:, step] = x.reshape(self.n_states ** 2)
+
+    def set_control_matrix_physical(self, B):
+        if np.allclose(B.shape, np.array([self.n_states, self.n_states])) is False:
+            raise TypeError("Control matrix B has wrong shape.")
+        self.B = B
+        self.Bhat = np.fft.fft2(B)
+
+    def set_control_matrix_fourier(self, Bhat):
+        if np.allclose(Bhat.shape, np.array([self.n_states, self.n_states])) is False:
+            raise TypeError("Control matrix Bhat has wrong shape.")
+        self.Bhat = Bhat
+        self.B = np.fft.ifft2(self.Bhat)
+
+    def viz_setup(self):
+        self.cmap_torus = plt.cm.jet  # bwr #plt.cm.RdYlBu
+        self.n_colors = self.n_states
+        r1 = 2
+        r2 = 1
+        [T1, T2] = np.meshgrid(np.linspace(0, 2 * np.pi, self.n_states), np.linspace(0, 2 * np.pi,  self.n_states))
+        R = r1 + r2 * np.cos(T2)
+        self.Zgrid = r2 * np.sin(T2)
+        self.Xgrid = R * np.cos(T1)
+        self.Ygrid = R * np.sin(T1)
+
+    def viz_torus(self, ax, x):
+
+        if not hasattr(self, 'viz'):
+            self.viz_setup()
+
+        norm = mpl.colors.Normalize(vmin=-abs(x).max(), vmax=abs(x).max())
+        surface = ax.plot_surface(self.Xgrid, self.Ygrid, self.Zgrid,
+                                  facecolors=self.cmap_torus(norm(x)), shade=False, rstride=1,
+                                  cstride=1)
+        #     m = cm.ScalarMappable(cmap=cmap_torus, norm=norm)
+        #     m.set_array([])
+        #     plt.colorbar(m)
+        # ax.figure.colorbar(surf, ax=ax)
+        ax.set_zlim(-3.01, 3.01)
+        return surface
+
+    def viz_all_modes(self, modes=None):
+
+        if modes is None:
+            modes = self.modes
+
+        if not hasattr(self, 'viz'):
+            self.viz_setup()
+
+        fig = plt.figure(figsize=(20, 10))
+        for k in range(self.sparsity):
+            ax = plt.subplot2grid((1, self.sparsity), (0, k), projection='3d')
+            tmp = modes[:, k].reshape(self.n_states, self.n_states)
+            self.viz_torus(ax, tmp)
+            plt.axis('off')
+
+    @property
+    def modes(self):
+        modes = np.zeros((self.n_states**2, self.sparsity))
+
+        for k in range(self.sparsity):
+            mode_in_fourier = np.zeros((self.n_states, self.n_states))
+            mode_in_fourier[self.I[k], self.J[k]] = 1
+            modes[:, k] = np.real(np.fft.ifft2(mode_in_fourier).reshape(self.n_states ** 2))
+
+        return modes
