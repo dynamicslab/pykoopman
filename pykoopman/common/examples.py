@@ -111,35 +111,82 @@ def advance_linear_system(x0,u,n,A=None,B=None,C=None):
         y[i+1,:] = C.dot(x[i+1,:])
     return x,y
 
-def setup_torus_dynamics(n_states=128, sparsity=5, freq_max=15):
-    # sparsity: degree of sparsity
-    # n_states : number of states
-    #freq_max = 15
-    np.random.seed(1)  # for reproducibility
+class torus_dynamics():
+    """
+    Sparse dynamics in Fourier space on torus
+    sparsity: degree of sparsity
+    n_states : number of states
+    freq_max = 15
+    """
+    def __init__(self, n_states=128, sparsity=5, freq_max=15, noisemag=0.0):
+        self.n_states = n_states
+        self.sparsity = sparsity
+        self.freq_max = freq_max
+        self.noisemag = noisemag
+        self.setup()
 
-    # Initialization
-    xhat = np.zeros((n_states, n_states), complex)
-    I = np.zeros(sparsity, dtype=int)  # Index of nonzero frequency components
-    J = np.zeros(sparsity, dtype=int)
-    IC = np.zeros(sparsity)  # Initial condition
-    frequencies = np.zeros(sparsity)
-    damping = np.zeros(sparsity)
+    def setup(self):
+        # Initialization
+        xhat = np.zeros((self.n_states, self.n_states), complex)
+        I = np.zeros(self.sparsity, dtype=int)  # Index of nonzero frequency components
+        J = np.zeros(self.sparsity, dtype=int)
+        IC = np.zeros(self.sparsity)  # Initial condition
+        frequencies = np.zeros(self.sparsity)
+        damping = np.zeros(self.sparsity)
 
-    IC = np.random.randn(sparsity)
-    frequencies = np.sqrt(4 * np.random.rand(sparsity))
-    damping = -np.random.rand(sparsity) * 0.1
-    for i in range(sparsity):
-        loopbreak = 0;
-        while loopbreak is not 1:
-            I[i] = np.ceil(np.random.rand(1) * n_states / (freq_max + 1))
-            J[i] = np.ceil(np.random.rand(1) * n_states / (freq_max + 1))
-            if xhat[I[i], J[i]] == 0.0:
-                loopbreak = 1
+        IC = np.random.randn(self.sparsity)
+        frequencies = np.sqrt(4 * np.random.rand(self.sparsity))
+        damping = -np.random.rand(self.sparsity) * 0.1
+        for i in range(self.sparsity):
+            loopbreak = 0;
+            while loopbreak is not 1:
+                I[i] = np.ceil(np.random.rand(1) * self.n_states / (self.freq_max + 1))
+                J[i] = np.ceil(np.random.rand(1) * self.n_states / (self.freq_max + 1))
+                if xhat[I[i], J[i]] == 0.0:
+                    loopbreak = 1
 
-        xhat[I[i], J[i]] = IC[i]
+            xhat[I[i], J[i]] = IC[i]
 
-    mask = np.zeros((n_states, n_states), int)
-    for k in range(sparsity):
-        mask[I[k], J[k]] = 1
+        mask = np.zeros((self.n_states, self.n_states), int)
+        for k in range(self.sparsity):
+            mask[I[k], J[k]] = 1
 
-    return n_states, sparsity, damping, frequencies, IC, I, J, xhat, mask
+        self.damping = damping
+        self.frequencies = frequencies
+        self.IC = IC
+        self.I = I
+        self.J = J
+        self.xhat = xhat
+        self.mask = mask
+
+    def advance(self, n_samples, dt=1):
+        self.n_samples = n_samples
+        self.dt = dt
+
+        # Initilization
+        self.X = np.ndarray((self.n_states ** 2, self.n_samples))  # In physical space
+        self.Xhat = np.ndarray((self.n_states ** 2, self.n_samples), complex)  # In Fourier space
+        self.time_vector = np.zeros(self.n_samples)
+
+        # if self.noisemag != 0:
+        #     self.XhatClean = np.ndarray((self.n_states**2, self.n_samples), complex)
+        #     self.XClean = np.ndarray((self.n_states**2, self.n_samples))
+
+        for step in range(self.n_samples):
+            t = step * self.dt
+            self.time_vector[step] = t
+            xhat = np.zeros((self.n_states, self.n_states), complex)
+            for k in range(self.sparsity):
+                xhat[self.I[k], self.J[k]] = np.exp((self.damping[k] + 1j * 2 * np.pi * self.frequencies[k]) * t) * self.IC[k]
+
+            if self.noisemag != 0:
+                self.XhatClean[:, step] = xhat.reshape(self.n_states ** 2)
+                xClean = np.real(np.fft.ifft2(xhat))
+                self.XClean[:, step] = xClean.reshape(self.n_states ** 2)
+
+            # xRMS = np.sqrt(np.mean(xhat.reshape((self.n_states**2,1))**2))
+            # xhat = xhat + self.noisemag*xRMS*np.random.randn(xhat.shape[0],xhat.shape[1]) \
+            #         + 1j*self.noisemag*xRMS*np.random.randn(xhat.shape[0],xhat.shape[1])
+            self.Xhat[:,step] = xhat.reshape(self.n_states**2)
+            x = np.real(np.fft.ifft2(xhat))
+            self.X[:, step] = x.reshape(self.n_states ** 2)
