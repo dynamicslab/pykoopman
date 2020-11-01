@@ -190,3 +190,33 @@ class torus_dynamics():
             self.Xhat[:,step] = xhat.reshape(self.n_states**2)
             x = np.real(np.fft.ifft2(xhat))
             self.X[:, step] = x.reshape(self.n_states ** 2)
+
+    def advance_discrete_time(self, n_samples, dt):
+        self.n_samples = n_samples
+        self.dt = dt
+
+        # Initilization
+        self.X = np.ndarray((self.n_states ** 2, self.n_samples))  # In physical space
+        self.Xhat = np.ndarray((self.n_states ** 2, self.n_samples), complex)  # In Fourier space
+        self.time_vector = np.zeros(self.n_samples)
+
+        # Set initial condition
+        xhat0 = np.zeros((self.n_states, self.n_states), complex)
+        for k in range(self.sparsity):
+            xhat0[self.I[k],self.J[k]] = self.IC[k]
+        self.Xhat[:,0] = xhat0.reshape(self.n_states**2)
+        x0 = np.real(np.fft.ifft2(xhat0))
+        self.X[:, 0] = x0.reshape(self.n_states ** 2)
+
+        for step in range(1,self.n_samples,1):
+            t = step * self.dt
+            self.time_vector[step] = t
+            xhat = np.zeros((self.n_states, self.n_states), complex)
+            xhat_prev = self.Xhat[:,step-1].reshape(self.n_states, self.n_states)
+            for k in range(self.sparsity):
+                xhat[self.I[k], self.J[k]] = np.exp((self.damping[k] + 1j * 2 * np.pi * self.frequencies[k]) * self.dt) \
+                                             * xhat_prev[self.I[k], self.J[k]]
+
+            self.Xhat[:,step] = xhat.reshape(self.n_states**2)
+            x = np.real(np.fft.ifft2(xhat))
+            self.X[:, step] = x.reshape(self.n_states ** 2)
