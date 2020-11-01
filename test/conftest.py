@@ -112,13 +112,35 @@ def data_torus_unforced():
     dt = 0.05  # time step
     n_samples = int(T / dt)
 
-    # Seed random generator for reproducibility
-    np.random.seed(1)
-
-    from pykoopman.common import torus_dynamics
+    np.random.seed(1) # Seed random generator for reproducibility
     torus = torus_dynamics()
-
     torus.advance(n_samples, dt)
     xhat_nonzero = torus.Xhat[torus.mask.reshape(torus.n_states ** 2) == 1, :]
 
     return xhat_nonzero, torus.frequencies, dt
+
+@pytest.fixture
+def data_torus_ct():
+    T = 4  # integration time
+    dt = 0.01  # time step
+    n_samples = int(T / dt)
+
+    np.random.seed(1)  # for reproducibility
+    torus = torus_dynamics()
+    torus.advance(n_samples, dt)
+    xhat = torus.Xhat[torus.mask.reshape(torus.n_states**2)==1,:]
+
+    return xhat
+
+@pytest.fixture
+def data_torus_dt():
+    T = 4  # integration time
+    dt = 0.01  # time step
+    n_samples = int(T / dt)
+
+    np.random.seed(1)  # for reproducibility
+    torus = torus_dynamics()
+    torus.advance_discrete_time(n_samples, dt)
+    xhat = torus.Xhat[torus.mask.reshape(torus.n_states**2)==1,:]
+
+    return xhat
