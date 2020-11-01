@@ -133,3 +133,9 @@ def test_torus_unforced(data_torus_unforced):
         frequencies_est[k] = freq[np.argmax(abs(spec))]
 
     assert_allclose(np.sort(frequencies), np.sort(frequencies_est), 1e-02, 1e-01)
+
+def test_torus_discrete_time(data_torus_ct, data_torus_dt):
+    xhat_ct = data_torus_ct
+    xhat_dt = data_torus_dt
+
+    assert_allclose(xhat_ct, xhat_dt, 1e-12, 1e-12 )
