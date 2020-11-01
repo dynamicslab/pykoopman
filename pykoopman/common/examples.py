@@ -110,3 +110,36 @@ def advance_linear_system(x0,u,n,A=None,B=None,C=None):
         x[i+1,:] = A.dot(x[i,:]) + B.dot(u[:,i])
         y[i+1,:] = C.dot(x[i+1,:])
     return x,y
+
+def torus_with_control(n_states=128, sparsity=5, freq_max=15):
+    # sparsity: degree of sparsity
+    # n_states : number of states
+    #freq_max = 15
+    np.random.seed(1)  # for reproducibility
+
+    # Initialization
+    xhat = np.zeros((n_states, n_states), complex)
+    I = np.zeros(sparsity, dtype=int)  # Index of nonzero frequency components
+    J = np.zeros(sparsity, dtype=int)
+    IC = np.zeros(sparsity)  # Initial condition
+    frequencies = np.zeros(sparsity)
+    damping = np.zeros(sparsity)
+
+    IC = np.random.randn(sparsity)
+    frequencies = np.sqrt(4 * np.random.rand(sparsity))
+    damping = -np.random.rand(sparsity) * 0.1
+    for i in range(sparsity):
+        loopbreak = 0;
+        while loopbreak is not 1:
+            I[i] = np.ceil(np.random.rand(1) * n_states / (freq_max + 1))
+            J[i] = np.ceil(np.random.rand(1) * n_states / (freq_max + 1))
+            if xhat[I[i], J[i]] == 0.0:
+                loopbreak = 1
+
+        xhat[I[i], J[i]] = IC[i]
+
+    mask = np.zeros((n_states, n_states), int)
+    for k in range(sparsity):
+        mask[I[k], J[k]] = 1
+
+    return n_states, sparsity, damping, frequencies, IC, I, J, xhat, mask
