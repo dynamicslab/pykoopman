@@ -111,7 +111,7 @@ def advance_linear_system(x0,u,n,A=None,B=None,C=None):
         y[i+1,:] = C.dot(x[i+1,:])
     return x,y
 
-def torus_with_control(n_states=128, sparsity=5, freq_max=15):
+def setup_torus_dynamics(n_states=128, sparsity=5, freq_max=15):
     # sparsity: degree of sparsity
     # n_states : number of states
     #freq_max = 15
