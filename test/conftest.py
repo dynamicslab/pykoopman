@@ -4,7 +4,7 @@ Shared pytest fixtures for unit tests.
 Put any datasets that are used by multiple unit test files here.
 """
 import numpy as np
-from pykoopman.common  import drss, advance_linear_system
+from pykoopman.common  import drss, advance_linear_system, torus_dynamics
 import pytest
 
 from pykoopman.observables import CustomObservables
@@ -105,3 +105,20 @@ def data_drss():
     U = u.T
 
     return Y,U,A,B,C
+
+@pytest.fixture
+def data_torus_unforced():
+    T = 20  # integration time
+    dt = 0.05  # time step
+    n_samples = int(T / dt)
+
+    # Seed random generator for reproducibility
+    np.random.seed(1)
+
+    from pykoopman.common import torus_dynamics
+    torus = torus_dynamics()
+
+    torus.advance(n_samples, dt)
+    xhat_nonzero = torus.Xhat[torus.mask.reshape(torus.n_states ** 2) == 1, :]
+
+    return xhat_nonzero, torus.frequencies, dt

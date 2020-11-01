@@ -197,3 +197,14 @@ def test_dmdc_for_highdim_system(data_drss):
     # Evecs may be accurate up to a sign; ensured by seeding random generator
     # when producing the data set
     assert_allclose(V[:,idxTrue], Vtilde[:,idxTilde], 1e-07, 1e-12)
+
+def test_torus_unforced(data_torus_unforced):
+    xhat, frequencies, dt = data_torus_unforced
+
+    frequencies_est = np.zeros(xhat.shape[0])
+    for k in range(xhat.shape[0]):
+        spec = np.fft.fft(xhat[k, :])
+        freq = np.fft.fftfreq(len(xhat[0, :]), dt)
+        frequencies_est[k] = freq[np.argmax(abs(spec))]
+
+    assert_allclose(np.sort(frequencies), np.sort(frequencies_est), 1e-02, 1e-01)
