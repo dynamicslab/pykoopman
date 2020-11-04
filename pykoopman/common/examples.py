@@ -261,6 +261,24 @@ class torus_dynamics():
         self.Bhat = Bhat
         self.B = np.fft.ifft2(self.Bhat)
 
+    def set_point_actuator(self, position=None):
+        if position is None:
+            position = np.random.randint(0, self.n_states, 2)
+        try:
+            for i in range(len(position)):
+                position[i] = int(position[i])
+        except ValueError:
+            print('position was not a valid integer.')
+
+        is_position_in_valid_domain = (position >= 0) & (position < self.n_states)
+        if any(is_position_in_valid_domain==False):
+            raise ValueError('Actuator position was not a valid integer inside of domain.')
+
+        # Control matrix in physical space (single point actuator)
+        B = np.zeros((self.n_states, self.n_states))
+        B[position[0],position[1]] = 1
+        self.set_control_matrix_physical(B)
+
     def viz_setup(self):
         self.cmap_torus = plt.cm.jet  # bwr #plt.cm.RdYlBu
         self.n_colors = self.n_states
