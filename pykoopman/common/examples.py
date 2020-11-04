@@ -195,6 +195,7 @@ class torus_dynamics():
             self.X[:, step] = x.reshape(self.n_states ** 2)
 
     def advance_discrete_time(self, n_samples, dt, u=None):
+        print('Evolving discrete-time dynamics with or without control.')
         if u is None:
             self.n_control_features_ = 0
             self.U = np.zeros(n_samples)
