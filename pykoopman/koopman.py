@@ -167,7 +167,8 @@ class Koopman(BaseEstimator):
         check_is_fitted(self, "model")
         # Could have an option to only return the end state and not all
         # intermediate states to save memory.
-        xhat = empty((n_steps, self.n_input_features_), dtype=self.koopman_matrix.dtype)
+        xhat = empty((n_steps, self.n_input_features_),
+                     dtype=self.koopman_matrix.dtype)
 
         if u is None:
             xhat[0] = self.predict(x0)
@@ -209,8 +210,8 @@ class Koopman(BaseEstimator):
                 )
             elif u is not None:
                 warn(
-                    "Control variables u were ignored because control variables were"
-                    " not used when the model was fit"
+                    "Control variables u were ignored because control variables"
+                    "were not used when the model was fit"
                 )
             return self.model.predict(X=x)
         else:
@@ -224,7 +225,8 @@ class Koopman(BaseEstimator):
     def koopman_matrix(self):
         """
         The Koopman matrix K satisfying g(X') = g(X) * K
-        where g denotes the observables map and X' denotes x advanced one timestep.
+        where g denotes the observables map and X' denotes x advanced
+        one timestep.
         """
         check_is_fitted(self, "model")
         return self.model.steps[-1][1].coef_
@@ -239,7 +241,8 @@ class Koopman(BaseEstimator):
         check_is_fitted(self, "model")
         if not isinstance(self.regressor, DMDc):
             raise ValueError(
-                "self.regressor is not DMDc, so object has no state_transition_matrix"
+                "self.regressor is not DMDc, so object has no "
+                "state_transition_matrix"
             )
         return self.model.steps[-1][1].state_matrix_
 
@@ -275,7 +278,8 @@ class Koopman(BaseEstimator):
         check_is_fitted(self, "model")
         if not isinstance(self.regressor, DMDc):
             raise ValueError(
-                "self.regressor is not DMDc, so object has no projection_matrix_output"
+                "self.regressor is not DMDc, so object has no "
+                "projection_matrix_output"
             )
         return self.model.steps[-1][1].projection_matrix_output_
 
@@ -290,7 +294,8 @@ class Koopman(BaseEstimator):
     @property
     def eigenvalues(self):
         """
-        Discrete-time Koopman eigenvalues obtained from spectral decomposition of the Koopman matrix
+        Discrete-time Koopman eigenvalues obtained from spectral decomposition
+        of the Koopman matrix
         """
         check_is_fitted(self, "model")
         return self.model.steps[-1][1].eigenvalues_
@@ -308,7 +313,8 @@ class Koopman(BaseEstimator):
     @property
     def eigenvalues_continuous(self):
         """
-        Continuous-time Koopman eigenvalues obtained from spectral decomposition of the Koopman matrix
+        Continuous-time Koopman eigenvalues obtained from spectral decomposition
+        of the Koopman matrix
         """
         check_is_fitted(self, "model")
         dt = self.time['dt']
