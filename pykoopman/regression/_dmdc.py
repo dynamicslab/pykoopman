@@ -50,7 +50,8 @@ class DMDc(BaseRegressor):
     projection_matrix_ : array, shape (n_input_features_+n_control_features_, svd_rank)
         Projection matrix into low-dimensional subspace.
 
-    projection_matrix_output_ : array, shape (n_input_features_+n_control_features_, svd_output_rank)
+    projection_matrix_output_ : array, shape (n_input_features_+n_control_features_,
+                                              svd_output_rank)
         Projection matrix into low-dimensional subspace.
 
      Examples
@@ -266,7 +267,8 @@ class DMDc(BaseRegressor):
     # @property
     # def eigenvalues_continuous_(self):
     #     """
-    #     Continuous-time Koopman eigenvalues obtained from spectral decomposition of the Koopman matrix
+    #     Continuous-time Koopman eigenvalues obtained from spectral decomposition of
+    #     the Koopman matrix
     #     """
     #     check_is_fitted(self, "coef_")
     #     dt = self.time_['dt']

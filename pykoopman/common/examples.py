@@ -139,9 +139,8 @@ class torus_dynamics:
     def setup(self):
         # Initialization
         xhat = np.zeros((self.n_states, self.n_states), complex)
-        self.I = np.zeros(
-            self.sparsity, dtype=int
-        )  # Index of nonzero frequency components
+        # Index of nonzero frequency components
+        self.I = np.zeros(self.sparsity, dtype=int)
         self.J = np.zeros(self.sparsity, dtype=int)
         IC = np.zeros(self.sparsity)  # Initial condition
         frequencies = np.zeros(self.sparsity)
