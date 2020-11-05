@@ -192,7 +192,10 @@ class Koopman(BaseEstimator):
         # Could have an option to only return the end state and not all
         # intermediate states to save memory.
         y = empty((n_steps, self.n_input_features_), dtype=self.koopman_matrix.dtype)
-        y[0] = self.predict(x0)
+        if u is None:
+            y[0] = self.predict(x0)
+        elif u is not None:
+            y[0] = self.predict(x0,u[0])
 
         if isinstance(self.observables, TimeDelay):
             n_consumed_samples = self.observables.n_consumed_samples

@@ -214,6 +214,7 @@ def data_torus_dt():
     return xhat
 
 
+@pytest.fixture
 def data_1D_cosine():
     t = np.linspace(0, 2 * np.pi, 200)
     x = np.cos(3 * t)
