@@ -183,9 +183,9 @@ class Koopman(BaseEstimator):
 
         Returns
         -------
-        xhat: numpy.ndarray, shape (n_steps, n_input_features)
+        y: numpy.ndarray, shape (n_steps, n_input_features)
             Simulated states.
-            Note that ``xhat[0, :]`` is one timestep ahead of ``x0``.
+            Note that ``y[0, :]`` is one timestep ahead of ``x0``.
         """
         check_is_fitted(self, "n_output_features_")
         # Could have an option to only return the end state and not all
@@ -209,7 +209,7 @@ class Koopman(BaseEstimator):
                 for k in range(n_steps - 1):
                     y[k + 1] = self.predict(y[k], u[k + 1])
 
-        return xhat
+        return y
 
     def score(self, x, y=None, cast_as_real=True, metric=r2_score, **metric_kws):
         """
