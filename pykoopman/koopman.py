@@ -2,8 +2,8 @@ from warnings import catch_warnings
 from warnings import filterwarnings
 from warnings import warn
 
-from numpy import empty
 import numpy as np
+from numpy import empty
 from numpy import vstack
 from pydmd import DMD
 from pydmd import DMDBase
@@ -157,6 +157,7 @@ class Koopman(BaseEstimator):
         y: numpy.ndarray, shape (n_samples, n_input_features)
             Predicted state one timestep in the future.
         """
+
         check_is_fitted(self, "n_output_features_")
         return self.observables.inverse(self._step(x, u))
 
@@ -204,8 +205,9 @@ class Koopman(BaseEstimator):
             if u is None:
                 for k in range(n_steps - 1):
                     y[k + 1] = self.predict(y[k])
-                else:
-                    y[k + 1] = self.predict(y[k], u[k])
+            else:
+                for k in range(n_steps - 1):
+                    y[k + 1] = self.predict(y[k], u[k + 1])
 
         return y
 

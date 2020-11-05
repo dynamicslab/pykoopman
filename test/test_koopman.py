@@ -13,7 +13,6 @@ from pykoopman.observables import Polynomial
 from pykoopman.observables import TimeDelay
 
 
-
 def test_fit(data_random):
     x = data_random
     model = Koopman().fit(x)
