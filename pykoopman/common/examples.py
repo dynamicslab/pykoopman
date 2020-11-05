@@ -140,8 +140,7 @@ class torus_dynamics:
         # Initialization
         xhat = np.zeros((self.n_states, self.n_states), complex)
         # Index of nonzero frequency components
-        self.I = np.zeros(self.sparsity, dtype=int)
-        self.J = np.zeros(self.sparsity, dtype=int)
+        self.J = np.zeros((self.sparsity, 2), dtype=int)
         IC = np.zeros(self.sparsity)  # Initial condition
         frequencies = np.zeros(self.sparsity)
         damping = np.zeros(self.sparsity)
@@ -151,21 +150,21 @@ class torus_dynamics:
         damping = -np.random.rand(self.sparsity) * 0.1
         for k in range(self.sparsity):
             loopbreak = 0
-            while loopbreak is not 1:
-                self.I[k] = np.ceil(
+            while loopbreak != 1:
+                self.J[k, 0] = np.ceil(
                     np.random.rand(1) * self.n_states / (self.freq_max + 1)
                 )
-                self.J[k] = np.ceil(
+                self.J[k, 1] = np.ceil(
                     np.random.rand(1) * self.n_states / (self.freq_max + 1)
                 )
-                if xhat[self.I[k], self.J[k]] == 0.0:
+                if xhat[self.J[k, 0], self.J[k, 1]] == 0.0:
                     loopbreak = 1
 
-            xhat[self.I[k], self.J[k]] = IC[k]
+            xhat[self.J[k, 0], self.J[k, 1]] = IC[k]
 
         mask = np.zeros((self.n_states, self.n_states), int)
         for k in range(self.sparsity):
-            mask[self.I[k], self.J[k]] = 1
+            mask[self.J[k, 0], self.J[k, 1]] = 1
 
         self.damping = damping
         self.frequencies = frequencies
@@ -194,7 +193,7 @@ class torus_dynamics:
             self.time_vector[step] = t
             xhat = np.zeros((self.n_states, self.n_states), complex)
             for k in range(self.sparsity):
-                xhat[self.I[k], self.J[k]] = (
+                xhat[self.J[k, 0], self.J[k, 1]] = (
                     np.exp((self.damping[k] + 1j * 2 * np.pi * self.frequencies[k]) * t)
                     * self.IC[k]
                 )
@@ -250,7 +249,7 @@ class torus_dynamics:
         # Set initial condition
         xhat0 = np.zeros((self.n_states, self.n_states), complex)
         for k in range(self.sparsity):
-            xhat0[self.I[k], self.J[k]] = self.IC[k]
+            xhat0[self.J[k, 0], self.J[k, 1]] = self.IC[k]
         self.Xhat[:, 0] = xhat0.reshape(self.n_states ** 2)
         x0 = np.real(np.fft.ifft2(xhat0))
         self.X[:, 0] = x0.reshape(self.n_states ** 2)
@@ -268,20 +267,20 @@ class torus_dynamics:
             xhat = self.Xhat[:, step].reshape(self.n_states, self.n_states)
             xhat_prev = self.Xhat[:, step - 1].reshape(self.n_states, self.n_states)
             for k in range(self.sparsity):
-                xhat[self.I[k], self.J[k]] = (
+                xhat[self.J[k, 0], self.J[k, 1]] = (
                     np.exp(
                         (self.damping[k] + 1j * 2 * np.pi * self.frequencies[k])
                         * self.dt
                     )
-                    * xhat_prev[self.I[k], self.J[k]]
-                    + self.Bhat[self.I[k], self.J[k]] * self.U[0, step - 1]
+                    * xhat_prev[self.J[k, 0], self.J[k, 1]]
+                    + self.Bhat[self.J[k, 0], self.J[k, 1]] * self.U[0, step - 1]
                 )
 
             # xhat_prev = self.Xhat[:,step-1].reshape(self.n_states, self.n_states)
             # for k in range(self.sparsity):
-            #     xhat[self.I[k], self.J[k]] += np.exp((self.damping[k] \
+            #     xhat[self.J[k,0], self.J[k,1]] += np.exp((self.damping[k] \
             #     + 1j * 2 * np.pi * self.frequencies[k]) * self.dt) \
-            #     * xhat_prev[self.I[k], self.J[k]]
+            #     * xhat_prev[self.J[k,0], self.J[k,1]]
 
             self.Xhat[:, step] = xhat.reshape(self.n_states ** 2)
             x = np.real(np.fft.ifft2(xhat))
@@ -309,7 +308,7 @@ class torus_dynamics:
             print("position was not a valid integer.")
 
         is_position_in_valid_domain = (position >= 0) & (position < self.n_states)
-        if any(is_position_in_valid_domain == False):
+        if any(is_position_in_valid_domain is False):
             raise ValueError(
                 "Actuator position was not \
                              a valid integer inside of domain."
@@ -369,6 +368,7 @@ class torus_dynamics:
             ax = plt.subplot2grid((1, self.sparsity), (0, k), projection="3d")
             self.viz_torus(ax, modes[:, k].reshape(self.n_states, self.n_states))
             plt.axis("off")
+        return fig
 
     @property
     def modes(self):
@@ -376,7 +376,7 @@ class torus_dynamics:
 
         for k in range(self.sparsity):
             mode_in_fourier = np.zeros((self.n_states, self.n_states))
-            mode_in_fourier[self.I[k], self.J[k]] = 1
+            mode_in_fourier[self.J[k, 0], self.J[k, 1]] = 1
             modes[:, k] = np.real(
                 np.fft.ifft2(mode_in_fourier).reshape(self.n_states ** 2)
             )
@@ -388,7 +388,9 @@ class torus_dynamics:
         Bhat_effective = np.zeros((self.n_states, self.n_states), complex)
         for k in range(self.sparsity):
             control_mode = np.zeros((self.n_states, self.n_states), complex)
-            control_mode[self.I[k], self.J[k]] = self.Bhat[self.I[k], self.J[k]]
+            control_mode[self.J[k, 0], self.J[k, 1]] = self.Bhat[
+                self.J[k, 0], self.J[k, 1]
+            ]
             Bhat_effective += control_mode
         B_effective = np.fft.ifft2(Bhat_effective)
 
