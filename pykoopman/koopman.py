@@ -329,7 +329,7 @@ class Koopman(BaseEstimator):
                     "Model was fit using control variables, so u is required"
                 )
             elif u is not None:
-                warnings.warn(
+                warn(
                     "Control variables u were ignored because control variables were"
                     " not used when the model was fit"
                 )
