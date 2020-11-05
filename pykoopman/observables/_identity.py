@@ -28,7 +28,7 @@ class Identity(BaseObservables):
 
         Returns
         -------
-        self: returns a fit ``Identity`` instance
+        self: a fit :class:`pykoopman.observables.Identity` instance
         """
         # TODO: validate input
         self.n_input_features_ = self.n_output_features_ = x.shape[1]
@@ -84,7 +84,7 @@ class Identity(BaseObservables):
         ----------
         input_features: list of string, length n_input_features,\
          optional (default None)
-            STring names for input features, if available. By default,
+            String names for input features, if available. By default,
             the names "x0", "x1", ... ,"xn_input_features" are used.
 
         Returns

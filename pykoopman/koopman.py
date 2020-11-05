@@ -1,15 +1,20 @@
+from warnings import catch_warnings
+from warnings import filterwarnings
 from warnings import warn
 
 import numpy as np
 from numpy import empty
+from numpy import vstack
 from pydmd import DMD
 from pydmd import DMDBase
 from sklearn.base import BaseEstimator
+from sklearn.metrics import r2_score
 from sklearn.pipeline import Pipeline
 from sklearn.utils.validation import check_is_fitted
 
 from .common import validate_input
 from .observables import Identity
+from .observables import TimeDelay
 from .regression import BaseRegressor
 from .regression import DMDc
 from .regression import DMDRegressor
@@ -21,18 +26,23 @@ class Koopman(BaseEstimator):
 
     Parameters
     ----------
-    observables: observables object, optional (default ``Identity``)
+    observables: observables object, optional \
+            (default :class:`pykoopman.observables.Identity`)
         Map(s) to apply to raw measurement data before estimating the
         Koopman operator.
-        Must extend the ``pykoopman.observables.BaseObservables`` class.
-        The default option, ``Identity`` leaves the input untouched.
+        Must extend :class:`pykoopman.observables.BaseObservables`.
+        The default option, :class:`pykoopman.observables.Identity` leaves
+        the input untouched.
 
     regressor: regressor object, optional (default ``DMD``)
         The regressor used to learn the Koopman operator from the observables.
         ``regressor`` can either extend the
-        ``pykoopman.regression.BaseRegressor`` class, or the ``pydmd.DMDBase``
-        class. In the latter case, the pydmd object must have both a ``fit``
+        :class:`pykoopman.regression.BaseRegressor`, or ``pydmd.DMDBase``.
+        In the latter case, the pydmd object must have both a ``fit``
         and a ``predict`` method.
+
+    quiet: booolean, optional (default False)
+        Whether or not warnings should be silenced during fitting.
 
     Attributes
     ----------
@@ -52,7 +62,7 @@ class Koopman(BaseEstimator):
         Time vector properties.
     """
 
-    def __init__(self, observables=None, regressor=None):
+    def __init__(self, observables=None, regressor=None, quiet=False):
         if observables is None:
             observables = Identity()
         if regressor is None:
@@ -64,6 +74,7 @@ class Koopman(BaseEstimator):
 
         self.observables = observables
         self.regressor = regressor
+        self.quiet = quiet
 
     def fit(self, x, u=None, dt=1):
         """
@@ -105,10 +116,14 @@ class Koopman(BaseEstimator):
         ]
         self.model = Pipeline(steps)
 
-        if u is None:
-            self.model.fit(x)
-        else:
-            self.model.fit(x, u)
+        action = "ignore" if self.quiet else "default"
+        with catch_warnings():
+            filterwarnings(action, category=UserWarning)
+            if u is None:
+              self.model.fit(x)
+            else:
+              self.model.fit(x, u)
+
 
         self.n_input_features_ = self.model.steps[0][1].n_input_features_
         self.n_output_features_ = self.model.steps[0][1].n_output_features_
@@ -142,8 +157,10 @@ class Koopman(BaseEstimator):
         y: numpy.ndarray, shape (n_samples, n_input_features)
             Predicted state one timestep in the future.
         """
-        check_is_fitted(self, "model")
-        return self.observables.inverse(self._step(x, u))
+
+        check_is_fitted(self, "n_output_features_")
+        return self.observables.inverse(self._step(x))
+
 
     def simulate(self, x0, u=None, n_steps=1):
         """
@@ -152,8 +169,12 @@ class Koopman(BaseEstimator):
 
         Parameters
         ----------
-        x0: numpy.ndarray, shape (n_input_features,)
+        x0: numpy.ndarray, shape (n_input_features,) or \
+                (n_consumed_samples + 1, n_input_features)
             Initial state from which to simulate.
+            If using :code:`TimeDelay` observables, ``x0`` should contain
+            enough examples to compute all required time delays,
+            i.e. ``n_consumed_samples + 1``.
 
         u: numpy.ndarray, shape (n_samples, n_control_features), \
                 optional (default None)
@@ -168,21 +189,118 @@ class Koopman(BaseEstimator):
             Simulated states.
             Note that ``xhat[0, :]`` is one timestep ahead of ``x0``.
         """
-        check_is_fitted(self, "model")
+        check_is_fitted(self, "n_output_features_")
         # Could have an option to only return the end state and not all
         # intermediate states to save memory.
-        xhat = empty((n_steps, self.n_input_features_), dtype=self.koopman_matrix.dtype)
 
-        if u is None:
-            xhat[0] = self.predict(x0)
-            for k in range(n_steps - 1):
-                xhat[k + 1] = self.predict(xhat[k])
+        y = empty((n_steps, self.n_input_features_), dtype=self.koopman_matrix.dtype)
+        y[0] = self.predict(x0)
+
+        if isinstance(self.observables, TimeDelay):
+            n_consumed_samples = self.observables.n_consumed_samples
+            for k in range(n_consumed_samples):
+                y[k + 1] = self.predict(vstack((x0[k + 1 :], y[: k + 1])))
+
+            for k in range(n_consumed_samples, n_steps - 1):
+                y[k + 1] = self.predict(y[k - n_consumed_samples : k + 1])
         else:
-            xhat[0] = self.predict(x0, u[0])
-            for k in range(n_steps - 1):
-                xhat[k + 1] = self.predict(xhat[k], u[k + 1])
+            if u is None:
+                for k in range(n_steps - 1):
+                    y[k + 1] = self.predict(y[k])
+            else:
+                for k in range(n_steps - 1):
+                    y[k + 1] = self.predict(y[k], u[k + 1])
 
         return xhat
+
+    def score(self, x, y=None, cast_as_real=True, metric=r2_score, **metric_kws):
+        """
+        Score the model prediction for the next timestep.
+
+        Parameters
+        ----------
+        x: numpy.ndarray, shape (n_samples, n_input_features)
+            State measurements.
+            Each row should correspond to the system state at some point
+            in time.
+            If ``y`` is not passed, then it is assumed that the examples are
+            equi-spaced in time and are given in sequential order.
+            If ``y`` is passed, then this assumption need not hold.
+
+        y: numpy.ndarray, shape (n_samples, n_input_features), optional \
+                (default None)
+            State measurements one timestep in the future.
+            Each row of this array should give the corresponding row in x advanced
+            forward in time by one timestep.
+            If None, the rows of ``x`` are used to construct ``y``.
+
+        cast_as_real: bool, optional (default True)
+            Whether to take the real part of predictions when computing the score.
+            Many Scikit-learn metrics do not support complex numbers.
+
+        metric: callable, optional (default ``r2_score``)
+            The metric function used to score the model predictions.
+
+        metric_kws: dict, optional
+            Optional parameters to pass to the metric function.
+
+        Returns
+        -------
+        score: float
+            Metric function value for the model predictions at the next timestep.
+        """
+        check_is_fitted(self, "n_output_features_")
+        x = validate_input(x)
+
+        if isinstance(self.observables, TimeDelay):
+            n_consumed_samples = self.observables.n_consumed_samples
+
+            # User may pass in too-large
+            if y is not None and len(y) == len(x):
+                warn(
+                    f"The first {n_consumed_samples} entries of y were ignored because "
+                    "TimeDelay obesrvables were used."
+                )
+                y = y[n_consumed_samples:]
+        else:
+            n_consumed_samples = 0
+
+        if y is None:
+            if cast_as_real:
+                return metric(
+                    x[n_consumed_samples + 1 :].real,
+                    self.predict(x[:-1]).real,
+                    **metric_kws,
+                )
+            else:
+                return metric(
+                    x[n_consumed_samples + 1 :], self.predict(x[:-1]), **metric_kws
+                )
+        else:
+            if cast_as_real:
+                return metric(y.real, self.predict(x).real, **metric_kws)
+            else:
+                return metric(y, self.predict(x), **metric_kws)
+
+    def get_feature_names(self, input_features=None):
+        """
+        Get the names of the individual features constituting the observables.
+
+        Parameters
+        ----------
+        input_features: list of string, length n_input_features, \
+                optional (default None)
+            String names for input features, if available. By default,
+            the names "x0", "x1", ... ,"xn_input_features" are used.
+
+        Returns
+        -------
+        output_feature_names: list of string, length n_ouput_features
+            Output feature names.
+        """
+        check_is_fitted(self, "n_input_features_")
+        return self.observables.get_feature_names(input_features=input_features)
+
 
     def _step(self, x, u=None):
         """
@@ -190,7 +308,7 @@ class Koopman(BaseEstimator):
 
         Parameters
         ----------
-        x: numpy.ndarray, shape (n_examples, n_input_features)
+        x: numpy.ndarray, shape (n_samples, n_input_features)
             State vectors to be stepped forward.
 
         u: numpy.ndarray, shape (n_samples, n_control_features), \
@@ -199,10 +317,9 @@ class Koopman(BaseEstimator):
 
         Returns
         -------
-        X': numpy.ndarray, shape (n_examples, self.n_output_features_)
+        X': numpy.ndarray, shape (n_samples, self.n_output_features_)
             Observables one timestep after x.
         """
-
         check_is_fitted(self, "model")
 
         if u is None or self.n_control_features_ == 0:
@@ -231,7 +348,7 @@ class Koopman(BaseEstimator):
         where g denotes the observables map and X' denotes x advanced
         one timestep.
         """
-        check_is_fitted(self, "model")
+        check_is_fitted(self, "n_output_features_")
         return self.model.steps[-1][1].coef_
 
     @property
