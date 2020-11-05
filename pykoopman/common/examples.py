@@ -56,7 +56,6 @@ def drss(n=2, p=2, m=2,
         mag = np.random.rand(ncomplex);
         cplx = np.zeros(ncomplex,dtype=complex)
         for i in range(ncomplex):
-            tmp = np.exp(complex(0,np.pi*np.random.rand(1)))
             cplx[i] = mag[i]*np.exp(complex(0,np.pi*np.random.rand(1)))
         re = np.real(cplx);
         im = np.imag(cplx);
@@ -326,8 +325,7 @@ class torus_dynamics():
         fig = plt.figure(figsize=(20, 10))
         for k in range(self.sparsity):
             ax = plt.subplot2grid((1, self.sparsity), (0, k), projection='3d')
-            tmp = modes[:, k].reshape(self.n_states, self.n_states)
-            self.viz_torus(ax, tmp)
+            self.viz_torus(ax, modes[:, k].reshape(self.n_states, self.n_states))
             plt.axis('off')
 
     @property
