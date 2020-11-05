@@ -119,11 +119,10 @@ class Koopman(BaseEstimator):
         action = "ignore" if self.quiet else "default"
         with catch_warnings():
             filterwarnings(action, category=UserWarning)
-
-        if u is None:
-            self.model.fit(x)
-        elif u is not None:
-            self.model.fit(x, u)
+            if u is None:
+                self.model.fit(x)
+            else:
+                self.model.fit(x, u)
 
         self.n_input_features_ = self.model.steps[0][1].n_input_features_
         self.n_output_features_ = self.model.steps[0][1].n_output_features_
@@ -191,6 +190,7 @@ class Koopman(BaseEstimator):
         check_is_fitted(self, "n_output_features_")
         # Could have an option to only return the end state and not all
         # intermediate states to save memory.
+
         y = empty((n_steps, self.n_input_features_), dtype=self.koopman_matrix.dtype)
         if u is None:
             y[0] = self.predict(x0)
