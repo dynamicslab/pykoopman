@@ -1,7 +1,7 @@
 from warnings import warn
 
-from numpy import empty
 import numpy as np
+from numpy import empty
 from pydmd import DMD
 from pydmd import DMDBase
 from sklearn.base import BaseEstimator
@@ -115,9 +115,13 @@ class Koopman(BaseEstimator):
         if hasattr(self.model.steps[1][1], "n_control_features_"):
             self.n_control_features_ = self.model.steps[1][1].n_control_features_
 
-        self.time = dict([('tstart', 0),
-                           ('tend', dt * (self.model.steps[1][1].n_samples_ - 1)),
-                           ('dt', dt)])
+        self.time = dict(
+            [
+                ("tstart", 0),
+                ("tend", dt * (self.model.steps[1][1].n_samples_ - 1)),
+                ("dt", dt),
+            ]
+        )
         return self
 
     def predict(self, x, u=None):
@@ -167,8 +171,7 @@ class Koopman(BaseEstimator):
         check_is_fitted(self, "model")
         # Could have an option to only return the end state and not all
         # intermediate states to save memory.
-        xhat = empty((n_steps, self.n_input_features_),
-                     dtype=self.koopman_matrix.dtype)
+        xhat = empty((n_steps, self.n_input_features_), dtype=self.koopman_matrix.dtype)
 
         if u is None:
             xhat[0] = self.predict(x0)
@@ -306,7 +309,7 @@ class Koopman(BaseEstimator):
         Oscillation frequencies of Koopman modes/eigenvectors
         """
         check_is_fitted(self, "model")
-        dt = self.time['dt']
+        dt = self.time["dt"]
         return np.imag(np.log(self.eigenvalues) / dt) / (2 * np.pi)
         # return self.model.steps[-1][1].frequencies_
 
@@ -317,6 +320,6 @@ class Koopman(BaseEstimator):
         of the Koopman matrix
         """
         check_is_fitted(self, "model")
-        dt = self.time['dt']
+        dt = self.time["dt"]
         return np.log(self.eigenvalues) / dt
         # return self.model.steps[-1][1].eigenvalues_continuous_

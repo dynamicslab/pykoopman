@@ -1,11 +1,12 @@
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.linalg import orth
-import matplotlib.pyplot as plt
-import matplotlib as mpl
 
-def drss(n=2, p=2, m=2,
-         p_int_first=0.1, p_int_others=0.01,
-         p_repeat=0.05, p_complex=0.5):
+
+def drss(
+    n=2, p=2, m=2, p_int_first=0.1, p_int_others=0.01, p_repeat=0.05, p_complex=0.5
+):
     """
     Create discrete-time, random, stable, linear state space model.
 
@@ -43,30 +44,36 @@ def drss(n=2, p=2, m=2,
     """
 
     # Number of integrators
-    nint = int((np.random.rand(1)<p_int_first)+sum(np.random.rand(n-1)<p_int_others));
+    nint = int(
+        (np.random.rand(1) < p_int_first) + sum(np.random.rand(n - 1) < p_int_others)
+    )
     # Number of repeated roots
-    nrepeated = int(np.floor(sum(np.random.rand(n-nint)<p_repeat)/2));
+    nrepeated = int(np.floor(sum(np.random.rand(n - nint) < p_repeat) / 2))
     # Number of complex roots
-    ncomplex = int(np.floor(sum(np.random.rand(n-nint-2*nrepeated,1)<p_complex)/2));
-    nreal = n-nint-2*nrepeated-2*ncomplex;
+    ncomplex = int(
+        np.floor(sum(np.random.rand(n - nint - 2 * nrepeated, 1) < p_complex) / 2)
+    )
+    nreal = n - nint - 2 * nrepeated - 2 * ncomplex
 
     # Random poles
-    rep = 2*np.random.rand(nrepeated)-1;
+    rep = 2 * np.random.rand(nrepeated) - 1
     if ncomplex != 0:
-        mag = np.random.rand(ncomplex);
-        cplx = np.zeros(ncomplex,dtype=complex)
+        mag = np.random.rand(ncomplex)
+        cplx = np.zeros(ncomplex, dtype=complex)
         for i in range(ncomplex):
-            cplx[i] = mag[i]*np.exp(complex(0,np.pi*np.random.rand(1)))
-        re = np.real(cplx);
-        im = np.imag(cplx);
+            cplx[i] = mag[i] * np.exp(complex(0, np.pi * np.random.rand(1)))
+        re = np.real(cplx)
+        im = np.imag(cplx)
 
     # Generate random state space model
-    A = np.zeros((n,n))
+    A = np.zeros((n, n))
     if ncomplex != 0:
-        for i in range(0,ncomplex):
-            A[2*i:2*i+2,2*i:2*i+2] = np.array([[re[i],im[i]],[-im[i],re[i]]])
+        for i in range(0, ncomplex):
+            A[2 * i : 2 * i + 2, 2 * i : 2 * i + 2] = np.array(
+                [[re[i], im[i]], [-im[i], re[i]]]
+            )
 
-    if 2*ncomplex<n:
+    if 2 * ncomplex < n:
         list_poles = []
         if nint:
             list_poles = np.append(list_poles, np.ones(nint))
@@ -74,51 +81,54 @@ def drss(n=2, p=2, m=2,
             list_poles = np.append(list_poles, rep)
             list_poles = np.append(list_poles, rep)
         if nreal:
-            list_poles = np.append(list_poles, 2*np.random.rand(nreal)-1)
+            list_poles = np.append(list_poles, 2 * np.random.rand(nreal) - 1)
 
-        A[2*ncomplex:,2*ncomplex:] = np.diag(list_poles)
+        A[2 * ncomplex :, 2 * ncomplex :] = np.diag(list_poles)
 
-    T = orth(np.random.rand(n,n));
-    A = (np.transpose(T)@(A@T))
+    T = orth(np.random.rand(n, n))
+    A = np.transpose(T) @ (A @ T)
 
     # control matrix
-    B = np.random.randn(n,p)
+    B = np.random.randn(n, p)
     # mask for nonzero entries in B
     mask = np.random.rand(B.shape[0], B.shape[1])
-    B = np.squeeze(np.multiply(B, [(mask<0.75) != 0]))
+    B = np.squeeze(np.multiply(B, [(mask < 0.75) != 0]))
 
     # Measurement matrix
-    if m==0:
+    if m == 0:
         C = np.identity(n)
     else:
         C = np.random.randn(m, n)
         mask = np.random.rand(C.shape[0], C.shape[1])
         C = np.squeeze(C * [(mask < 0.75) != 0])
 
-    return A,B,C
+    return A, B, C
 
-def advance_linear_system(x0,u,n,A=None,B=None,C=None):
+
+def advance_linear_system(x0, u, n, A=None, B=None, C=None):
     if C is None:
         C = np.identity(len(x0))
-    if u.ndim==1:
+    if u.ndim == 1:
         u = u[np.newaxis, :]
 
-    y = np.zeros([n,C.shape[0]])
-    x = np.zeros([n,len(x0)])
-    x[0,:] = x0
-    y[0,:] = C.dot(x[0,:])
-    for i in range(n-1):
-        x[i+1,:] = A.dot(x[i,:]) + B.dot(u[:,i])
-        y[i+1,:] = C.dot(x[i+1,:])
-    return x,y
+    y = np.zeros([n, C.shape[0]])
+    x = np.zeros([n, len(x0)])
+    x[0, :] = x0
+    y[0, :] = C.dot(x[0, :])
+    for i in range(n - 1):
+        x[i + 1, :] = A.dot(x[i, :]) + B.dot(u[:, i])
+        y[i + 1, :] = C.dot(x[i + 1, :])
+    return x, y
 
-class torus_dynamics():
+
+class torus_dynamics:
     """
     Sparse dynamics in Fourier space on torus
     sparsity: degree of sparsity
     n_states : number of states
     freq_max = 15
     """
+
     def __init__(self, n_states=128, sparsity=5, freq_max=15, noisemag=0.0):
         self.n_states = n_states
         self.sparsity = sparsity
@@ -139,7 +149,7 @@ class torus_dynamics():
         frequencies = np.sqrt(4 * np.random.rand(self.sparsity))
         damping = -np.random.rand(self.sparsity) * 0.1
         for k in range(self.sparsity):
-            loopbreak = 0;
+            loopbreak = 0
             while loopbreak is not 1:
                 I[k] = np.ceil(np.random.rand(1) * self.n_states / (self.freq_max + 1))
                 J[k] = np.ceil(np.random.rand(1) * self.n_states / (self.freq_max + 1))
@@ -161,7 +171,7 @@ class torus_dynamics():
         self.mask = mask
 
     def advance(self, n_samples, dt=1):
-        print('Evolving continuous-time dynamics without control.')
+        print("Evolving continuous-time dynamics without control.")
         self.n_samples = n_samples
         self.dt = dt
 
@@ -181,8 +191,10 @@ class torus_dynamics():
             self.time_vector[step] = t
             xhat = np.zeros((self.n_states, self.n_states), complex)
             for k in range(self.sparsity):
-                xhat[self.I[k], self.J[k]] = np.exp((self.damping[k]
-                            + 1j * 2 * np.pi * self.frequencies[k]) * t) * self.IC[k]
+                xhat[self.I[k], self.J[k]] = (
+                    np.exp((self.damping[k] + 1j * 2 * np.pi * self.frequencies[k]) * t)
+                    * self.IC[k]
+                )
 
             if self.noisemag != 0:
                 self.XhatClean[:, step] = xhat.reshape(self.n_states ** 2)
@@ -194,17 +206,17 @@ class torus_dynamics():
             #           *np.random.randn(xhat.shape[0],xhat.shape[1]) \
             #         + 1j*self.noisemag*xRMS \
             #         *np.random.randn(xhat.shape[0],xhat.shape[1])
-            self.Xhat[:,step] = xhat.reshape(self.n_states**2)
+            self.Xhat[:, step] = xhat.reshape(self.n_states ** 2)
             x = np.real(np.fft.ifft2(xhat))
             self.X[:, step] = x.reshape(self.n_states ** 2)
 
     def advance_discrete_time(self, n_samples, dt, u=None):
-        print('Evolving discrete-time dynamics with or without control.')
+        print("Evolving discrete-time dynamics with or without control.")
         if u is None:
             self.n_control_features_ = 0
             self.U = np.zeros(n_samples)
             self.U = self.U[np.newaxis, :]
-            print('No control input provided. Evolving unforced system.')
+            print("No control input provided. Evolving unforced system.")
         else:
             if u.ndim == 1:
                 if len(u) > n_samples:
@@ -216,11 +228,11 @@ class torus_dynamics():
                 self.U = u
             self.n_control_features_ = self.U.shape[1]
 
-        if not hasattr(self, 'B'):
-            B = np.zeros((self.n_states,self.n_states))
+        if not hasattr(self, "B"):
+            B = np.zeros((self.n_states, self.n_states))
             print(B.shape)
             self.set_control_matrix_physical(B)
-            print('Control matrix is not set. Continue with unforced system.')
+            print("Control matrix is not set. Continue with unforced system.")
 
         self.n_samples = n_samples
         self.dt = dt
@@ -235,12 +247,12 @@ class torus_dynamics():
         # Set initial condition
         xhat0 = np.zeros((self.n_states, self.n_states), complex)
         for k in range(self.sparsity):
-            xhat0[self.I[k],self.J[k]] = self.IC[k]
-        self.Xhat[:,0] = xhat0.reshape(self.n_states**2)
+            xhat0[self.I[k], self.J[k]] = self.IC[k]
+        self.Xhat[:, 0] = xhat0.reshape(self.n_states ** 2)
         x0 = np.real(np.fft.ifft2(xhat0))
         self.X[:, 0] = x0.reshape(self.n_states ** 2)
 
-        for step in range(1,self.n_samples,1):
+        for step in range(1, self.n_samples, 1):
             t = step * self.dt
             self.time_vector[step] = t
             # self.Xhat[:, step] = np.reshape(self.Bhat * self.U[0,step - 1],\
@@ -251,13 +263,16 @@ class torus_dynamics():
 
             xhat = np.array((self.n_states, self.n_states), complex)
             xhat = self.Xhat[:, step].reshape(self.n_states, self.n_states)
-            xhat_prev = self.Xhat[:,step-1].reshape(self.n_states, self.n_states)
+            xhat_prev = self.Xhat[:, step - 1].reshape(self.n_states, self.n_states)
             for k in range(self.sparsity):
-                xhat[self.I[k], self.J[k]] = \
-                    np.exp((self.damping[k] + \
-                            1j * 2 * np.pi * self.frequencies[k]) * self.dt) \
-                    * xhat_prev[self.I[k], self.J[k]] \
-                    + self.Bhat[self.I[k], self.J[k]]*self.U[0,step - 1]
+                xhat[self.I[k], self.J[k]] = (
+                    np.exp(
+                        (self.damping[k] + 1j * 2 * np.pi * self.frequencies[k])
+                        * self.dt
+                    )
+                    * xhat_prev[self.I[k], self.J[k]]
+                    + self.Bhat[self.I[k], self.J[k]] * self.U[0, step - 1]
+                )
 
             # xhat_prev = self.Xhat[:,step-1].reshape(self.n_states, self.n_states)
             # for k in range(self.sparsity):
@@ -265,7 +280,7 @@ class torus_dynamics():
             #     + 1j * 2 * np.pi * self.frequencies[k]) * self.dt) \
             #     * xhat_prev[self.I[k], self.J[k]]
 
-            self.Xhat[:,step] = xhat.reshape(self.n_states**2)
+            self.Xhat[:, step] = xhat.reshape(self.n_states ** 2)
             x = np.real(np.fft.ifft2(xhat))
             self.X[:, step] = x.reshape(self.n_states ** 2)
 
@@ -288,16 +303,18 @@ class torus_dynamics():
             for i in range(len(position)):
                 position[i] = int(position[i])
         except ValueError:
-            print('position was not a valid integer.')
+            print("position was not a valid integer.")
 
         is_position_in_valid_domain = (position >= 0) & (position < self.n_states)
-        if any(is_position_in_valid_domain==False):
-            raise ValueError('Actuator position was not \
-                             a valid integer inside of domain.')
+        if any(is_position_in_valid_domain == False):
+            raise ValueError(
+                "Actuator position was not \
+                             a valid integer inside of domain."
+            )
 
         # Control matrix in physical space (single point actuator)
         B = np.zeros((self.n_states, self.n_states))
-        B[position[0],position[1]] = 1
+        B[position[0], position[1]] = 1
         self.set_control_matrix_physical(B)
 
     def viz_setup(self):
@@ -305,8 +322,10 @@ class torus_dynamics():
         self.n_colors = self.n_states
         r1 = 2
         r2 = 1
-        [T1, T2] = np.meshgrid(np.linspace(0, 2 * np.pi, self.n_states),
-                               np.linspace(0, 2 * np.pi,  self.n_states))
+        [T1, T2] = np.meshgrid(
+            np.linspace(0, 2 * np.pi, self.n_states),
+            np.linspace(0, 2 * np.pi, self.n_states),
+        )
         R = r1 + r2 * np.cos(T2)
         self.Zgrid = r2 * np.sin(T2)
         self.Xgrid = R * np.cos(T1)
@@ -314,14 +333,19 @@ class torus_dynamics():
 
     def viz_torus(self, ax, x):
 
-        if not hasattr(self, 'viz'):
+        if not hasattr(self, "viz"):
             self.viz_setup()
 
         norm = mpl.colors.Normalize(vmin=-abs(x).max(), vmax=abs(x).max())
-        surface = ax.plot_surface(self.Xgrid, self.Ygrid, self.Zgrid,
-                                  facecolors=self.cmap_torus(norm(x)),
-                                  shade=False, rstride=1,
-                                  cstride=1)
+        surface = ax.plot_surface(
+            self.Xgrid,
+            self.Ygrid,
+            self.Zgrid,
+            facecolors=self.cmap_torus(norm(x)),
+            shade=False,
+            rstride=1,
+            cstride=1,
+        )
         #     m = cm.ScalarMappable(cmap=cmap_torus, norm=norm)
         #     m.set_array([])
         #     plt.colorbar(m)
@@ -334,24 +358,25 @@ class torus_dynamics():
         if modes is None:
             modes = self.modes
 
-        if not hasattr(self, 'viz'):
+        if not hasattr(self, "viz"):
             self.viz_setup()
 
         fig = plt.figure(figsize=(20, 10))
         for k in range(self.sparsity):
-            ax = plt.subplot2grid((1, self.sparsity), (0, k), projection='3d')
+            ax = plt.subplot2grid((1, self.sparsity), (0, k), projection="3d")
             self.viz_torus(ax, modes[:, k].reshape(self.n_states, self.n_states))
-            plt.axis('off')
+            plt.axis("off")
 
     @property
     def modes(self):
-        modes = np.zeros((self.n_states**2, self.sparsity))
+        modes = np.zeros((self.n_states ** 2, self.sparsity))
 
         for k in range(self.sparsity):
             mode_in_fourier = np.zeros((self.n_states, self.n_states))
             mode_in_fourier[self.I[k], self.J[k]] = 1
-            modes[:, k] = \
-                np.real(np.fft.ifft2(mode_in_fourier).reshape(self.n_states ** 2))
+            modes[:, k] = np.real(
+                np.fft.ifft2(mode_in_fourier).reshape(self.n_states ** 2)
+            )
 
         return modes
 
