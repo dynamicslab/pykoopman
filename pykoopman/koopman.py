@@ -123,7 +123,7 @@ class Koopman(BaseEstimator):
         if u is None:
             self.model.fit(x)
         elif u is not None:
-            self.model.fit(x,u)
+            self.model.fit(x, u)
 
         self.n_input_features_ = self.model.steps[0][1].n_input_features_
         self.n_output_features_ = self.model.steps[0][1].n_output_features_
@@ -195,7 +195,7 @@ class Koopman(BaseEstimator):
         if u is None:
             y[0] = self.predict(x0)
         elif u is not None:
-            y[0] = self.predict(x0,u[0])
+            y[0] = self.predict(x0, u[0])
 
         if isinstance(self.observables, TimeDelay):
             n_consumed_samples = self.observables.n_consumed_samples
