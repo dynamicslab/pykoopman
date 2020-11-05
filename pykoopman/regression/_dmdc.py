@@ -175,10 +175,15 @@ class DMDc(BaseRegressor):
         else:
             Uhatr = np.identity(self.n_input_features_)
 
-        U1 = Ur[:self.n_input_features_, :]
-        U2 = Ur[self.n_input_features_:, :]
-        self.state_matrix_ = np.dot(Uhatr.T, np.dot(X2.T, np.dot(Vr, np.dot(np.linalg.inv(Sr), np.dot(U1.T, Uhatr)))))
-        self.control_matrix_ = np.dot(Uhatr.T, np.dot(X2.T, np.dot(Vr, np.dot(np.linalg.inv(Sr), U2.T))))
+        U1 = Ur[: self.n_input_features_, :]
+        U2 = Ur[self.n_input_features_ :, :]
+        self.state_matrix_ = np.dot(
+            Uhatr.T,
+            np.dot(X2.T, np.dot(Vr, np.dot(np.linalg.inv(Sr), np.dot(U1.T, Uhatr)))),
+        )
+        self.control_matrix_ = np.dot(
+            Uhatr.T, np.dot(X2.T, np.dot(Vr, np.dot(np.linalg.inv(Sr), U2.T)))
+        )
         G = np.concatenate((self.state_matrix_, self.control_matrix_), axis=1)
 
         self.coef_ = G
@@ -187,8 +192,15 @@ class DMDc(BaseRegressor):
 
         # Compute Koopman modes, eigenvectors, eigenvalues
         [self.eigenvalues_, self.eigenvectors_] = np.linalg.eig(self.state_matrix_)
-        self.modes_ = np.dot(X2.T,
-                             np.dot(Vr, np.dot(np.linalg.inv(Sr), np.dot(U1.T, np.dot(Uhatr, self.eigenvectors_)))))
+        self.modes_ = np.dot(
+            X2.T,
+            np.dot(
+                Vr,
+                np.dot(
+                    np.linalg.inv(Sr), np.dot(U1.T, np.dot(Uhatr, self.eigenvectors_))
+                ),
+            ),
+        )
 
     def fit_known_B(self, X1, X2, C, r):
         if self.n_input_features_ in self.control_matrix_.shape is False:
@@ -217,8 +229,9 @@ class DMDc(BaseRegressor):
 
         # Compute Koopman modes, eigenvectors, eigenvalues
         [self.eigenvalues_, self.eigenvectors_] = np.linalg.eig(self.state_matrix_)
-        self.modes_ = np.dot(X2.T,
-                             np.dot(Vh.T * (s ** (-1)), np.dot(U.T, self.eigenvectors_)))
+        self.modes_ = np.dot(
+            X2.T, np.dot(Vh.T * (s ** (-1)), np.dot(U.T, self.eigenvectors_))
+        )
 
     def predict(self, x, u):
         """
@@ -259,4 +272,4 @@ class DMDc(BaseRegressor):
     #     dt = self.time_['dt']
     #     return np.log(self.eigenvalues_) / dt
 
-    #TODO: function to set time information --> in Koopman, here not necessary
+    # TODO: function to set time information --> in Koopman, here not necessary

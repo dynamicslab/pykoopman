@@ -130,10 +130,13 @@ class Koopman(BaseEstimator):
         if hasattr(self.model.steps[1][1], "n_control_features_"):
             self.n_control_features_ = self.model.steps[1][1].n_control_features_
 
-        self.time = dict([('tstart', 0),
-                           ('tend', dt * (self.model.steps[1][1].n_samples_ - 1)),
-                           ('dt', dt)])
-
+        self.time = dict(
+            [
+                ("tstart", 0),
+                ("tend", dt * (self.model.steps[1][1].n_samples_ - 1)),
+                ("dt", dt),
+            ]
+        )
         return self
 
     def predict(self, x, u=None):
@@ -418,7 +421,7 @@ class Koopman(BaseEstimator):
         Oscillation frequencies of Koopman modes/eigenvectors
         """
         check_is_fitted(self, "model")
-        dt = self.time['dt']
+        dt = self.time["dt"]
         return np.imag(np.log(self.eigenvalues) / dt) / (2 * np.pi)
         # return self.model.steps[-1][1].frequencies_
 
@@ -429,6 +432,6 @@ class Koopman(BaseEstimator):
         of the Koopman matrix
         """
         check_is_fitted(self, "model")
-        dt = self.time['dt']
+        dt = self.time["dt"]
         return np.log(self.eigenvalues) / dt
         # return self.model.steps[-1][1].eigenvalues_continuous_
