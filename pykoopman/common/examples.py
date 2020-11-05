@@ -139,15 +139,15 @@ class torus_dynamics():
         IC = np.random.randn(self.sparsity)
         frequencies = np.sqrt(4 * np.random.rand(self.sparsity))
         damping = -np.random.rand(self.sparsity) * 0.1
-        for i in range(self.sparsity):
+        for k in range(self.sparsity):
             loopbreak = 0;
             while loopbreak is not 1:
                 I[i] = np.ceil(np.random.rand(1) * self.n_states / (self.freq_max + 1))
                 J[i] = np.ceil(np.random.rand(1) * self.n_states / (self.freq_max + 1))
-                if xhat[I[i], J[i]] == 0.0:
+                if xhat[I[k], J[k]] == 0.0:
                     loopbreak = 1
 
-            xhat[I[i], J[i]] = IC[i]
+            xhat[I[k], J[k]] = IC[k]
 
         mask = np.zeros((self.n_states, self.n_states), int)
         for k in range(self.sparsity):
