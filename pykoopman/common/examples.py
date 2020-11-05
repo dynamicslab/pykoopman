@@ -139,8 +139,8 @@ class torus_dynamics:
     def setup(self):
         # Initialization
         xhat = np.zeros((self.n_states, self.n_states), complex)
-        I = np.zeros(self.sparsity, dtype=int)  # Index of nonzero frequency components
-        J = np.zeros(self.sparsity, dtype=int)
+        self.I = np.zeros(self.sparsity, dtype=int)  # Index of nonzero frequency components
+        self.J = np.zeros(self.sparsity, dtype=int)
         IC = np.zeros(self.sparsity)  # Initial condition
         frequencies = np.zeros(self.sparsity)
         damping = np.zeros(self.sparsity)
@@ -151,22 +151,20 @@ class torus_dynamics:
         for k in range(self.sparsity):
             loopbreak = 0
             while loopbreak is not 1:
-                I[k] = np.ceil(np.random.rand(1) * self.n_states / (self.freq_max + 1))
-                J[k] = np.ceil(np.random.rand(1) * self.n_states / (self.freq_max + 1))
-                if xhat[I[k], J[k]] == 0.0:
+                self.I[k] = np.ceil(np.random.rand(1) * self.n_states / (self.freq_max + 1))
+                self.J[k] = np.ceil(np.random.rand(1) * self.n_states / (self.freq_max + 1))
+                if xhat[self.I[k], self.J[k]] == 0.0:
                     loopbreak = 1
 
-            xhat[I[k], J[k]] = IC[k]
+            xhat[self.I[k], self.J[k]] = IC[k]
 
         mask = np.zeros((self.n_states, self.n_states), int)
         for k in range(self.sparsity):
-            mask[I[k], J[k]] = 1
+            mask[self.I[k], self.J[k]] = 1
 
         self.damping = damping
         self.frequencies = frequencies
         self.IC = IC
-        self.I = I
-        self.J = J
         self.xhat = xhat
         self.mask = mask
 
