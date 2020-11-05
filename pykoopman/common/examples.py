@@ -237,14 +237,22 @@ class torus_dynamics():
         for step in range(1,self.n_samples,1):
             t = step * self.dt
             self.time_vector[step] = t
-            self.Xhat[:, step] = np.reshape(self.Bhat * self.U[0,step - 1], self.n_states ** 2)
-            xhat = self.Xhat[:,step].reshape(self.n_states,self.n_states)
-            # xhat = np.zeros((self.n_states, self.n_states), complex)
+            # self.Xhat[:, step] = np.reshape(self.Bhat * self.U[0,step - 1], self.n_states ** 2)
+            # xhat = self.Xhat[:,step].reshape(self.n_states,self.n_states)
+            # xhat_prev = self.Xhat[:, step - 1].reshape(self.n_states, self.n_states)
 
+            xhat = np.array((self.n_states, self.n_states), complex)
+            xhat = self.Xhat[:, step].reshape(self.n_states, self.n_states)
             xhat_prev = self.Xhat[:,step-1].reshape(self.n_states, self.n_states)
             for k in range(self.sparsity):
-                xhat[self.I[k], self.J[k]] += np.exp((self.damping[k] + 1j * 2 * np.pi * self.frequencies[k]) * self.dt) \
-                                             * xhat_prev[self.I[k], self.J[k]]
+                xhat[self.I[k], self.J[k]] = np.exp((self.damping[k] + 1j * 2 * np.pi * self.frequencies[k]) * self.dt) \
+                                              * xhat_prev[self.I[k], self.J[k]] \
+                                              + self.Bhat[self.I[k], self.J[k]]*self.U[0,step - 1]
+
+            # xhat_prev = self.Xhat[:,step-1].reshape(self.n_states, self.n_states)
+            # for k in range(self.sparsity):
+            #     xhat[self.I[k], self.J[k]] += np.exp((self.damping[k] + 1j * 2 * np.pi * self.frequencies[k]) * self.dt) \
+            #                                  * xhat_prev[self.I[k], self.J[k]]
 
             self.Xhat[:,step] = xhat.reshape(self.n_states**2)
             x = np.real(np.fft.ifft2(xhat))
@@ -260,7 +268,7 @@ class torus_dynamics():
         if np.allclose(Bhat.shape, np.array([self.n_states, self.n_states])) is False:
             raise TypeError("Control matrix Bhat has wrong shape.")
         self.Bhat = Bhat
-        self.B = np.fft.ifft2(self.Bhat)
+        self.B = np.real(np.fft.ifft2(self.Bhat))
 
     def set_point_actuator(self, position=None):
         if position is None:
@@ -332,3 +340,14 @@ class torus_dynamics():
             modes[:, k] = np.real(np.fft.ifft2(mode_in_fourier).reshape(self.n_states ** 2))
 
         return modes
+
+    @property
+    def B_effective(self):
+        Bhat_effective = np.zeros((self.n_states, self.n_states), complex)
+        for k in range(self.sparsity):
+            control_mode = np.zeros((self.n_states, self.n_states), complex)
+            control_mode[self.I[k], self.J[k]] = self.Bhat[self.I[k], self.J[k]]
+            Bhat_effective += control_mode
+        B_effective = np.fft.ifft2(Bhat_effective)
+
+        return B_effective
