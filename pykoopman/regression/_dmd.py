@@ -35,6 +35,7 @@ class DMDRegressor(BaseRegressor):
         """
         if y is not None:
             warn("pydmd regressors do not require the y argument when fitting.")
+        self.n_samples_, self.n_input_features_ = x.shape
         # We transpose x because PyDMD assumes examples are columns, not rows
         self.regressor.fit(x.T)
         self.coef_ = self.regressor.predict(identity(x.shape[1])).T
