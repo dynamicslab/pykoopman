@@ -120,10 +120,9 @@ class Koopman(BaseEstimator):
         with catch_warnings():
             filterwarnings(action, category=UserWarning)
             if u is None:
-              self.model.fit(x)
+                self.model.fit(x)
             else:
-              self.model.fit(x, u)
-
+                self.model.fit(x, u)
 
         self.n_input_features_ = self.model.steps[0][1].n_input_features_
         self.n_output_features_ = self.model.steps[0][1].n_output_features_
@@ -160,7 +159,6 @@ class Koopman(BaseEstimator):
 
         check_is_fitted(self, "n_output_features_")
         return self.observables.inverse(self._step(x))
-
 
     def simulate(self, x0, u=None, n_steps=1):
         """
@@ -300,7 +298,6 @@ class Koopman(BaseEstimator):
         """
         check_is_fitted(self, "n_input_features_")
         return self.observables.get_feature_names(input_features=input_features)
-
 
     def _step(self, x, u=None):
         """

@@ -8,9 +8,8 @@ from .validation import validate_input
 __all__ = [
     "check_array",
     "drop_nan_rows",
-    "validate_input", 
-    "drss", 
-    "advance_linear_system", 
+    "validate_input",
+    "drss",
+    "advance_linear_system",
     "torus_dynamics",
 ]
-

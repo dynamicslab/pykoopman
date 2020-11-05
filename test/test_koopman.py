@@ -13,7 +13,6 @@ from pykoopman.observables import Polynomial
 from pykoopman.observables import TimeDelay
 
 
-
 def test_fit(data_random):
     x = data_random
     model = Koopman().fit(x)
@@ -57,6 +56,7 @@ def test_if_fitted(data_random):
         model._step(x)
     with pytest.raises(NotFittedError):
         model.score(x)
+
 
 def test_score_without_target(data_2D_superposition):
     x = data_2D_superposition
@@ -129,7 +129,7 @@ def test_simulate_with_time_delay(data_2D_superposition):
     assert_allclose(
         x[n_consumed_samples + 1 : n_consumed_samples + n_steps + 1], x_pred
     )
-    
+
 
 def test_if_dmdc_model_is_accurate_with_known_controlmatrix(
     data_2D_linear_control_system,
@@ -228,8 +228,3 @@ def test_torus_discrete_time(data_torus_ct, data_torus_dt):
 
 
 # TODO: test torus mode id with dmdc
-
-
-
-
-

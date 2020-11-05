@@ -6,11 +6,9 @@ Put any datasets that are used by multiple unit test files here.
 import numpy as np
 import pytest
 
-
 from pykoopman.common import advance_linear_system
 from pykoopman.common import drss
 from pykoopman.common import torus_dynamics
-
 from pykoopman.observables import CustomObservables
 
 
@@ -184,6 +182,7 @@ def data_torus_dt():
 
     return xhat
 
+
 def data_1D_cosine():
     t = np.linspace(0, 2 * np.pi, 200)
     x = np.cos(3 * t)
@@ -212,4 +211,3 @@ def data_realistic_custom_observables():
     ]
 
     return CustomObservables(observables, observable_names=observable_names)
-
