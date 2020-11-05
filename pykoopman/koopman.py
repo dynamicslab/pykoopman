@@ -1,6 +1,7 @@
 from warnings import warn
 
 from numpy import empty
+import numpy as np
 from pydmd import DMD
 from pydmd import DMDBase
 from sklearn.base import BaseEstimator
@@ -47,6 +48,8 @@ class Koopman(BaseEstimator):
 
     n_control_features_: int
         Number of control features used as input to the system.
+    time: dictionary
+        Time vector properties.
     """
 
     def __init__(self, observables=None, regressor=None):
@@ -62,7 +65,7 @@ class Koopman(BaseEstimator):
         self.observables = observables
         self.regressor = regressor
 
-    def fit(self, x, u=None):
+    def fit(self, x, u=None, dt=1):
         """
         Fit the Koopman model by learning an approximate Koopman operator.
 
@@ -80,6 +83,8 @@ class Koopman(BaseEstimator):
             time-varying parameter. It is assumed that samples are equi-spaced
             in time (i.e. a uniform timestep is assumed) and correspond to the
             samples in x.
+        dt: float, (default=1)
+            Time step between samples
 
         Returns
         -------
@@ -109,6 +114,10 @@ class Koopman(BaseEstimator):
         self.n_output_features_ = self.model.steps[0][1].n_output_features_
         if hasattr(self.model.steps[1][1], "n_control_features_"):
             self.n_control_features_ = self.model.steps[1][1].n_control_features_
+
+        self.time = dict([('tstart', 0),
+                           ('tend', dt * (self.model.steps[1][1].n_samples_ - 1)),
+                           ('dt', dt)])
         return self
 
     def predict(self, x, u=None):
@@ -279,14 +288,6 @@ class Koopman(BaseEstimator):
         return self.model.steps[-1][1].modes_
 
     @property
-    def frequencies(self):
-        """
-        Oscillation frequencies of Koopman modes/eigenvectors
-        """
-        check_is_fitted(self, "model")
-        return self.model.steps[-1][1].frequencies_
-
-    @property
     def eigenvalues(self):
         """
         Discrete-time Koopman eigenvalues obtained from spectral decomposition of the Koopman matrix
@@ -295,9 +296,21 @@ class Koopman(BaseEstimator):
         return self.model.steps[-1][1].eigenvalues_
 
     @property
+    def frequencies(self):
+        """
+        Oscillation frequencies of Koopman modes/eigenvectors
+        """
+        check_is_fitted(self, "model")
+        dt = self.time['dt']
+        return np.imag(np.log(self.eigenvalues) / dt) / (2 * np.pi)
+        # return self.model.steps[-1][1].frequencies_
+
+    @property
     def eigenvalues_continuous(self):
         """
         Continuous-time Koopman eigenvalues obtained from spectral decomposition of the Koopman matrix
         """
         check_is_fitted(self, "model")
-        return self.model.steps[-1][1].eigenvalues_continuous_
+        dt = self.time['dt']
+        return np.log(self.eigenvalues) / dt
+        # return self.model.steps[-1][1].eigenvalues_continuous_

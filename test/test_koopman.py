@@ -139,3 +139,5 @@ def test_torus_discrete_time(data_torus_ct, data_torus_dt):
     xhat_dt = data_torus_dt
 
     assert_allclose(xhat_ct, xhat_dt, 1e-12, 1e-12 )
+
+#TODO: test torus mode id with dmdc
