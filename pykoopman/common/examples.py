@@ -88,7 +88,7 @@ def drss(n=2, p=2, m=2,
     B = np.squeeze(np.multiply(B, [(mask<0.75) != 0]))
 
     # Measurement matrix
-    if m is 0:
+    if m==0:
         C = np.identity(n)
     else:
         C = np.random.randn(m, n)
@@ -100,7 +100,7 @@ def drss(n=2, p=2, m=2,
 def advance_linear_system(x0,u,n,A=None,B=None,C=None):
     if C is None:
         C = np.identity(len(x0))
-    if u.ndim is 1:
+    if u.ndim==1:
         u = u[np.newaxis, :]
 
     y = np.zeros([n,C.shape[0]])
@@ -141,8 +141,8 @@ class torus_dynamics():
         for k in range(self.sparsity):
             loopbreak = 0;
             while loopbreak is not 1:
-                I[i] = np.ceil(np.random.rand(1) * self.n_states / (self.freq_max + 1))
-                J[i] = np.ceil(np.random.rand(1) * self.n_states / (self.freq_max + 1))
+                I[k] = np.ceil(np.random.rand(1) * self.n_states / (self.freq_max + 1))
+                J[k] = np.ceil(np.random.rand(1) * self.n_states / (self.freq_max + 1))
                 if xhat[I[k], J[k]] == 0.0:
                     loopbreak = 1
 
@@ -166,8 +166,10 @@ class torus_dynamics():
         self.dt = dt
 
         # Initilization
-        self.X = np.ndarray((self.n_states ** 2, self.n_samples))  # In physical space
-        self.Xhat = np.ndarray((self.n_states ** 2, self.n_samples), complex)  # In Fourier space
+        # In physical space
+        self.X = np.ndarray((self.n_states ** 2, self.n_samples))
+        # In Fourier space
+        self.Xhat = np.ndarray((self.n_states ** 2, self.n_samples), complex)
         self.time_vector = np.zeros(self.n_samples)
 
         # if self.noisemag != 0:
@@ -179,7 +181,8 @@ class torus_dynamics():
             self.time_vector[step] = t
             xhat = np.zeros((self.n_states, self.n_states), complex)
             for k in range(self.sparsity):
-                xhat[self.I[k], self.J[k]] = np.exp((self.damping[k] + 1j * 2 * np.pi * self.frequencies[k]) * t) * self.IC[k]
+                xhat[self.I[k], self.J[k]] = np.exp((self.damping[k]
+                            + 1j * 2 * np.pi * self.frequencies[k]) * t) * self.IC[k]
 
             if self.noisemag != 0:
                 self.XhatClean[:, step] = xhat.reshape(self.n_states ** 2)
@@ -187,8 +190,10 @@ class torus_dynamics():
                 self.XClean[:, step] = xClean.reshape(self.n_states ** 2)
 
             # xRMS = np.sqrt(np.mean(xhat.reshape((self.n_states**2,1))**2))
-            # xhat = xhat + self.noisemag*xRMS*np.random.randn(xhat.shape[0],xhat.shape[1]) \
-            #         + 1j*self.noisemag*xRMS*np.random.randn(xhat.shape[0],xhat.shape[1])
+            # xhat = xhat + self.noisemag*xRMS\
+            #           *np.random.randn(xhat.shape[0],xhat.shape[1]) \
+            #         + 1j*self.noisemag*xRMS \
+            #         *np.random.randn(xhat.shape[0],xhat.shape[1])
             self.Xhat[:,step] = xhat.reshape(self.n_states**2)
             x = np.real(np.fft.ifft2(xhat))
             self.X[:, step] = x.reshape(self.n_states ** 2)
@@ -221,8 +226,10 @@ class torus_dynamics():
         self.dt = dt
 
         # Initilization
-        self.X = np.ndarray((self.n_states ** 2, self.n_samples))  # In physical space
-        self.Xhat = np.ndarray((self.n_states ** 2, self.n_samples), complex)  # In Fourier space
+        # In physical space
+        self.X = np.ndarray((self.n_states ** 2, self.n_samples))
+        # In Fourier space
+        self.Xhat = np.ndarray((self.n_states ** 2, self.n_samples), complex)
         self.time_vector = np.zeros(self.n_samples)
 
         # Set initial condition
@@ -236,22 +243,27 @@ class torus_dynamics():
         for step in range(1,self.n_samples,1):
             t = step * self.dt
             self.time_vector[step] = t
-            # self.Xhat[:, step] = np.reshape(self.Bhat * self.U[0,step - 1], self.n_states ** 2)
+            # self.Xhat[:, step] = np.reshape(self.Bhat * self.U[0,step - 1],\
+            #                   self.n_states ** 2)
             # xhat = self.Xhat[:,step].reshape(self.n_states,self.n_states)
-            # xhat_prev = self.Xhat[:, step - 1].reshape(self.n_states, self.n_states)
+            # xhat_prev = \
+            # self.Xhat[:, step - 1].reshape(self.n_states, self.n_states)
 
             xhat = np.array((self.n_states, self.n_states), complex)
             xhat = self.Xhat[:, step].reshape(self.n_states, self.n_states)
             xhat_prev = self.Xhat[:,step-1].reshape(self.n_states, self.n_states)
             for k in range(self.sparsity):
-                xhat[self.I[k], self.J[k]] = np.exp((self.damping[k] + 1j * 2 * np.pi * self.frequencies[k]) * self.dt) \
-                                              * xhat_prev[self.I[k], self.J[k]] \
-                                              + self.Bhat[self.I[k], self.J[k]]*self.U[0,step - 1]
+                xhat[self.I[k], self.J[k]] = \
+                    np.exp((self.damping[k] + \
+                            1j * 2 * np.pi * self.frequencies[k]) * self.dt) \
+                    * xhat_prev[self.I[k], self.J[k]] \
+                    + self.Bhat[self.I[k], self.J[k]]*self.U[0,step - 1]
 
             # xhat_prev = self.Xhat[:,step-1].reshape(self.n_states, self.n_states)
             # for k in range(self.sparsity):
-            #     xhat[self.I[k], self.J[k]] += np.exp((self.damping[k] + 1j * 2 * np.pi * self.frequencies[k]) * self.dt) \
-            #                                  * xhat_prev[self.I[k], self.J[k]]
+            #     xhat[self.I[k], self.J[k]] += np.exp((self.damping[k] \
+            #     + 1j * 2 * np.pi * self.frequencies[k]) * self.dt) \
+            #     * xhat_prev[self.I[k], self.J[k]]
 
             self.Xhat[:,step] = xhat.reshape(self.n_states**2)
             x = np.real(np.fft.ifft2(xhat))
@@ -280,7 +292,8 @@ class torus_dynamics():
 
         is_position_in_valid_domain = (position >= 0) & (position < self.n_states)
         if any(is_position_in_valid_domain==False):
-            raise ValueError('Actuator position was not a valid integer inside of domain.')
+            raise ValueError('Actuator position was not \
+                             a valid integer inside of domain.')
 
         # Control matrix in physical space (single point actuator)
         B = np.zeros((self.n_states, self.n_states))
@@ -292,7 +305,8 @@ class torus_dynamics():
         self.n_colors = self.n_states
         r1 = 2
         r2 = 1
-        [T1, T2] = np.meshgrid(np.linspace(0, 2 * np.pi, self.n_states), np.linspace(0, 2 * np.pi,  self.n_states))
+        [T1, T2] = np.meshgrid(np.linspace(0, 2 * np.pi, self.n_states),
+                               np.linspace(0, 2 * np.pi,  self.n_states))
         R = r1 + r2 * np.cos(T2)
         self.Zgrid = r2 * np.sin(T2)
         self.Xgrid = R * np.cos(T1)
@@ -305,7 +319,8 @@ class torus_dynamics():
 
         norm = mpl.colors.Normalize(vmin=-abs(x).max(), vmax=abs(x).max())
         surface = ax.plot_surface(self.Xgrid, self.Ygrid, self.Zgrid,
-                                  facecolors=self.cmap_torus(norm(x)), shade=False, rstride=1,
+                                  facecolors=self.cmap_torus(norm(x)),
+                                  shade=False, rstride=1,
                                   cstride=1)
         #     m = cm.ScalarMappable(cmap=cmap_torus, norm=norm)
         #     m.set_array([])
@@ -335,7 +350,8 @@ class torus_dynamics():
         for k in range(self.sparsity):
             mode_in_fourier = np.zeros((self.n_states, self.n_states))
             mode_in_fourier[self.I[k], self.J[k]] = 1
-            modes[:, k] = np.real(np.fft.ifft2(mode_in_fourier).reshape(self.n_states ** 2))
+            modes[:, k] = \
+                np.real(np.fft.ifft2(mode_in_fourier).reshape(self.n_states ** 2))
 
         return modes
 
