@@ -194,7 +194,7 @@ class Koopman(BaseEstimator):
         y = empty((n_steps, self.n_input_features_), dtype=self.koopman_matrix.dtype)
         if u is None:
             y[0] = self.predict(x0)
-        elif u is not None:
+        else:
             y[0] = self.predict(x0, u[0])
 
         if isinstance(self.observables, TimeDelay):
@@ -207,10 +207,12 @@ class Koopman(BaseEstimator):
         else:
             if u is None:
                 for k in range(n_steps - 1):
-                    y[k + 1] = self.predict(y[k])
+                    y[k + 1] = self.predict(y[k].reshape(1, -1))
             else:
                 for k in range(n_steps - 1):
-                    y[k + 1] = self.predict(y[k], u[k + 1])
+                    y[k + 1] = self.predict(
+                        y[k].reshape(1, -1), u[k + 1].reshape(1, -1)
+                    )
 
         return y
 
