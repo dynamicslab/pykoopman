@@ -200,7 +200,7 @@ def test_dmdc_for_highdim_system(data_drss):
     Wtilde, Vtilde = np.linalg.eig(Atilde)
 
     idxTilde = np.argsort(Wtilde)
-    assert_allclose(W[idxTrue], Wtilde[idxTilde], 1e-07, 1e-12)
+    assert_allclose(abs(W[idxTrue]), abs(Wtilde[idxTilde]), 1e-07, 1e-12)
     # Evecs may be accurate up to a sign; ensured by seeding random generator
     # when producing the data set
     assert_allclose(abs(V[:, idxTrue]), abs(Vtilde[:, idxTilde]), 1e-07, 1e-12)
