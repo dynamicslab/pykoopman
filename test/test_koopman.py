@@ -203,7 +203,7 @@ def test_dmdc_for_highdim_system(data_drss):
     assert_allclose(W[idxTrue], Wtilde[idxTilde], 1e-07, 1e-12)
     # Evecs may be accurate up to a sign; ensured by seeding random generator
     # when producing the data set
-    assert_allclose(V[:, idxTrue], Vtilde[:, idxTilde], 1e-07, 1e-12)
+    assert_allclose(abs(V[:, idxTrue]), abs(Vtilde[:, idxTilde]), 1e-07, 1e-12)
 
 
 def test_torus_unforced(data_torus_unforced):
