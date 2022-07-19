@@ -189,3 +189,18 @@ class Polynomial(PolynomialFeatures):
         return chain.from_iterable(
             comb(range(n_features), i) for i in range(start, degree + 1)
         )
+
+    @property
+    def powers_(self):
+        """Exponent for each of the inputs in the output."""
+        check_is_fitted(self)
+
+        combinations = self._combinations(
+            n_features=self.n_features_in_,
+            degree=self.degree,
+            interaction_only=self.interaction_only,
+            include_bias=self.include_bias,
+        )
+        return np.vstack(
+            [np.bincount(c, minlength=self.n_features_in_) for c in combinations]
+        )
