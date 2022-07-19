@@ -11,7 +11,8 @@ from setuptools_scm.version import tags_to_versions
 
 warnings.warn(
     DeprecationWarning(
-        "This plugin is obsolete. setuptools_scm >= 7.0.0 supports Git archives by itself."
+        "This plugin is obsolete. setuptools_scm >= 7.0.0"
+        "supports Git archives by itself."
     )
 )
 
