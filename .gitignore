@@ -8,6 +8,9 @@ docs/examples
 # virtual environment
 venv
 
+# eggs
+.eggs
+
 **/*cache*
 
 .coverage
