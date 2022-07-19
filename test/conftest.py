@@ -47,7 +47,7 @@ def data_1D_cosine():
 
 @pytest.fixture
 def data_custom_observables():
-    observables = [lambda x: x, lambda x: x ** 2, lambda x: 0 * x, lambda x, y: x * y]
+    observables = [lambda x: x, lambda x: x**2, lambda x: 0 * x, lambda x, y: x * y]
     observable_names = [
         lambda s: str(s),
         lambda s: f"{s}^2",
@@ -60,7 +60,7 @@ def data_custom_observables():
 
 @pytest.fixture
 def data_realistic_custom_observables():
-    observables = [lambda x: x ** 2, lambda x, y: x * y]
+    observables = [lambda x: x**2, lambda x, y: x * y]
     observable_names = [
         lambda s: f"{s}^2",
         lambda s, t: f"{s} {t}",
@@ -181,7 +181,7 @@ def data_torus_unforced():
     np.random.seed(1)  # Seed random generator for reproducibility
     torus = torus_dynamics()
     torus.advance(n_samples, dt)
-    xhat_nonzero = torus.Xhat[torus.mask.reshape(torus.n_states ** 2) == 1, :]
+    xhat_nonzero = torus.Xhat[torus.mask.reshape(torus.n_states**2) == 1, :]
 
     return xhat_nonzero, torus.frequencies, dt
 
@@ -195,7 +195,7 @@ def data_torus_ct():
     np.random.seed(1)  # for reproducibility
     torus = torus_dynamics()
     torus.advance(n_samples, dt)
-    xhat = torus.Xhat[torus.mask.reshape(torus.n_states ** 2) == 1, :]
+    xhat = torus.Xhat[torus.mask.reshape(torus.n_states**2) == 1, :]
 
     return xhat
 
@@ -209,6 +209,6 @@ def data_torus_dt():
     np.random.seed(1)  # for reproducibility
     torus = torus_dynamics()
     torus.advance_discrete_time(n_samples, dt)
-    xhat = torus.Xhat[torus.mask.reshape(torus.n_states ** 2) == 1, :]
+    xhat = torus.Xhat[torus.mask.reshape(torus.n_states**2) == 1, :]
 
     return xhat

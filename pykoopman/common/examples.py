@@ -179,9 +179,9 @@ class torus_dynamics:
 
         # Initilization
         # In physical space
-        self.X = np.ndarray((self.n_states ** 2, self.n_samples))
+        self.X = np.ndarray((self.n_states**2, self.n_samples))
         # In Fourier space
-        self.Xhat = np.ndarray((self.n_states ** 2, self.n_samples), complex)
+        self.Xhat = np.ndarray((self.n_states**2, self.n_samples), complex)
         self.time_vector = np.zeros(self.n_samples)
 
         # if self.noisemag != 0:
@@ -199,18 +199,18 @@ class torus_dynamics:
                 )
 
             if self.noisemag != 0:
-                self.XhatClean[:, step] = xhat.reshape(self.n_states ** 2)
+                self.XhatClean[:, step] = xhat.reshape(self.n_states**2)
                 xClean = np.real(np.fft.ifft2(xhat))
-                self.XClean[:, step] = xClean.reshape(self.n_states ** 2)
+                self.XClean[:, step] = xClean.reshape(self.n_states**2)
 
             # xRMS = np.sqrt(np.mean(xhat.reshape((self.n_states**2,1))**2))
             # xhat = xhat + self.noisemag*xRMS\
             #           *np.random.randn(xhat.shape[0],xhat.shape[1]) \
             #         + 1j*self.noisemag*xRMS \
             #         *np.random.randn(xhat.shape[0],xhat.shape[1])
-            self.Xhat[:, step] = xhat.reshape(self.n_states ** 2)
+            self.Xhat[:, step] = xhat.reshape(self.n_states**2)
             x = np.real(np.fft.ifft2(xhat))
-            self.X[:, step] = x.reshape(self.n_states ** 2)
+            self.X[:, step] = x.reshape(self.n_states**2)
 
     def advance_discrete_time(self, n_samples, dt, u=None):
         print("Evolving discrete-time dynamics with or without control.")
@@ -241,18 +241,18 @@ class torus_dynamics:
 
         # Initilization
         # In physical space
-        self.X = np.ndarray((self.n_states ** 2, self.n_samples))
+        self.X = np.ndarray((self.n_states**2, self.n_samples))
         # In Fourier space
-        self.Xhat = np.ndarray((self.n_states ** 2, self.n_samples), complex)
+        self.Xhat = np.ndarray((self.n_states**2, self.n_samples), complex)
         self.time_vector = np.zeros(self.n_samples)
 
         # Set initial condition
         xhat0 = np.zeros((self.n_states, self.n_states), complex)
         for k in range(self.sparsity):
             xhat0[self.J[k, 0], self.J[k, 1]] = self.IC[k]
-        self.Xhat[:, 0] = xhat0.reshape(self.n_states ** 2)
+        self.Xhat[:, 0] = xhat0.reshape(self.n_states**2)
         x0 = np.real(np.fft.ifft2(xhat0))
-        self.X[:, 0] = x0.reshape(self.n_states ** 2)
+        self.X[:, 0] = x0.reshape(self.n_states**2)
 
         for step in range(1, self.n_samples, 1):
             t = step * self.dt
@@ -282,9 +282,9 @@ class torus_dynamics:
             #     + 1j * 2 * np.pi * self.frequencies[k]) * self.dt) \
             #     * xhat_prev[self.J[k,0], self.J[k,1]]
 
-            self.Xhat[:, step] = xhat.reshape(self.n_states ** 2)
+            self.Xhat[:, step] = xhat.reshape(self.n_states**2)
             x = np.real(np.fft.ifft2(xhat))
-            self.X[:, step] = x.reshape(self.n_states ** 2)
+            self.X[:, step] = x.reshape(self.n_states**2)
 
     def set_control_matrix_physical(self, B):
         if np.allclose(B.shape, np.array([self.n_states, self.n_states])) is False:
@@ -372,13 +372,13 @@ class torus_dynamics:
 
     @property
     def modes(self):
-        modes = np.zeros((self.n_states ** 2, self.sparsity))
+        modes = np.zeros((self.n_states**2, self.sparsity))
 
         for k in range(self.sparsity):
             mode_in_fourier = np.zeros((self.n_states, self.n_states))
             mode_in_fourier[self.J[k, 0], self.J[k, 1]] = 1
             modes[:, k] = np.real(
-                np.fft.ifft2(mode_in_fourier).reshape(self.n_states ** 2)
+                np.fft.ifft2(mode_in_fourier).reshape(self.n_states**2)
             )
 
         return modes

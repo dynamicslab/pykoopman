@@ -17,7 +17,7 @@ from pykoopman.observables import TimeDelay
 @pytest.fixture
 def data_small():
     t = linspace(0, 5, 10)
-    return stack((t, t ** 2), axis=1)
+    return stack((t, t**2), axis=1)
 
 
 @pytest.mark.parametrize(
@@ -81,7 +81,7 @@ def test_bad_polynomial_inputs():
 
 def test_bad_custom_observables_inputs():
     # One too few names
-    observables = [lambda x: x, lambda x: x ** 2, lambda x: 0 * x, lambda x, y: x * y]
+    observables = [lambda x: x, lambda x: x**2, lambda x: 0 * x, lambda x, y: x * y]
     observable_names = [lambda s: f"{s}^2", lambda: str(0), lambda s, t: f"{s} {t}"]
 
     with pytest.raises(ValueError):
@@ -91,11 +91,11 @@ def test_bad_custom_observables_inputs():
 def test_custom_observables_transform(data_small):
     x = data_small
 
-    observables = [lambda x: x ** 2]
+    observables = [lambda x: x**2]
     y = CustomObservables(observables).fit_transform(x)
 
     # Identity is automatically prepended to custom observables
-    assert_array_equal(y, hstack((x, x ** 2)))
+    assert_array_equal(y, hstack((x, x**2)))
 
 
 @pytest.mark.parametrize("delay, n_delays", [(3, 2), (1, 5)])
