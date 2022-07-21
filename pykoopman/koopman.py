@@ -162,8 +162,7 @@ class Koopman(BaseEstimator):
 
     def simulate(self, x0, u=None, n_steps=1):
         """
-        Simulate an initial state forward in time with the learned Koopman
-        model.
+        Simulate an initial state forward in time with the learned Koopman model.
 
         Parameters
         ----------
@@ -412,6 +411,8 @@ class Koopman(BaseEstimator):
         """
         check_is_fitted(self, "model")
         return self.model.steps[-1][1].modes_
+
+    # TODO: add property "amplititute" to get the lifted from a given x
 
     @property
     def eigenvalues(self):

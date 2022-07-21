@@ -137,11 +137,11 @@ class torus_dynamics:
         self.setup()
 
     def setup(self):
-        # Initialization
+        # Initialization in the Fourier space
         xhat = np.zeros((self.n_states, self.n_states), complex)
         # Index of nonzero frequency components
         self.J = np.zeros((self.sparsity, 2), dtype=int)
-        IC = np.zeros(self.sparsity)  # Initial condition
+        IC = np.zeros(self.sparsity)  # Initial condition, real number
         frequencies = np.zeros(self.sparsity)
         damping = np.zeros(self.sparsity)
 
@@ -263,6 +263,7 @@ class torus_dynamics:
             # xhat_prev = \
             # self.Xhat[:, step - 1].reshape(self.n_states, self.n_states)
 
+            # forced torus dynamics linearly evolve in the spectral space, sparsely
             xhat = np.array((self.n_states, self.n_states), complex)
             xhat = self.Xhat[:, step].reshape(self.n_states, self.n_states)
             xhat_prev = self.Xhat[:, step - 1].reshape(self.n_states, self.n_states)
@@ -308,10 +309,9 @@ class torus_dynamics:
             print("position was not a valid integer.")
 
         is_position_in_valid_domain = (position >= 0) & (position < self.n_states)
-        if any(is_position_in_valid_domain is False):
+        if all(is_position_in_valid_domain) is False:
             raise ValueError(
-                "Actuator position was not \
-                             a valid integer inside of domain."
+                "Actuator position was not a valid integer inside of domain."
             )
 
         # Control matrix in physical space (single point actuator)
