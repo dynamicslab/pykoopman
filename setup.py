@@ -6,13 +6,12 @@ name = "pykoopman"
 description = """Python package for computing data-driven approximations to
     the Koopman operator."""
 url = "https://github.com/dynamicslab/pykoopman"
-email = "eurika@uw.edu, bdesilva@uw.edu"
-author = "Eurika Kaiser, Brian de Silva"
-python = ">=3.6"
+email = "eurika@uw.edu, bdesilva@uw.edu, shawnpan@uw.edu"
+author = "Eurika Kaiser, Brian de Silva, Shaowu Pan"
+python = ">=3.7"
 license = "MIT"
 classifiers = [
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Development Status :: 4 - Beta",

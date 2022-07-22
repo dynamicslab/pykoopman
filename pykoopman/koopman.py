@@ -413,6 +413,10 @@ class Koopman(BaseEstimator):
         return self.model.steps[-1][1].modes_
 
     # TODO: add property "amplititute" to get the lifted from a given x
+    @property
+    def amplitudes(self):
+        check_is_fitted(self, "model")
+        return self.model.steps[-1][1].amplitudes
 
     @property
     def eigenvalues(self):
