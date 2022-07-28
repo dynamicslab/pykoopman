@@ -1,10 +1,11 @@
 from warnings import warn
 
-from numpy import identity
 from pydmd import DMDBase
 from sklearn.utils.validation import check_is_fitted
 
 from ._base import BaseRegressor
+
+# from numpy import identity
 
 
 class DMDRegressor(BaseRegressor):
@@ -45,12 +46,16 @@ class DMDRegressor(BaseRegressor):
         # note that pydmd only stores the low-rank `A' matrix, which makes
         # sense in high-dimensional system but we focus on low-dimensional,
         # but highly nonlinear system
-        self.coef_ = self.regressor.predict(identity(x.shape[1])).T
+        # self._coef_ = self.regressor.predict(identity(x.shape[1])).T
 
-        # Get Koopman modes, eigenvectors, eigenvalues manually at here
-        # self.modes_ = self.regressor.modes
+        # but in order to follow the guidelines of using pydmd as much as we can
+        # we should use the atilde from them. but remember to transpose
+        self._coef_ = self.regressor.atilde.T
+
+        # Get Koopman modes, eigenvectors, eigenvalues from pydmd
         self._amplitudes_ = self.regressor.amplitudes
         self._eigenvalues_ = self.regressor.eigs
+        self._modes_ = self.regressor.modes
         return self
 
     def predict(self, x):
@@ -70,11 +75,21 @@ class DMDRegressor(BaseRegressor):
         return self.regressor.predict(x.T).T
 
     @property
+    def coef_(self):
+        check_is_fitted(self, "_coef_")
+        return self._coef_
+
+    @property
     def eigenvalues_(self):
-        check_is_fitted(self, "coef_")
+        check_is_fitted(self, "_eigenvalues_")
         return self._eigenvalues_
 
     @property
     def amplitudes_(self):
-        check_is_fitted(self, "coef_")
+        check_is_fitted(self, "_amplitudes_")
         return self._amplitudes_
+
+    @property
+    def modes_(self):
+        check_is_fitted(self, "_modes_")
+        return self._modes_

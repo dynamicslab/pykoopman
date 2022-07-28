@@ -2,6 +2,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
+from pydmd import DMD
 from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
 
@@ -21,15 +22,16 @@ def test_fit(data_random):
 
 def test_predict_shape(data_random):
     x = data_random
-
-    model = Koopman().fit(x)
+    dmd = DMD(svd_rank=10)
+    model = Koopman(regressor=dmd).fit(x)
     assert x.shape == model.predict(x).shape
 
 
 def test_simulate_accuracy(data_2D_superposition):
     x = data_2D_superposition
 
-    model = Koopman().fit(x)
+    regressor = DMD(svd_rank=10)
+    model = Koopman(regressor=regressor).fit(x)
 
     n_steps = 10
     x_pred = model.simulate(x[0], n_steps=n_steps)
@@ -38,7 +40,8 @@ def test_simulate_accuracy(data_2D_superposition):
 
 def test_koopman_matrix_shape(data_random):
     x = data_random
-    model = Koopman().fit(x)
+    dmd = DMD(svd_rank=10)
+    model = Koopman(regressor=dmd).fit(x)
     assert model.koopman_matrix.shape[0] == model.n_output_features_
 
 
@@ -60,7 +63,8 @@ def test_if_fitted(data_random):
 
 def test_score_without_target(data_2D_superposition):
     x = data_2D_superposition
-    model = Koopman().fit(x)
+    dmd = DMD(svd_rank=10)
+    model = Koopman(regressor=dmd).fit(x)
 
     # Test without a target
     assert model.score(x) > 0.8
@@ -76,7 +80,8 @@ def test_score_with_target(data_2D_superposition):
 
 def test_score_complex_data(data_random_complex):
     x = data_random_complex
-    model = Koopman().fit(x)
+    dmd = DMD(svd_rank=10)
+    model = Koopman(regressor=dmd).fit(x)
 
     with pytest.raises(ValueError):
         model.score(x, cast_as_real=False)
@@ -135,7 +140,7 @@ def test_if_dmdc_model_is_accurate_with_known_controlmatrix(
     data_2D_linear_control_system,
 ):
     X, C, A, B = data_2D_linear_control_system
-    model = Koopman()
+    # model = Koopman()
 
     DMDc = regression.DMDc(svd_rank=3, control_matrix=B)
     model = Koopman(regressor=DMDc).fit(X, C)
@@ -147,7 +152,7 @@ def test_if_dmdc_model_is_accurate_with_unknown_controlmatrix(
     data_2D_linear_control_system,
 ):
     X, C, A, B = data_2D_linear_control_system
-    model = Koopman()
+    # model = Koopman()
 
     DMDc = regression.DMDc(svd_rank=3)
     model = Koopman(regressor=DMDc)
