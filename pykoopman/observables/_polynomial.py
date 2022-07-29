@@ -13,9 +13,10 @@ from sklearn.utils.validation import check_is_fitted
 from sklearn.utils.validation import FLOAT_DTYPES
 
 from ..common import check_array
+from ._base import BaseObservables
 
 
-class Polynomial(PolynomialFeatures):
+class Polynomial(PolynomialFeatures, BaseObservables):
     """Polynomial observables.
 
     This is essentially just :code:`sklearn.preprocessing.PolynomialFeatures`
@@ -65,6 +66,7 @@ class Polynomial(PolynomialFeatures):
         -------
         self : fit :class:`pykoopman.observables.Polynomial` instance
         """
+        self.n_consumed_samples = 0
         return super(Polynomial, self).fit(x.real, y)
 
     def transform(self, x):

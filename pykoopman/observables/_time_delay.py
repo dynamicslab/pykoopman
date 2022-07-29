@@ -170,10 +170,11 @@ class TimeDelay(BaseObservables):
             Output of inverse map applied to y.
         """
         check_is_fitted(self, "n_input_features_")
+        check_is_fitted(self, "n_output_features_")
         if y.shape[1] != self.n_output_features_:
             raise ValueError(
                 "Wrong number of input features."
-                f"Expected y.shape[1] = {self.n_out_features_}; "
+                f"Expected y.shape[1] = {self.n_output_features_}; "
                 f"instead y.shape[1] = {y.shape[1]}."
             )
 
