@@ -1,5 +1,5 @@
 derivative
 scikit-learn>=0.23
 numpy
-scipy
+scipy<1.9.0
 pydmd
