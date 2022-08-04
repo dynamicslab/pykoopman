@@ -165,7 +165,6 @@ class ConcatObservables(BaseObservables):
                 ]
             else:
                 concat_feature_names += obs.get_feature_names()[obs.n_input_features_ :]
-
         return concat_feature_names
 
     def inverse(self, y):
@@ -174,6 +173,8 @@ class ConcatObservables(BaseObservables):
         """
         check_is_fitted(self, "n_consumed_samples")
         obs1 = self.observables_list_[0]
+
+        # todo: another if-else for inverse from fitted B. this is necessary for KDMD
 
         if getattr(obs1, "include_bias", False):
             return y[:, 1 : self.n_input_features_ + 1]

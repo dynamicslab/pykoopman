@@ -375,11 +375,12 @@ def test_feature_names(
     )
 
 
+# TODO: rewrite Polynomial to handle cplx. nums.  S: no we don't need this
 @pytest.mark.parametrize(
     "observables",
     [
         Identity(),
-        Polynomial(),  # TODO: rewrite Polynomial to handle cplx. nums.
+        Polynomial(),
         TimeDelay(),
         pytest.lazy_fixture("data_custom_observables"),
     ],

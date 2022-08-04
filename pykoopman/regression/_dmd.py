@@ -7,6 +7,10 @@ from ._base import BaseRegressor
 
 # from numpy import identity
 
+# todo: can't we just call DMD in PyKoopman, which is actually calling DMD
+# from pydmd? -- No. we want that explicit call so we can use other dmd
+# from pydmd without implementing on our own.
+
 
 class DMDRegressor(BaseRegressor):
     """
