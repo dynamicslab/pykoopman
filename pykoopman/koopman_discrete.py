@@ -32,11 +32,11 @@ class Koopman:
             dt = self.dt_default
 
         x = validate_input(x, dt)
-        if x_dot is None:
-            x_dot = x[1:]
+        if x_shift is None:
+            x_shift = x[1:]
             x = x[:-1]
         else:
-            x_dot = validate_input(x_dot, dt)
+            x_shift = validate_input(x_shift, dt)
 
         if isinstance(self.regressor, DMDBase):
             regressor = DMDRegressor(self.regressor)
@@ -50,7 +50,7 @@ class Koopman:
         self.model = Pipeline(steps)
 
         # TODO: make this solve the correct problem
-        self.model.fit(x, x_dot)
+        self.model.fit(x, x_shift)
 
         self.n_input_features_ = self.model.steps[0][1].n_input_features_
         self.n_output_features_ = self.model.steps[0][1].n_output_features_
