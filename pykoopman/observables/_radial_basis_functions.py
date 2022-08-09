@@ -67,6 +67,9 @@ class RadialBasisFunction(BaseObservables):
     polyharmonic_coeff: float, optional (default 1.0)
         The polyharmonic coefficient for polyharmonic rbfs.
 
+    include_states: bool, optional (default True)
+        Includes the input coordinates as additional coordinates in the observable.
+
     Attributes
     ----------
     n_input_features_ : int
@@ -77,7 +80,7 @@ class RadialBasisFunction(BaseObservables):
 
     """
 
-    def __init__(self, rbf_type='gauss', n_centers=10, centers=None, kernel_width=1.0, polyharmonic_coeff=1.0):
+    def __init__(self, rbf_type='gauss', n_centers=10, centers=None, kernel_width=1.0, polyharmonic_coeff=1.0, include_states=True):
         super().__init__()
         if type(rbf_type) != str:
             raise TypeError("rbf_type must be a string")
@@ -91,6 +94,8 @@ class RadialBasisFunction(BaseObservables):
             raise ValueError("polyharmonic_coeff must be a nonnegative float")
         if rbf_type not in ['thinplate', 'gauss', 'invquad', 'invmultquad', 'polyharmonic']:
             raise ValueError("rbf_type not of available type")
+        if type(include_states) != bool:
+            raise TypeError("include_states must be a boolean")
         if centers is not None:
             if int(n_centers) not in centers.shape():
                 raise ValueError('n_centers is not equal to centers.shape[1]. centers must be of shape (n_input_features, n_centers). ')
@@ -99,6 +104,7 @@ class RadialBasisFunction(BaseObservables):
         self.centers = centers
         self.kernel_width = kernel_width
         self.polyharmonic_coeff = polyharmonic_coeff
+        self.include_states = include_states
 
     def fit(self, x, y=None):
         """
@@ -120,7 +126,10 @@ class RadialBasisFunction(BaseObservables):
 
         self.n_samples_ = n_samples
         self.n_input_features_ = n_features
-        self.n_output_features_ = n_features * 1 + self.n_centers
+        if self.include_states is True:
+            self.n_output_features_ = n_features * 1 + self.n_centers
+        elif self.include_states is False:
+            self.n_output_features_ = self.n_centers
 
         return self
 
@@ -239,11 +248,9 @@ class RadialBasisFunction(BaseObservables):
     def _rbf_lifting(self, x):
 
         y = empty(
-            (self.n_samples_, self.n_input_features_ + self.n_output_features_),
+            (self.n_samples_, self.n_output_features_),
             dtype=x.dtype,
         )
-
-        y[:, :self.n_input_features_] = x
 
         for index_of_center in range(self.n_output_features_):
             C = self.centers[:, index_of_center]
@@ -265,7 +272,11 @@ class RadialBasisFunction(BaseObservables):
                     # if none of the above cases match:
                     raise ValueError("provided rbf_type not available")
 
-            y[:, self.n_input_features_ + index_of_center] = y_
+            if self.include_states is True:
+                y[:, :self.n_input_features_] = x
+                y[:, self.n_input_features_ + index_of_center] = y_
+            elif self.include_states is False:
+                y = y_
 
         return y
 
