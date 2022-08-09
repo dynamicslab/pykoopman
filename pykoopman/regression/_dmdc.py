@@ -119,14 +119,6 @@ class DMDc(BaseRegressor):
         self: returns a fitted ``DMDc`` instance
         """
         self.n_samples_, self.n_input_features_ = x.shape
-        # if dt is None:
-        #     self.time_ = dict([ ('tstart', 0),
-        #                         ('tend', self.n_samples_ - 1),
-        #                         ('dt', 1)])
-        # else:
-        #     self.time_ = dict([('tstart', 0),
-        #                        ('tend', dt*(self.n_samples_ - 1)),
-        #                        ('dt', dt)])
 
         if y is None:
             X1 = x[:-1, :]
