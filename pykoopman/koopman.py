@@ -11,11 +11,13 @@ from sklearn.base import BaseEstimator
 from sklearn.metrics import r2_score
 from sklearn.pipeline import Pipeline
 from sklearn.utils.validation import check_is_fitted
+# from sklearn.compose import TransformedTargetRegressor
 
 from .common import validate_input
 from .observables import Identity
 from .observables import TimeDelay
 from .regression import BaseRegressor
+from .regression import EnsembleBaseRegressor
 from .regression import DMDc
 from .regression import DMDRegressor
 from .regression import EDMDc
@@ -118,19 +120,26 @@ class Koopman(BaseEstimator):
                 "Control input u was passed, but self.regressor is not DMDc or EDMDc"
             )
 
+        regressor = self.regressor
+        if y is not None:
+            regressor = EnsembleBaseRegressor(regressor=self.regressor,
+                                              func=self.observables.transform,
+                                              inverse_func=self.observables.inverse)
+
         steps = [
             ("observables", self.observables),
-            ("regressor", self.regressor),
+            ("regressor", regressor),
         ]
         self.model = Pipeline(steps)
 
         action = "ignore" if self.quiet else "default"
         with catch_warnings():
             filterwarnings(action, category=UserWarning)
-            if u is None:
+            if u is None and y is None:
                 self.model.fit(x)
             else:
                 self.model.fit(x, y, regressor__u=u)
+                self.model.steps[1] = (self.model.steps[1][0], self.model.steps[1][1].regressor_)
 
         self.n_input_features_ = self.model.steps[0][1].n_input_features_
         self.n_output_features_ = self.model.steps[0][1].n_output_features_
@@ -408,7 +417,7 @@ class Koopman(BaseEstimator):
     @property
     def projection_matrix(self):
         """
-        The control matrix (or vector) B satisfies x' = Ax + Bu.
+        Projection matrix
         """
         check_is_fitted(self, "model")
         if isinstance(self.regressor, DMDBase):
@@ -421,7 +430,7 @@ class Koopman(BaseEstimator):
     @property
     def projection_matrix_output(self):
         """
-        The control matrix (or vector) B satisfies x' = Ax + Bu.
+        Output projection matrix
         """
         check_is_fitted(self, "model")
         if isinstance(self.regressor, DMDBase):
