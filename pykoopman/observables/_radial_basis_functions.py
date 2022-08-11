@@ -131,6 +131,31 @@ class RadialBasisFunction(BaseObservables):
         elif self.include_states is False:
             self.n_output_features_ = self.n_centers
 
+        x = validate_input(x)
+
+        if x.shape[1] != self.n_input_features_:
+            raise ValueError(
+                "Wrong number of input features. "
+                f"Expected x.shape[1] = {self.n_input_features_}; "
+                f"instead x.shape[1] = {x.shape[1]}."
+            )
+
+        if self.centers is None:
+            # Uniformly distributed centers
+            self.centers = random.rand(self.n_input_features_, self.n_centers)
+            # Change range to range of input features' range
+            for feat in range(self.n_input_features_):
+                xminmax = self._minmax(x[:, feat])
+
+                # Map to range [0,1]
+                self.centers[feat, :] = (self.centers[feat, :] - min(self.centers[feat, :])) / \
+                                        (max(self.centers[feat, :]) - min(self.centers[feat, :]))
+                # Scale to input features' range
+                self.centers[feat, :] = self.centers[feat, :] * (xminmax[1] - xminmax[0]) + xminmax[0]
+
+        xlift = self._rbf_lifting(x)
+        self.measurement_matrix_ = x.T @ np.linalg.pinv(xlift.T)
+
         return self
 
     def transform(self, x):
@@ -149,7 +174,7 @@ class RadialBasisFunction(BaseObservables):
         y: array-like, shape (n_samples, n_output_features)
             Transformed data.
         """
-        check_is_fitted(self, "n_input_features_")
+        check_is_fitted(self, ["n_input_features_", "centers"])
         x = validate_input(x)
 
         if x.shape[1] != self.n_input_features_:
@@ -159,30 +184,15 @@ class RadialBasisFunction(BaseObservables):
                 f"instead x.shape[1] = {x.shape[1]}."
             )
 
-        xminmax = self._minmax(x)
-
-        if self.centers is None:
-            # Uniformly distributed centers
-            self.centers = random.rand(self.n_input_features_, self.n_centers)
-            # Change range to range of input features' range
-            for feat in range(self.n_input_features_):
-                # Map to range [0,1]
-                self.centers[feat, :] = (self.centers[feat, :] - min(self.centers[feat, :])) / \
-                                       (max(self.centers[feat, :]) - min(self.centers[feat, :]))
-                # Scale to input features' range
-                self.centers[feat, :] = self.centers[feat, :] * (xminmax[1] - xminmax[0]) + xminmax[0]
-
         y = self._rbf_lifting(x)
-
         return y
 
     def inverse(self, y):
         """
-        TODO
-        Invert the transformation.
+        Invert the transformation using the fitted measurement matrix.
 
         This function satisfies
-        :code:`self.inverse(self.transform(x)) == x[self._n_consumed_samples:]`
+        :code:`self.inverse(self.transform(x)) ~= x[self._n_consumed_samples:]`
 
         Parameters
         ----------
@@ -195,7 +205,7 @@ class RadialBasisFunction(BaseObservables):
         x: array-like, shape (n_samples, n_input_features)
             Output of inverse map applied to y.
         """
-        check_is_fitted(self, "n_input_features_")
+        check_is_fitted(self, ["n_input_features_", "measurement_matrix_"])
         if y.shape[1] != self.n_output_features_:
             raise ValueError(
                 "Wrong number of input features."
@@ -203,9 +213,7 @@ class RadialBasisFunction(BaseObservables):
                 f"instead y.shape[1] = {y.shape[1]}."
             )
 
-        # The first n_input_features_ columns correspond to the un-delayed
-        # measurements
-        return y[:, : self.n_input_features_]
+        return y @ self.measurement_matrix_.T
 
     def get_feature_names(self, input_features=None):
         """
@@ -246,15 +254,20 @@ class RadialBasisFunction(BaseObservables):
         return output_features
 
     def _rbf_lifting(self, x):
-
+        n_samples = x.shape[0]
         y = empty(
-            (self.n_samples_, self.n_output_features_),
+            (n_samples, self.n_output_features_),
             dtype=x.dtype,
         )
 
-        for index_of_center in range(self.n_output_features_):
+        y_index = 0
+        if self.include_states is True:
+            y[:, :self.n_input_features_] = x
+            y_index = self.n_input_features_
+
+        for index_of_center in range(self.n_centers):
             C = self.centers[:, index_of_center]
-            r_squared = (x.transpose() - C).transpose().square().sum(axis=0)
+            r_squared = np.sum((x-C[np.newaxis,:])**2, axis=1)  #(x.transpose() - C).transpose().square().sum(axis=0)
 
             match self.rbf_type:
                 case 'thinplate':
@@ -272,11 +285,7 @@ class RadialBasisFunction(BaseObservables):
                     # if none of the above cases match:
                     raise ValueError("provided rbf_type not available")
 
-            if self.include_states is True:
-                y[:, :self.n_input_features_] = x
-                y[:, self.n_input_features_ + index_of_center] = y_
-            elif self.include_states is False:
-                y = y_
+            y[:, y_index + index_of_center] = y_
 
         return y
 
