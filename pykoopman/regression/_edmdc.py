@@ -58,7 +58,7 @@ class EDMDc(BaseRegressor):
     def __init__(self):
         pass
 
-    def fit(self, x, u, y=None, dt=None):
+    def fit(self, x, y=None, u=None, dt=None):
         """
         Parameters
         ----------

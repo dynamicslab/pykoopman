@@ -77,8 +77,9 @@ class Koopman(BaseEstimator):
         self.regressor = regressor
         self.quiet = quiet
 
-    def fit(self, x, u=None, dt=1):
+    def fit(self, x, y=None, u=None, dt=1):
         #TODO: add time-derivative or time-shifted data y=None
+        #TODO: remove assumption of equispaced samples in time / consecutive samples
         """
         Fit the Koopman model by learning an approximate Koopman operator.
 
@@ -86,6 +87,11 @@ class Koopman(BaseEstimator):
         ----------
         x: numpy.ndarray, shape (n_samples, n_features)
             Measurement data to be fit. Each row should correspond to an example
+            and each column a feature. It is assumed that examples are
+            equi-spaced in time (i.e. a uniform timestep is assumed).
+
+        y: numpy.ndarray, shape (n_samples, n_features)
+            Target measurement data to be fit. Each row should correspond to an example
             and each column a feature. It is assumed that examples are
             equi-spaced in time (i.e. a uniform timestep is assumed).
 
@@ -104,7 +110,6 @@ class Koopman(BaseEstimator):
         self: returns a fit ``Koopman`` instance
         """
         x = validate_input(x)
-        # y = validate_input(y)
 
         if u is None:
             self.n_control_features_ = 0
@@ -125,7 +130,7 @@ class Koopman(BaseEstimator):
             if u is None:
                 self.model.fit(x)
             else:
-                self.model.fit(x, u)
+                self.model.fit(x, y, regressor__u=u)
 
         self.n_input_features_ = self.model.steps[0][1].n_input_features_
         self.n_output_features_ = self.model.steps[0][1].n_output_features_
