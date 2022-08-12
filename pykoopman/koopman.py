@@ -80,8 +80,8 @@ class Koopman(BaseEstimator):
         self.quiet = quiet
 
     def fit(self, x, y=None, u=None, dt=1):
-        #TODO: add time-derivative or time-shifted data y=None
-        #TODO: remove assumption of equispaced samples in time / consecutive samples
+        # TODO: add time-derivative or time-shifted data y=None
+        # TODO: remove assumption of equispaced samples in time / consecutive samples
         """
         Fit the Koopman model by learning an approximate Koopman operator.
 

@@ -32,20 +32,20 @@ class RadialBasisFunction(BaseObservables):
     See the following references for more information.
 
         Williams, Matthew O and Kevrekidis, Ioannis G and Rowley,
-		Clarence W
-		"A data-driven approximation of the {K}oopman operator:
-		extending dynamic mode decomposition."
+        Clarence W
+        "A data-driven approximation of the {K}oopman operator:
+        extending dynamic mode decomposition."
         Journal of Nonlinear Science 6 (2015): 1307-1346
 
         Williams, Matthew O and Rowley, Clarence W and Kevrekidis,
-		Ioannis G
-		"A Kernel Approach to Data-Driven {K}oopman Spectral Analysis."
+        Ioannis G
+        "A Kernel Approach to Data-Driven {K}oopman Spectral Analysis."
         Journal of Computational Dynamics 2.2 (2015): 247-265
 
         Korda, Milan and Mezic, Igor
         "Linear predictors for nonlinear dynamical systems:
-		Koopman operator meets model predictive control."
-		Automatica 93 (2018): 149-160
+        Koopman operator meets model predictive control."
+        Automatica 93 (2018): 149-160
 
     Parameters
     ----------
@@ -151,13 +151,13 @@ class RadialBasisFunction(BaseObservables):
                 xminmax = self._minmax(x[:, feat])
 
                 # Map to range [0,1]
-                self.centers[feat, :] = (self.centers[feat, :] -
-                                         min(self.centers[feat, :])) / \
-                                        (max(self.centers[feat, :]) -
-                                         min(self.centers[feat, :]))
+                self.centers[feat, :] = (self.centers[feat, :]
+                                         - min(self.centers[feat, :])) / \
+                                        (max(self.centers[feat, :])
+                                         - min(self.centers[feat, :]))
                 # Scale to input features' range
-                self.centers[feat, :] = self.centers[feat, :] * \
-                                        (xminmax[1] - xminmax[0]) + xminmax[0]
+                self.centers[feat, :] = self.centers[feat, :] \
+                    * (xminmax[1] - xminmax[0]) + xminmax[0]
 
         xlift = self._rbf_lifting(x)
         self.measurement_matrix_ = x.T @ np.linalg.pinv(xlift.T)
@@ -287,7 +287,7 @@ class RadialBasisFunction(BaseObservables):
                     y_ = np.reciprocal(np.sqrt(1 + self.kernel_width ** 2 * r_squared))
                 case 'polyharmonic':
                     y_ = r_squared ** (self.polyharmonic_coeff / 2) * \
-                         np.log(np.sqrt(r_squared))
+                        np.log(np.sqrt(r_squared))
                 case _:
                     # if none of the above cases match:
                     raise ValueError("provided rbf_type not available")

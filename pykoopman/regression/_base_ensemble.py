@@ -3,7 +3,8 @@ from sklearn.compose import TransformedTargetRegressor
 
 class EnsembleBaseRegressor(TransformedTargetRegressor):
     """
-    Wrapper class for PyKoopman regressors using ensemble or non-consecutive training data.
+    Wrapper class for PyKoopman regressors using ensemble or non-consecutive training
+    data.
 
     Parameters
     ----------
