@@ -257,7 +257,7 @@ def test_edmdc_vanderpol(data_vdp_edmdc):
 
     # Create Koopman model
     EDMDc = regression.EDMDc()
-    RBF = observables.RadialBasisFunction(rbf_type='gauss', n_centers=10, centers=None, kernel_width=1.0,
+    RBF = observables.RadialBasisFunction(rbf_type='thinplate', n_centers=10, centers=None, kernel_width=1.0,
                                              polyharmonic_coeff=1.0)
     model = Koopman(observables=RBF, regressor=EDMDc)
     model.fit(x=X.T, y=Y.T, u=U.T)
