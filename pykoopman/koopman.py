@@ -11,7 +11,6 @@ from sklearn.base import BaseEstimator
 from sklearn.metrics import r2_score
 from sklearn.pipeline import Pipeline
 from sklearn.utils.validation import check_is_fitted
-# from sklearn.compose import TransformedTargetRegressor
 
 from .common import validate_input
 from .observables import Identity
@@ -115,17 +114,20 @@ class Koopman(BaseEstimator):
 
         if u is None:
             self.n_control_features_ = 0
-        elif not isinstance(self.regressor, DMDc) and \
-                not isinstance(self.regressor, EDMDc):
+        elif not isinstance(self.regressor, DMDc) and not isinstance(
+            self.regressor, EDMDc
+        ):
             raise ValueError(
                 "Control input u was passed, but self.regressor is not DMDc or EDMDc"
             )
 
         regressor = self.regressor
         if y is not None:
-            regressor = EnsembleBaseRegressor(regressor=self.regressor,
-                                              func=self.observables.transform,
-                                              inverse_func=self.observables.inverse)
+            regressor = EnsembleBaseRegressor(
+                regressor=self.regressor,
+                func=self.observables.transform,
+                inverse_func=self.observables.inverse,
+            )
 
         steps = [
             ("observables", self.observables),
@@ -142,8 +144,10 @@ class Koopman(BaseEstimator):
                 self.model.fit(x, y, regressor__u=u)
 
             if isinstance(self.model.steps[1][1], EnsembleBaseRegressor):
-                self.model.steps[1] = (self.model.steps[1][0],
-                                       self.model.steps[1][1].regressor_)
+                self.model.steps[1] = (
+                    self.model.steps[1][0],
+                    self.model.steps[1][1].regressor_,
+                )
 
         self.n_input_features_ = self.model.steps[0][1].n_input_features_
         self.n_output_features_ = self.model.steps[0][1].n_output_features_
@@ -357,8 +361,9 @@ class Koopman(BaseEstimator):
                 )
             return self.model.predict(X=x)
         else:
-            if not isinstance(self.regressor, DMDc) and \
-                    not isinstance(self.regressor, EDMDc):
+            if not isinstance(self.regressor, DMDc) and not isinstance(
+                self.regressor, EDMDc
+            ):
                 raise ValueError(
                     "Control input u was passed, but self.regressor is not DMDc "
                     "or EDMDc"
@@ -386,12 +391,11 @@ class Koopman(BaseEstimator):
         check_is_fitted(self, "model")
         if isinstance(self.regressor, DMDBase):
             raise ValueError(
-                "this type of self.regressor has no "
-                "state_transition_matrix"
+                "this type of self.regressor has no state_transition_matrix"
             )
 
         mat = self.koopman_matrix
-        if hasattr(self.model.steps[-1][1], 'state_matrix_'):
+        if hasattr(self.model.steps[-1][1], "state_matrix_"):
             mat = self.model.steps[-1][1].state_matrix_
         return mat
 
@@ -402,10 +406,7 @@ class Koopman(BaseEstimator):
         """
         check_is_fitted(self, "model")
         if isinstance(self.regressor, DMDBase):
-            raise ValueError(
-                "this type of self.regressor has no "
-                "control_matrix"
-            )
+            raise ValueError("this type of self.regressor has no control_matrix")
         return self.model.steps[-1][1].control_matrix_
 
     def measurement_matrix(self):
@@ -414,10 +415,7 @@ class Koopman(BaseEstimator):
         """
         check_is_fitted(self, "model")
         if isinstance(self.regressor, DMDBase):
-            raise ValueError(
-                "this type of self.regressor has no "
-                "measurement_matrix"
-            )
+            raise ValueError("this type of self.regressor has no measurement_matrix")
         return self.model.steps[0][1].measurement_matrix_
 
     @property
@@ -427,10 +425,7 @@ class Koopman(BaseEstimator):
         """
         check_is_fitted(self, "model")
         if isinstance(self.regressor, DMDBase):
-            raise ValueError(
-                "this type of self.regressor has no "
-                "projection_matrix"
-            )
+            raise ValueError("this type of self.regressor has no projection_matrix")
         return self.model.steps[-1][1].projection_matrix_
 
     @property
@@ -441,8 +436,7 @@ class Koopman(BaseEstimator):
         check_is_fitted(self, "model")
         if isinstance(self.regressor, DMDBase):
             raise ValueError(
-                "this type of self.regressor has no "
-                "projection_matrix_output"
+                "this type of self.regressor has no projection_matrix_output"
             )
         return self.model.steps[-1][1].projection_matrix_output_
 
