@@ -103,7 +103,7 @@ class DMDc(BaseRegressor):
         self.svd_output_rank = svd_output_rank
         self.control_matrix_ = control_matrix
 
-    def fit(self, x, u, y=None, dt=None):
+    def fit(self, x, y=None, u=None, dt=None):
         """
         Parameters
         ----------

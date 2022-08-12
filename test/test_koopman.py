@@ -138,7 +138,7 @@ def test_if_dmdc_model_is_accurate_with_known_controlmatrix(
     model = Koopman()
 
     DMDc = regression.DMDc(svd_rank=3, control_matrix=B)
-    model = Koopman(regressor=DMDc).fit(X, C)
+    model = Koopman(regressor=DMDc).fit(X, u=C)
     Aest = model.state_transition_matrix
     assert_allclose(Aest, A, 1e-07, 1e-12)
 
@@ -151,7 +151,7 @@ def test_if_dmdc_model_is_accurate_with_unknown_controlmatrix(
 
     DMDc = regression.DMDc(svd_rank=3)
     model = Koopman(regressor=DMDc)
-    model.fit(X, C)
+    model.fit(X, u=C)
     Aest = model.state_transition_matrix
     Best = model.control_matrix
     assert_allclose(Aest, A, 1e-07, 1e-12)
@@ -162,7 +162,7 @@ def test_simulate_accuracy_dmdc(data_2D_linear_control_system):
     X, C, _, _ = data_2D_linear_control_system
 
     DMDc = regression.DMDc(svd_rank=3)
-    model = Koopman(regressor=DMDc).fit(X, C)
+    model = Koopman(regressor=DMDc).fit(X, u=C)
 
     n_steps = len(C)
     x_pred = model.simulate(X[0, :], C, n_steps=n_steps - 1)
@@ -179,7 +179,7 @@ def test_dmdc_for_highdim_system(data_drss):
 
     DMDc = regression.DMDc(svd_rank=7, svd_output_rank=5)
     model = Koopman(regressor=DMDc)
-    model.fit(Y, U)
+    model.fit(Y, u=U)
 
     # Check spectrum
     Aest = model.state_transition_matrix
