@@ -400,7 +400,7 @@ class torus_dynamics:
 def vdp_osc(t, x, u):  # Dynamics of Van der Pol oscillator
     y = np.zeros(x.shape)
     y[0, :] = 2*x[1, :]
-    y[1, :] = -0.8*x[0, :]  + 2*x[1, :] - 10*(x[0, :]**2)*x[1, :] + u
+    y[1, :] = -0.8*x[0, :] + 2*x[1, :] - 10*(x[0, :]**2)*x[1, :] + u
     return y
 
 
@@ -411,6 +411,7 @@ def rk4(t, x, u, _dt=0.01, func=vdp_osc):
     k3 = func(t, x + k2*_dt/2, u)
     k4 = func(t, x + k1*_dt, u)
     return x + (_dt/6) * (k1 + 2*k2 + 2*k3 + k4)
+
 
 def square_wave(step):
     return (-1.0)**(round(step/30.0))

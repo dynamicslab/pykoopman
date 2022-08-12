@@ -1,7 +1,6 @@
 """
 Radial basis function observables
 """
-from numpy import arange
 from numpy import empty
 from numpy import random
 import numpy as np
@@ -267,7 +266,7 @@ class RadialBasisFunction(BaseObservables):
 
         for index_of_center in range(self.n_centers):
             C = self.centers[:, index_of_center]
-            r_squared = np.sum((x-C[np.newaxis,:])**2, axis=1)  #(x.transpose() - C).transpose().square().sum(axis=0)
+            r_squared = np.sum((x - C[np.newaxis, :]) ** 2, axis=1)
 
             match self.rbf_type:
                 case 'thinplate':
