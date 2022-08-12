@@ -16,10 +16,10 @@ from .common import validate_input
 from .observables import Identity
 from .observables import TimeDelay
 from .regression import BaseRegressor
-from .regression import EnsembleBaseRegressor
 from .regression import DMDc
 from .regression import DMDRegressor
 from .regression import EDMDc
+from .regression import EnsembleBaseRegressor
 
 
 class Koopman(BaseEstimator):

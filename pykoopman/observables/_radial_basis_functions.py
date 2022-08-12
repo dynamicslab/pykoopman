@@ -1,9 +1,9 @@
 """
 Radial basis function observables
 """
+import numpy as np
 from numpy import empty
 from numpy import random
-import numpy as np
 from sklearn.utils.validation import check_is_fitted
 
 from ..common import validate_input

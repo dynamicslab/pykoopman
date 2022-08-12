@@ -6,8 +6,10 @@ from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
 
 from pykoopman import Koopman
-from pykoopman import regression, observables
-from pykoopman.common import drss, examples
+from pykoopman import observables
+from pykoopman import regression
+from pykoopman.common import drss
+from pykoopman.common import examples
 from pykoopman.observables import Identity
 from pykoopman.observables import Polynomial
 from pykoopman.observables import TimeDelay
