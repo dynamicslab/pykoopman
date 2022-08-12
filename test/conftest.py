@@ -212,3 +212,9 @@ def data_torus_dt():
     xhat = torus.Xhat[torus.mask.reshape(torus.n_states**2) == 1, :]
 
     return xhat
+
+
+@pytest.fixture
+def data_vdp_edmdc():
+    xpred = np.loadtxt('data_vdp_for_edmdc.txt', delimiter=',')
+    return xpred
