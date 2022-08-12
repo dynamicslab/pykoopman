@@ -79,7 +79,8 @@ class RadialBasisFunction(BaseObservables):
 
     """
 
-    def __init__(self, rbf_type='gauss', n_centers=10, centers=None, kernel_width=1.0, polyharmonic_coeff=1.0, include_states=True):
+    def __init__(self, rbf_type='gauss', n_centers=10, centers=None, kernel_width=1.0,
+                 polyharmonic_coeff=1.0, include_states=True):
         super().__init__()
         if type(rbf_type) != str:
             raise TypeError("rbf_type must be a string")
@@ -91,13 +92,16 @@ class RadialBasisFunction(BaseObservables):
             raise ValueError("kernel_width must be a nonnegative float")
         if polyharmonic_coeff < 0:
             raise ValueError("polyharmonic_coeff must be a nonnegative float")
-        if rbf_type not in ['thinplate', 'gauss', 'invquad', 'invmultquad', 'polyharmonic']:
+        if rbf_type not in ['thinplate', 'gauss', 'invquad', 'invmultquad',
+                            'polyharmonic']:
             raise ValueError("rbf_type not of available type")
         if type(include_states) != bool:
             raise TypeError("include_states must be a boolean")
         if centers is not None:
             if int(n_centers) not in centers.shape():
-                raise ValueError('n_centers is not equal to centers.shape[1]. centers must be of shape (n_input_features, n_centers). ')
+                raise ValueError('n_centers is not equal to centers.shape[1]. '
+                                 'centers must be of shape (n_input_features, '
+                                 'n_centers). ')
         self.rbf_type = rbf_type
         self.n_centers = int(n_centers)
         self.centers = centers
@@ -147,10 +151,13 @@ class RadialBasisFunction(BaseObservables):
                 xminmax = self._minmax(x[:, feat])
 
                 # Map to range [0,1]
-                self.centers[feat, :] = (self.centers[feat, :] - min(self.centers[feat, :])) / \
-                                        (max(self.centers[feat, :]) - min(self.centers[feat, :]))
+                self.centers[feat, :] = (self.centers[feat, :] -
+                                         min(self.centers[feat, :])) / \
+                                        (max(self.centers[feat, :]) -
+                                         min(self.centers[feat, :]))
                 # Scale to input features' range
-                self.centers[feat, :] = self.centers[feat, :] * (xminmax[1] - xminmax[0]) + xminmax[0]
+                self.centers[feat, :] = self.centers[feat, :] * \
+                                        (xminmax[1] - xminmax[0]) + xminmax[0]
 
         xlift = self._rbf_lifting(x)
         self.measurement_matrix_ = x.T @ np.linalg.pinv(xlift.T)
@@ -279,7 +286,8 @@ class RadialBasisFunction(BaseObservables):
                 case 'invmultquad':
                     y_ = np.reciprocal(np.sqrt(1 + self.kernel_width ** 2 * r_squared))
                 case 'polyharmonic':
-                    y_ = r_squared ** (self.polyharmonic_coeff / 2) * np.log(np.sqrt(r_squared))
+                    y_ = r_squared ** (self.polyharmonic_coeff / 2) * \
+                         np.log(np.sqrt(r_squared))
                 case _:
                     # if none of the above cases match:
                     raise ValueError("provided rbf_type not available")
