@@ -2,4 +2,4 @@ derivative
 scikit-learn>=0.23
 numpy
 scipy
-pydmd
+git+https://github.com/mathLab/PyDMD@c98ede0#egg=pydmd
