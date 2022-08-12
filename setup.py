@@ -39,7 +39,7 @@ setup(
     url=url,
     packages=find_packages(),
     classifiers=classifiers,
-    python_requires=">=3.6",
+    python_requires=">=3.10",
     install_requires=requirements,
     license=license,
 )
