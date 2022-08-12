@@ -229,10 +229,11 @@ def test_torus_discrete_time(data_torus_ct, data_torus_dt):
 
 # TODO: test torus mode id with dmdc
 
+
 def test_edmdc_vanderpol(data_vdp_edmdc):
     xpred_ref = data_vdp_edmdc  # Test data from pre-computed Koopman model
 
-    np.random.seed(42)   # For reproducibility
+    np.random.seed(42)  # For reproducibility
     n_states = 2
     n_inputs = 1
     dT = 0.01
@@ -254,18 +255,20 @@ def test_edmdc_vanderpol(data_vdp_edmdc):
     # Integrate
     for step in range(n_int):
         y = examples.rk4(0, x, u[step, :], dT, examples.vdp_osc)
-        X[:, (step) * n_traj:(step + 1) * n_traj] = x
-        Y[:, (step) * n_traj:(step + 1) * n_traj] = y
-        U[:, (step) * n_traj:(step + 1) * n_traj] = u[step, :]
+        X[:, (step) * n_traj : (step + 1) * n_traj] = x
+        Y[:, (step) * n_traj : (step + 1) * n_traj] = y
+        U[:, (step) * n_traj : (step + 1) * n_traj] = u[step, :]
         x = y
 
     # Create Koopman model
     EDMDc = regression.EDMDc()
-    RBF = observables.RadialBasisFunction(rbf_type='thinplate',
-                                          n_centers=10,
-                                          centers=None,
-                                          kernel_width=1.0,
-                                          polyharmonic_coeff=1.0)
+    RBF = observables.RadialBasisFunction(
+        rbf_type="thinplate",
+        n_centers=10,
+        centers=None,
+        kernel_width=1.0,
+        polyharmonic_coeff=1.0,
+    )
     model = Koopman(observables=RBF, regressor=EDMDc)
     model.fit(x=X.T, y=Y.T, u=U.T)
 
@@ -276,8 +279,7 @@ def test_edmdc_vanderpol(data_vdp_edmdc):
     # x = np.array([[-0.1], [-0.5]])
 
     # Prediction using Koopman model
-    Xkoop = model.simulate(x[np.newaxis, :], u[:, np.newaxis],
-                           n_steps=n_int - 1)
+    Xkoop = model.simulate(x[np.newaxis, :], u[:, np.newaxis], n_steps=n_int - 1)
 
     # Add initial condition to simulated data for comparison below
     Xkoop = np.vstack([x[np.newaxis, :], Xkoop])
