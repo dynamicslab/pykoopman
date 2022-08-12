@@ -115,7 +115,8 @@ class Koopman(BaseEstimator):
 
         if u is None:
             self.n_control_features_ = 0
-        elif not isinstance(self.regressor, DMDc) and not isinstance(self.regressor, EDMDc):
+        elif not isinstance(self.regressor, DMDc) and \
+                not isinstance(self.regressor, EDMDc):
             raise ValueError(
                 "Control input u was passed, but self.regressor is not DMDc or EDMDc"
             )
@@ -141,7 +142,8 @@ class Koopman(BaseEstimator):
                 self.model.fit(x, y, regressor__u=u)
 
             if isinstance(self.model.steps[1][1], EnsembleBaseRegressor):
-                self.model.steps[1] = (self.model.steps[1][0], self.model.steps[1][1].regressor_)
+                self.model.steps[1] = (self.model.steps[1][0],
+                                       self.model.steps[1][1].regressor_)
 
         self.n_input_features_ = self.model.steps[0][1].n_input_features_
         self.n_output_features_ = self.model.steps[0][1].n_output_features_
@@ -355,9 +357,11 @@ class Koopman(BaseEstimator):
                 )
             return self.model.predict(X=x)
         else:
-            if not isinstance(self.regressor, DMDc) and not isinstance(self.regressor, EDMDc):
+            if not isinstance(self.regressor, DMDc) and \
+                    not isinstance(self.regressor, EDMDc):
                 raise ValueError(
-                    "Control input u was passed, but self.regressor is not DMDc or EDMDc"
+                    "Control input u was passed, but self.regressor is not DMDc "
+                    "or EDMDc"
                 )
             return self.model.predict(X=x, u=u)
 
