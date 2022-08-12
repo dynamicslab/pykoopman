@@ -139,6 +139,8 @@ class Koopman(BaseEstimator):
                 self.model.fit(x)
             else:
                 self.model.fit(x, y, regressor__u=u)
+
+            if isinstance(self.model.steps[1][1], EnsembleBaseRegressor):
                 self.model.steps[1] = (self.model.steps[1][0], self.model.steps[1][1].regressor_)
 
         self.n_input_features_ = self.model.steps[0][1].n_input_features_
