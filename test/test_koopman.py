@@ -228,7 +228,7 @@ def test_torus_discrete_time(data_torus_ct, data_torus_dt):
 # TODO: test torus mode id with dmdc
 
 def test_edmdc_vanderpol(data_vdp_edmdc):
-    xpred_ref = data_vdp_edmdc # Test data from pre-computed Koopman model
+    xpred_ref = data_vdp_edmdc  # Test data from pre-computed Koopman model
 
     np.random.seed(42)   # For reproducibility
     n_states = 2
@@ -238,9 +238,11 @@ def test_edmdc_vanderpol(data_vdp_edmdc):
     # Create training data
     n_traj = 200  # Number of trajectories
     n_int = 1000  # Integration length
-    t = np.arange(0, n_int * dT, dT) # Time vector
-    u = 2 * np.random.random([n_int, n_traj]) - 1 # Uniform forcing in [-1, 1]
-    x = 2 * np.random.random([n_states, n_traj]) - 1 # Uniform distribution of initial conditions
+
+    # Uniform forcing in [-1, 1]
+    u = 2 * np.random.random([n_int, n_traj]) - 1
+    # Uniform distribution of initial conditions
+    x = 2 * np.random.random([n_states, n_traj]) - 1
 
     # Init
     X = np.zeros((n_states, n_int * n_traj))
@@ -257,20 +259,25 @@ def test_edmdc_vanderpol(data_vdp_edmdc):
 
     # Create Koopman model
     EDMDc = regression.EDMDc()
-    RBF = observables.RadialBasisFunction(rbf_type='thinplate', n_centers=10, centers=None, kernel_width=1.0,
-                                             polyharmonic_coeff=1.0)
+    RBF = observables.RadialBasisFunction(rbf_type='thinplate',
+                                          n_centers=10,
+                                          centers=None,
+                                          kernel_width=1.0,
+                                          polyharmonic_coeff=1.0)
     model = Koopman(observables=RBF, regressor=EDMDc)
     model.fit(x=X.T, y=Y.T, u=U.T)
 
     # Create test data
     n_int = 300  # Integration length
-    t = np.arange(0, n_int * dT, dT)
     u = np.array([-examples.square_wave(step + 1) for step in range(n_int)])
     x = np.array([0.5, 0.5])
     # x = np.array([[-0.1], [-0.5]])
 
     # Prediction using Koopman model
-    Xkoop = model.simulate(x[np.newaxis, :], u[:, np.newaxis], n_steps=n_int - 1)
-    Xkoop = np.vstack([x[np.newaxis, :], Xkoop])  # add initial condition to simulated data for comparison below
+    Xkoop = model.simulate(x[np.newaxis, :], u[:, np.newaxis],
+                           n_steps=n_int - 1)
+
+    # Add initial condition to simulated data for comparison below
+    Xkoop = np.vstack([x[np.newaxis, :], Xkoop])
 
     assert_allclose(Xkoop, xpred_ref)
