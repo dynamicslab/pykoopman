@@ -21,7 +21,7 @@ class BaseRegressor(BaseEstimator):
 
         self.regressor = regressor
 
-    def fit(self, x, y):
+    def fit(self, x, y=None):
         raise NotImplementedError
 
     def predict(self, x):
