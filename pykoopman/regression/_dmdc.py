@@ -226,9 +226,6 @@ class DMDc(BaseRegressor):
         self.modes_ = np.linalg.multi_dot(
             [X2.T, Vh.T * s ** (-1), U.T, self.eigenvectors_]
         )
-        # self.modes_ = np.dot(
-        #     X2.T, np.dot(Vh.T * (s ** (-1)), np.dot(U.T, self.eigenvectors_))
-        # )
 
     def predict(self, x, u):
         """
