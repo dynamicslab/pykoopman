@@ -68,7 +68,9 @@ class HAVOK(BaseRegressor):
 
         self.coef_ = self.state_matrix_
         self.projection_matrix_ = U
-        [self.eigenvalues_, self.eigenvectors_] = np.linalg.eig(self.state_matrix_)
+
+        [eigenvalues_, self.eigenvectors_] = np.linalg.eig(self.state_matrix_)
+        self.eigenvalues_ = np.exp(eigenvalues_ * dt)  # discrete time
 
     def predict(self, x):
         t = np.arange(0, self.dt_ * self.n_samples_, self.dt_)
