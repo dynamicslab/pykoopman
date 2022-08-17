@@ -1,6 +1,7 @@
 from warnings import warn
 
 import numpy as np
+from ..differentiation._derivative import Derivative
 from derivative import dxdt
 from optht import optht
 from scipy.signal import lsim
@@ -10,10 +11,12 @@ from ._base import BaseRegressor
 
 
 class HAVOK(BaseRegressor):
-    def __init__(self, svd_rank=None,
-                 derivative={'kind': 'finite_difference', 'k': 1}):
+    def __init__(self,
+                 svd_rank=None,
+                 differentiator=Derivative(kind='finite_difference', k=1)):
+
         self.svd_rank = svd_rank
-        self.derivative = derivative
+        self.differentiator = differentiator
 
     def fit(self, x, y=None, dt=None):
         """
@@ -51,23 +54,12 @@ class HAVOK(BaseRegressor):
             self.svd_rank = optht(x, sv=s, sigma=None)
 
         # calculate time derivative dxdt & normalize
-        dVh = np.zeros((self.svd_rank-1, self.n_samples_))
-        for i in range(self.svd_rank-1):
-            dVh[i, :] = dxdt(Vh[i, :],
-                             t,
-                             kind=self.derivative['kind'],
-                             k=self.derivative['k'])
-
+        dVh = self.differentiator(Vh[:self.svd_rank-1, :].T, t).T
 
         # regression on intrinsic variables v
-        Vh_norm = np.linalg.norm(Vh, axis=1)
-        for i in range(self.svd_rank):
-            Vh[i, :] = Vh[i, :] / Vh_norm[i]
         xi = np.zeros((self.svd_rank-1, self.svd_rank))
         for i in range(self.svd_rank-1):
             xi[i, :] = np.linalg.lstsq(Vh[:self.svd_rank, :].T, dVh[i, :], rcond=None)[0]
-        for i in range(self.svd_rank):
-            xi[:, i] = xi[:, i] / Vh_norm[i]
 
         self.state_matrix_ = xi[:, :self.svd_rank-1]
         self.control_matrix_ = xi[:, self.svd_rank-1]
