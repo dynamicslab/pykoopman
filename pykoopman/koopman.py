@@ -79,8 +79,6 @@ class Koopman(BaseEstimator):
         self.quiet = quiet
 
     def fit(self, x, y=None, u=None, dt=1):
-        # TODO: add time-derivative or time-shifted data y=None
-        # TODO: remove assumption of equispaced samples in time / consecutive samples
         """
         Fit the Koopman model by learning an approximate Koopman operator.
 
@@ -88,21 +86,22 @@ class Koopman(BaseEstimator):
         ----------
         x: numpy.ndarray, shape (n_samples, n_features)
             Measurement data to be fit. Each row should correspond to an example
-            and each column a feature. It is assumed that examples are
-            equi-spaced in time (i.e. a uniform timestep is assumed).
+            and each column a feature. If only x is provided, it is assumed that
+            examples are equi-spaced in time (i.e. a uniform timestep is assumed).
 
-        y: numpy.ndarray, shape (n_samples, n_features)
-            Target measurement data to be fit. Each row should correspond to an example
-            and each column a feature. It is assumed that examples are
-            equi-spaced in time (i.e. a uniform timestep is assumed).
+        y: numpy.ndarray, shape (n_samples, n_features), (default=None)
+            Target measurement data to be fit, i.e. it is assumed y = fun(x). Each row
+            should correspond to an example and each column a feature. The samples in
+            x and y are generally not required to be consecutive and equi-spaced.
 
-        u: numpy.ndarray, shape (n_samples, n_control_features)
+        u: numpy.ndarray, shape (n_samples, n_control_features), (default=None)
             Control/actuation/external parameter data. Each row should correspond
             to one sample and each column a control variable or feature.
             The control variable may be amplitude of an actuator or an external,
-            time-varying parameter. It is assumed that samples are equi-spaced
-            in time (i.e. a uniform timestep is assumed) and correspond to the
-            samples in x.
+            time-varying parameter. It is assumed that samples in u occur at the
+            time instances of the corresponding samples in x,
+            e.g. x(t+1) = fun(x(t), u(t)).
+
         dt: float, (default=1)
             Time step between samples
 
