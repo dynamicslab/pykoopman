@@ -2,7 +2,7 @@ from warnings import warn
 
 import numpy as np
 from ..differentiation._derivative import Derivative
-from derivative import dxdt
+from ..common import drop_nan_rows
 from optht import optht
 from scipy.signal import lsim
 from sklearn.utils.validation import check_is_fitted
@@ -54,12 +54,14 @@ class HAVOK(BaseRegressor):
             self.svd_rank = optht(x, sv=s, sigma=None)
 
         # calculate time derivative dxdt & normalize
-        dVh = self.differentiator(Vh[:self.svd_rank-1, :].T, t).T
+        dVh = self.differentiator(Vh[:self.svd_rank-1, :].T, t)
+        dVh, t, Vh = drop_nan_rows(dVh, t, Vh.T)  #rows
 
         # regression on intrinsic variables v
         xi = np.zeros((self.svd_rank-1, self.svd_rank))
         for i in range(self.svd_rank-1):
-            xi[i, :] = np.linalg.lstsq(Vh[:self.svd_rank, :].T, dVh[i, :], rcond=None)[0]
+            xi[i, :] = np.linalg.lstsq(Vh[:, :self.svd_rank], dVh[:, i],
+                                       rcond=None)[0]
 
         self.state_matrix_ = xi[:, :self.svd_rank-1]
         self.control_matrix_ = xi[:, self.svd_rank-1]
