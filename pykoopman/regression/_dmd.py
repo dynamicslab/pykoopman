@@ -22,7 +22,7 @@ class DMDRegressor(BaseRegressor):
             raise ValueError("regressor must be a subclass of DMDBase from pydmd.")
         super(DMDRegressor, self).__init__(regressor)
 
-    def fit(self, x, y=None):
+    def fit(self, x, y=None, dt=1):
         """
         Parameters
         ----------

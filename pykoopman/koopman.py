@@ -139,9 +139,9 @@ class Koopman(BaseEstimator):
         with catch_warnings():
             filterwarnings(action, category=UserWarning)
             if u is None and y is None:
-                self.model.fit(x)
+                self.model.fit(x, y, regressor__dt=dt)
             else:
-                self.model.fit(x, y, regressor__u=u)
+                self.model.fit(x, y, regressor__u=u, regressor__dt=dt)
 
             if isinstance(self.model.steps[1][1], EnsembleBaseRegressor):
                 self.model.steps[1] = (
