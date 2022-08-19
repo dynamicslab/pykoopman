@@ -15,6 +15,8 @@ from sklearn.utils.validation import check_is_fitted
 from .common import validate_input
 from .observables import Identity
 from .observables import TimeDelay
+from .observables import RadialBasisFunction
+from .observables import Polynomial
 from .regression import BaseRegressor
 from .regression import DMDc
 from .regression import DMDRegressor
@@ -411,10 +413,12 @@ class Koopman(BaseEstimator):
     def measurement_matrix(self):
         """
         The measurement matrix (or vector) C satisfies x = Cy
+        TODO: implement measurement matrices for other observable types,
+        then remove error
         """
         check_is_fitted(self, "model")
-        if isinstance(self.regressor, DMDBase):
-            raise ValueError("this type of self.regressor has no measurement_matrix")
+        if not isinstance(self.observables, RadialBasisFunction):
+            raise ValueError("this type of self.observable has no measurement_matrix")
         return self.model.steps[0][1].measurement_matrix_
 
     @property
