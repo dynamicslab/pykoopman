@@ -5,10 +5,12 @@ Put any datasets that are used by multiple unit test files here.
 """
 import numpy as np
 import pytest
+import scipy
 
 from pykoopman.common import advance_linear_system
 from pykoopman.common import drss
 from pykoopman.common import torus_dynamics
+from pykoopman.common import lorenz
 from pykoopman.observables import CustomObservables
 
 
@@ -212,3 +214,13 @@ def data_torus_dt():
     xhat = torus.Xhat[torus.mask.reshape(torus.n_states**2) == 1, :]
 
     return xhat
+
+
+@pytest.fixture
+def data_lorenz():
+    x0 = [-8, 8, 27]  # initial condition
+    dt = 0.001
+    t = np.linspace(dt, 200, 200000)
+    x = scipy.integrate.odeint(lorenz, x0, t, atol=1e-12, rtol=1e-12)
+
+    return t, x, dt
