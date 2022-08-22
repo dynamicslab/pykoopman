@@ -38,4 +38,4 @@ def test_havok_prediction(data_lorenz):
         x[: n_delays + 1, 0], t[n_delays:] - t[n_delays], model.regressor.forcing_signal
     )
 
-    assert_allclose(xpred[-1], -15.24601065)
+    assert_allclose(xpred[50], 3.54512034, atol=1e-5)
