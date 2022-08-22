@@ -4,7 +4,7 @@ import numpy as np
 from ..differentiation._derivative import Derivative
 from ..common import drop_nan_rows
 from optht import optht
-from scipy.signal import lsim
+from scipy.signal import lsim, lti
 from sklearn.utils.validation import check_is_fitted
 
 from ._base import BaseRegressor
@@ -25,13 +25,14 @@ class HAVOK(BaseRegressor):
         x: numpy ndarray, shape (n_samples, n_features)
             Measurement data to be fit.
 
-        u: numpy.ndarray, shape (n_samples, n_control_features), \
-                optional (default None)
-            Time series of external actuation/control.
+        y: not used
+
+        dt: scalar
+            Discrete time-step
 
         Returns
         -------
-        self: returns a fitted ``DMDc`` instance
+        self: returns a fitted ``HAVOK`` instance
         """
 
         if y is not None:
@@ -42,6 +43,7 @@ class HAVOK(BaseRegressor):
 
         self.dt_ = dt
         self.n_samples_, self.n_input_features_ = x.shape
+        self.n_control_features_ = 1
 
         # Create time vector
         t = np.arange(0, self.dt_ * self.n_samples_, self.dt_)
@@ -63,18 +65,45 @@ class HAVOK(BaseRegressor):
             xi[i, :] = np.linalg.lstsq(Vh[:, :self.svd_rank], dVh[:, i],
                                        rcond=None)[0]
 
+        self.forcing_signal = Vh[:, self.svd_rank-1]
         self.state_matrix_ = xi[:, :self.svd_rank-1]
         self.control_matrix_ = xi[:, self.svd_rank-1]
 
+        self.svals = s
+        self.measurement_matrix_ = U[:, :self.svd_rank-1]  @ np.diag(s[
+                                                                     :self.svd_rank-1])
+
         self.coef_ = self.state_matrix_
-        self.projection_matrix_ = U
+        self.projection_matrix_ = U[:, :self.svd_rank-1]
 
         [eigenvalues_, self.eigenvectors_] = np.linalg.eig(self.state_matrix_)
         self.eigenvalues_ = np.exp(eigenvalues_ * dt)  # discrete time
 
-    def predict(self, x):
-        t = np.arange(0, self.dt_ * self.n_samples_, self.dt_)
+    def predict(self, x, u, t):
+        """
+        Parameters
+        ----------
+        x: numpy ndarray, shape (n_samples, n_features)
+            Measurement data upon which to base prediction.
 
-        # lsim((A, B, C, D), U=u, T=t, X0=x0)
+        u: numpy.ndarray, shape (n_samples, n_control_features), \
+                optional (default None)
+            Time series of external actuation/control, which is sampled at time
+            instances in t.
 
-        pass
+        t: numpy.ndarray, shape (n_samples)
+            Time vector. Instances at which solution vector shall be provided.
+
+
+        Returns
+        -------
+        y: numpy ndarray, shape (n_samples, n_features)
+            Prediction of x at time instances provided in t.
+
+        """
+        y0 = np.linalg.inv(np.diag(self.svals[:self.svd_rank-1])) @ self.projection_matrix_.T @ x.T
+        sys = lti(self.state_matrix_, self.control_matrix_[:, np.newaxis],
+                         self.measurement_matrix_, np.zeros((self.n_input_features_,
+                                                             self.n_control_features_)))
+        tout, ypred, xpred = lsim(sys, U=u, T=t, X0=y0.T)
+        return ypred
