@@ -1,4 +1,5 @@
-from numpy import arange
+import numpy as np
+from numpy import arange, empty
 from pydmd import DMD
 from pydmd import DMDBase
 from sklearn.base import BaseEstimator
@@ -54,20 +55,30 @@ class KoopmanContinuous(Koopman):
         super().__init__(observables, regressor)
         self.differentiator = differentiator
 
-    def predict(self, x):
+    def predict(self, x, t=0, u=None):
+        """Predict using continuous-time Koopman model"""
         check_is_fitted(self, "model")
-        return self.observables.inverse(self._step(x))
 
-    def simulate(self, x, n_steps=1):
-        check_is_fitted(self, "model")
-        # TODO
-        # Could have an option to only return the end state and not all
-        # intermediate states to save memory.
-        output = [self.predict(x)]
-        for k in range(n_steps - 1):
-            output.append(self.predict(output[-1]))
+        if u is None:
+            ypred = self.model.predict(X=x, t=t)
+        else:
+            ypred = self.model.predict(X=x, u=u, t=t)
 
-    def _step(self, x):
-        # TODO:
+        output = []
+        for k in range(ypred.shape[0]):
+            output.append(self.observables.inverse(ypred[k][np.newaxis, :]))
+
+        return output
+
+    def simulate(self, x, t=0, u=None):
+        """Simulate continuous-time Koopman model"""
         check_is_fitted(self, "model")
-        return self.model.predict(X=x, u=None)
+
+        # output = [self.predict(x)]
+        # for k in range(n_steps - 1):
+        #     output.append(self.predict(output[-1]))
+        pass
+
+    def _step(self, x, u=None):
+        """For consistency kept."""
+        raise NotImplementedError("ContinuousKoopman does not have a step function.")
