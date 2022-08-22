@@ -13,5 +13,5 @@ __all__ = [
     "drss",
     "advance_linear_system",
     "torus_dynamics",
-    "lorenz"
+    "lorenz",
 ]

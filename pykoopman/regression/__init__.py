@@ -5,8 +5,4 @@ from ._dmdc import DMDc
 from ._edmdc import EDMDc
 from ._havok import HAVOK
 
-__all__ = ["DMDRegressor",
-           "DMDc",
-           "EDMDc",
-           "EnsembleBaseRegressor",
-           "HAVOK"]
+__all__ = ["DMDRegressor", "DMDc", "EDMDc", "EnsembleBaseRegressor", "HAVOK"]

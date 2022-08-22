@@ -35,11 +35,12 @@ class KoopmanContinuous(Koopman):
     TODO
     """
 
-    def __init__(self,
-                 observables=None,
-                 differentiator=Derivative(kind='finite_difference', k=1),
-                 regressor=None
-                 ):
+    def __init__(
+        self,
+        observables=None,
+        differentiator=Derivative(kind="finite_difference", k=1),
+        regressor=None,
+    ):
 
         super().__init__(observables, regressor)
         self.differentiator = differentiator
