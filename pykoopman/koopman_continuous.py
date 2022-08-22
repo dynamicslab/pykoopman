@@ -66,7 +66,7 @@ class KoopmanContinuous(Koopman):
 
         output = []
         for k in range(ypred.shape[0]):
-            output.append(self.observables.inverse(ypred[k][np.newaxis, :]))
+            output.append(np.squeeze(self.observables.inverse(ypred[k][np.newaxis, :])))
 
         return output
 

@@ -415,3 +415,11 @@ def rk4(t, x, u, _dt=0.01, func=vdp_osc):
 
 def square_wave(step):
     return (-1.0) ** (round(step / 30.0))
+
+
+def lorenz(x, t, sigma=10, beta=8/3, rho=28):
+    return [
+        sigma*(x[1]-x[0]),
+        x[0]*(rho-x[2])-x[1],
+        x[0]*x[1]-beta*x[2]
+    ]
