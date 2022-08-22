@@ -230,8 +230,7 @@ def test_torus_discrete_time(data_torus_ct, data_torus_dt):
 # TODO: test torus mode id with dmdc
 
 
-def test_edmdc_vanderpol(data_vdp_edmdc):
-    xpred_ref = data_vdp_edmdc  # Test data from pre-computed Koopman model
+def test_edmdc_vanderpol():
 
     np.random.seed(42)  # For reproducibility
     n_states = 2
@@ -284,4 +283,7 @@ def test_edmdc_vanderpol(data_vdp_edmdc):
     # Add initial condition to simulated data for comparison below
     Xkoop = np.vstack([x[np.newaxis, :], Xkoop])
 
-    assert_allclose(Xkoop, xpred_ref, 1e-07, 1e-9)
+    assert_allclose(Xkoop[-1, :],
+                    [-8.473305929876546738e-01, 6.199389628993866308e-02],
+                    1e-07, 1e-9)
+
