@@ -283,7 +283,6 @@ def test_edmdc_vanderpol():
     # Add initial condition to simulated data for comparison below
     Xkoop = np.vstack([x[np.newaxis, :], Xkoop])
 
-    assert_allclose(Xkoop[-1, :],
-                    [-8.473305929876546738e-01, 6.199389628993866308e-02],
-                    1e-07, 1e-9)
-
+    assert_allclose(
+        Xkoop[-1, :], [-8.473305929876546738e-01, 6.199389628993866308e-02], 1e-07, 1e-9
+    )

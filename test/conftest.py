@@ -9,8 +9,8 @@ import scipy
 
 from pykoopman.common import advance_linear_system
 from pykoopman.common import drss
-from pykoopman.common import torus_dynamics
 from pykoopman.common import lorenz
+from pykoopman.common import torus_dynamics
 from pykoopman.observables import CustomObservables
 
 

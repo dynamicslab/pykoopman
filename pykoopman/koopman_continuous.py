@@ -1,19 +1,8 @@
 import numpy as np
-from numpy import arange, empty
-from pydmd import DMD
-from pydmd import DMDBase
-from sklearn.base import BaseEstimator
-from sklearn.pipeline import Pipeline
 from sklearn.utils.validation import check_is_fitted
 
-from .common import drop_nan_rows
-from .common import validate_input
 from .differentiation import Derivative
-from .observables import Identity
-from .regression import BaseRegressor
-from .regression import DMDRegressor
 from .koopman import Koopman
-from .differentiation import Derivative
 
 
 class KoopmanContinuous(Koopman):

@@ -14,9 +14,8 @@ from sklearn.utils.validation import check_is_fitted
 
 from .common import validate_input
 from .observables import Identity
-from .observables import TimeDelay
 from .observables import RadialBasisFunction
-from .observables import Polynomial
+from .observables import TimeDelay
 from .regression import BaseRegressor
 from .regression import DMDc
 from .regression import DMDRegressor

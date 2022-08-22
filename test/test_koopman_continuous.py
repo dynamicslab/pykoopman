@@ -1,13 +1,12 @@
-import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 from pydmd import DMD
 from sklearn.utils.validation import check_is_fitted
 
 from pykoopman import KoopmanContinuous
-from pykoopman.differentiation import Derivative
 from pykoopman import observables
 from pykoopman import regression
+from pykoopman.differentiation import Derivative
 
 
 @pytest.mark.parametrize(
@@ -31,10 +30,12 @@ def test_havok_prediction(data_lorenz):
     n_delays = 99
     TDC = observables.TimeDelay(delay=1, n_delays=n_delays)
     HAVOK = regression.HAVOK(svd_rank=15)
-    Diff = Derivative(kind='finite_difference', k=2)
+    Diff = Derivative(kind="finite_difference", k=2)
     model = KoopmanContinuous(observables=TDC, differentiator=Diff, regressor=HAVOK)
     model.fit(x[:, 0], dt=dt)
 
-    xpred = model.predict(x[:n_delays + 1, 0], t[n_delays:] - t[n_delays], model.regressor.forcing_signal)
+    xpred = model.predict(
+        x[: n_delays + 1, 0], t[n_delays:] - t[n_delays], model.regressor.forcing_signal
+    )
 
     assert_allclose(xpred[-1], -15.24601065)

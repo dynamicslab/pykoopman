@@ -1,12 +1,13 @@
 from warnings import warn
 
 import numpy as np
-from ..differentiation._derivative import Derivative
-from ..common import drop_nan_rows
 from optht import optht
-from scipy.signal import lsim, lti
+from scipy.signal import lsim
+from scipy.signal import lti
 from sklearn.utils.validation import check_is_fitted
 
+from ..common import drop_nan_rows
+from ..differentiation._derivative import Derivative
 from ._base import BaseRegressor
 
 
@@ -56,25 +57,25 @@ class HAVOK(BaseRegressor):
             self.svd_rank = optht(x, sv=s, sigma=None)
 
         # calculate time derivative dxdt & normalize
-        dVh = self.differentiator(Vh[:self.svd_rank-1, :].T, t)
-        dVh, t, Vh = drop_nan_rows(dVh, t, Vh.T)  #rows
+        dVh = self.differentiator(Vh[:self.svd_rank - 1, :].T, t)
+        dVh, t, Vh = drop_nan_rows(dVh, t, Vh.T)
 
         # regression on intrinsic variables v
-        xi = np.zeros((self.svd_rank-1, self.svd_rank))
-        for i in range(self.svd_rank-1):
+        xi = np.zeros((self.svd_rank - 1, self.svd_rank))
+        for i in range(self.svd_rank - 1):
             xi[i, :] = np.linalg.lstsq(Vh[:, :self.svd_rank], dVh[:, i],
                                        rcond=None)[0]
 
-        self.forcing_signal = Vh[:, self.svd_rank-1]
-        self.state_matrix_ = xi[:, :self.svd_rank-1]
-        self.control_matrix_ = xi[:, self.svd_rank-1]
+        self.forcing_signal = Vh[:, self.svd_rank - 1]
+        self.state_matrix_ = xi[:, :self.svd_rank - 1]
+        self.control_matrix_ = xi[:, self.svd_rank - 1]
 
         self.svals = s
-        self.measurement_matrix_ = U[:, :self.svd_rank-1]  @ np.diag(s[
-                                                                     :self.svd_rank-1])
+        self.measurement_matrix_ = \
+            U[:, :self.svd_rank - 1] @ np.diag(s[:self.svd_rank - 1])
 
         self.coef_ = self.state_matrix_
-        self.projection_matrix_ = U[:, :self.svd_rank-1]
+        self.projection_matrix_ = U[:, :self.svd_rank - 1]
 
         [eigenvalues_, self.eigenvectors_] = np.linalg.eig(self.state_matrix_)
         self.eigenvalues_ = np.exp(eigenvalues_ * dt)  # discrete time
@@ -101,9 +102,15 @@ class HAVOK(BaseRegressor):
             Prediction of x at time instances provided in t.
 
         """
-        y0 = np.linalg.inv(np.diag(self.svals[:self.svd_rank-1])) @ self.projection_matrix_.T @ x.T
-        sys = lti(self.state_matrix_, self.control_matrix_[:, np.newaxis],
-                         self.measurement_matrix_, np.zeros((self.n_input_features_,
-                                                             self.n_control_features_)))
+        if t[0] != 0:
+            raise ValueError("the time vector must start at 0.")
+
+        check_is_fitted(self, "coef_")
+        y0 = (np.linalg.inv(np.diag(self.svals[:self.svd_rank - 1])) @
+              self.projection_matrix_.T @ x.T)
+        sys = lti(self.state_matrix_,
+                  self.control_matrix_[:, np.newaxis],
+                  self.measurement_matrix_,
+                  np.zeros((self.n_input_features_, self.n_control_features_)))
         tout, ypred, xpred = lsim(sys, U=u, T=t, X0=y0.T)
         return ypred
