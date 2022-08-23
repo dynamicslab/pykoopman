@@ -57,12 +57,9 @@ class HAVOK(BaseRegressor):
 
     def __init__(
         self,
-        regressor,
         svd_rank=None,
         differentiator=Derivative(kind="finite_difference", k=1),
     ):
-
-        super().__init__(regressor)
         self.svd_rank = svd_rank
         self.differentiator = differentiator
 
