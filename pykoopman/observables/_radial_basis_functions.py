@@ -237,7 +237,6 @@ class RadialBasisFunction(BaseObservables):
 
     def get_feature_names(self, input_features=None):
         """
-        TODO
         Get the names of the output features.
 
         Parameters
@@ -262,15 +261,11 @@ class RadialBasisFunction(BaseObservables):
                     f"({self.n_input_features_}) elements"
                 )
 
-        output_features = [f"{xi}(t)" for xi in input_features]
-        output_features.extend(
-            [
-                f"{xi}(t-{i * self.delay}dt)"
-                for i in range(1, self.n_delays + 1)
-                for xi in input_features
-            ]
-        )
-
+        output_features = []
+        if self.include_states is True:
+            output_features.extend([f"{xi}(t)" for xi in input_features])
+        output_features.extend([f"phi(x(t)-c{i})" for i in range(
+                self.n_centers)])
         return output_features
 
     def _rbf_lifting(self, x):
