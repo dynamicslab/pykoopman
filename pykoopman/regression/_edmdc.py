@@ -18,7 +18,7 @@ class EDMDc(BaseRegressor):
     and
     :math:`\\|X-CY\\|_F`,
     are minimized using least-squares regression and singular value
-    decomposition/
+    decomposition.
 
     See the following reference for more details:
 
@@ -49,10 +49,6 @@ class EDMDc(BaseRegressor):
     projection_matrix_output_ : array, shape (n_input_features_+n_control_features_,
                                               svd_output_rank)
         Projection matrix into low-dimensional subspace.
-
-     Examples
-    --------
-    TODO
     """
 
     def __init__(self):

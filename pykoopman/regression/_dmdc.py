@@ -185,13 +185,6 @@ class DMDc(BaseRegressor):
 
         # Compute Koopman modes, eigenvectors, eigenvalues
         [self.eigenvalues_, self.eigenvectors_] = np.linalg.eig(self.state_matrix_)
-
-        # self.modes_ = np.dot(X2.T,
-        #                      np.dot(Vr, np.dot(np.linalg.inv(Sr),
-        #   np.dot(U1.T, np.dot(Uhatr, self.eigenvectors_))),
-        #                             ),
-        #                      )
-        # Replace with multi_dot
         self.modes_ = np.linalg.multi_dot(
             [X2.T, Vr, np.linalg.inv(Sr), U1.T, Uhatr, self.eigenvectors_]
         )

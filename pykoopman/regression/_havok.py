@@ -12,10 +12,57 @@ from ._base import BaseRegressor
 
 
 class HAVOK(BaseRegressor):
+    """
+    Hankel Alternative View of Koopman (HAVOK) regressor.
+
+    Aims to determine the system matrices A,B
+    that satisfy d/dt v = Av + Bu, where v is the vector of the leading delay
+    coordinates and u is a low-energy delay coordinate acting as forcing.
+    A and B are the unknown system and control matrices, respectively.
+    The delay coordinates are obtained by computing the SVD from a Hankel matrix.
+
+    The objective function,
+    :math:`\\|dV-AV-BU\\|_F`,
+    is minimized using least-squares regression.
+
+    See the following reference for more details:
+
+        `Brunton, S.L., Brunton, B.W., Proctor, J.L., Kaiser, E. & Kutz, J.N.
+        "Chaos as an intermittently forced linear system."
+        Nature Communications, Vol. 8(19), 2017.
+        <https://www.nature.com/articles/s41467-017-00030-8>`_
+
+    Parameters
+    ----------
+
+    Attributed
+    ----------
+    coef_ : array, shape (n_input_features_, n_input_features_) or
+        (n_input_features_, n_input_features_ + n_control_features_)
+        Weight vectors of the regression problem. Corresponds to either [A] or [A,B]
+
+    state_matrix_ : array, shape (n_input_features_, n_input_features_)
+        Identified state transition matrix A of the underlying system.
+
+    control_matrix_ : array, shape (n_input_features_, n_control_features_)
+        Identified control matrix B of the underlying system.
+
+    projection_matrix_ : array, shape (n_input_features_+n_control_features_, svd_rank)
+        Projection matrix into low-dimensional subspace.
+
+    projection_matrix_output_ : array, shape (n_input_features_+n_control_features_,
+                                              svd_output_rank)
+        Projection matrix into low-dimensional subspace.
+    """
+
     def __init__(
-        self, svd_rank=None, differentiator=Derivative(kind="finite_difference", k=1)
+        self,
+        regressor,
+        svd_rank=None,
+        differentiator=Derivative(kind="finite_difference", k=1),
     ):
 
+        super().__init__(regressor)
         self.svd_rank = svd_rank
         self.differentiator = differentiator
 
@@ -76,6 +123,7 @@ class HAVOK(BaseRegressor):
 
         self.coef_ = self.state_matrix_
         self.projection_matrix_ = U[:, : self.svd_rank - 1]
+        self.projection_matrix_output_ = U[:, : self.svd_rank - 1]
 
         [eigenvalues_, self.eigenvectors_] = np.linalg.eig(self.state_matrix_)
         self.eigenvalues_ = np.exp(eigenvalues_ * dt)  # discrete time
@@ -94,6 +142,7 @@ class HAVOK(BaseRegressor):
 
         t: numpy.ndarray, shape (n_samples)
             Time vector. Instances at which solution vector shall be provided.
+            Must start at 0.
 
 
         Returns
