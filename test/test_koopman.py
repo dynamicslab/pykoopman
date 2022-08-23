@@ -286,3 +286,22 @@ def test_edmdc_vanderpol():
     assert_allclose(
         Xkoop[-1, :], [-8.473305929876546738e-01, 6.199389628993866308e-02], 1e-07, 1e-9
     )
+
+
+def test_accuracy_of_edmd_prediction(data_rev_dvdp):
+    np.random.seed(42)  # for reproducibility
+    dT, X0, Xtrain, Ytrain, Xtest = data_rev_dvdp
+
+    EDMD = regression.EDMD()
+    RBF = observables.RadialBasisFunction(rbf_type='thinplate', n_centers=20,
+                                          centers=None, kernel_width=1.0,
+                                          polyharmonic_coeff=1.0,
+                                          include_states=True)
+
+    model = Koopman(observables=RBF, regressor=EDMD)
+    model.fit(Xtrain.T, y=Ytrain.T)
+
+    Xkoop = model.simulate(Xtest[0, :][np.newaxis, :], n_steps=np.shape(Xtest)[0] - 1)
+    Xkoop = np.vstack([Xtest[0, :][np.newaxis, :], Xkoop])
+
+    assert_allclose(Xtest, Xkoop, atol=2e-2, rtol=1e-10)
