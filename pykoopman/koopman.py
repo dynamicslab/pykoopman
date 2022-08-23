@@ -138,7 +138,7 @@ class Koopman(BaseEstimator):
         action = "ignore" if self.quiet else "default"
         with catch_warnings():
             filterwarnings(action, category=UserWarning)
-            if u is None and y is None:
+            if u is None:
                 self.model.fit(x, y, regressor__dt=dt)
             else:
                 self.model.fit(x, y, regressor__u=u, regressor__dt=dt)
