@@ -48,7 +48,7 @@ class DMDRegressor(BaseRegressor):
         self.coef_ = self.regressor.predict(identity(x.shape[1])).T
 
         # Get Koopman modes, eigenvectors, eigenvalues manually at here
-        # self.modes_ = self.regressor.modes
+        self._modes_ = self.regressor.modes
         self._amplitudes_ = self.regressor.amplitudes
         self._eigenvalues_ = self.regressor.eigs
         return self
@@ -78,3 +78,8 @@ class DMDRegressor(BaseRegressor):
     def amplitudes_(self):
         check_is_fitted(self, "coef_")
         return self._amplitudes_
+
+    @property
+    def modes_(self):
+        check_is_fitted(self, "coef_")
+        return self._modes_
