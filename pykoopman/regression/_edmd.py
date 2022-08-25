@@ -1,4 +1,5 @@
 import numpy as np
+import scipy
 from sklearn.utils.validation import check_is_fitted
 
 from ._base import BaseRegressor
@@ -87,9 +88,10 @@ class EDMD(BaseRegressor):
         self.coef_ = M
 
         # Compute Koopman modes, eigenvectors, eigenvalues
-        [self.eigenvalues_, self.eigenvectors_] = np.linalg.eig(self.state_matrix_)
-        # TODO: modes = inverse_map.T @ left_eigenvectors
-        # self.modes_ =
+        [self.eigenvalues_, self.left_eigenvectors_, self.eigenvectors_] = \
+            scipy.linalg.eig(self.state_matrix_, left=True)
+        self.modes_ = X1 @ self.eigenvectors_
+        self.kef_ = X1 @ self.left_eigenvectors_
 
     def predict(self, x):
         """

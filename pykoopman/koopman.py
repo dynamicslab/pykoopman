@@ -484,4 +484,11 @@ class Koopman(BaseEstimator):
         check_is_fitted(self, "model")
         dt = self.time["dt"]
         return np.log(self.eigenvalues) / dt
-        # return self.model.steps[-1][1].eigenvalues_continuous_
+
+    @property
+    def eigenfunctions(self):
+        """
+        Approximate Koopman eigenfunctions
+        """
+        check_is_fitted(self, "model")
+        return self.model.steps[-1][1].kef_
