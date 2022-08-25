@@ -90,8 +90,11 @@ class EDMD(BaseRegressor):
         # Compute Koopman modes, eigenvectors, eigenvalues
         [self.eigenvalues_, self.left_eigenvectors_, self.eigenvectors_] = \
             scipy.linalg.eig(self.state_matrix_, left=True)
-        self.modes_ = X1 @ self.eigenvectors_
-        self.kef_ = X1 @ self.left_eigenvectors_
+        sort_idx = np.argsort(self.eigenvalues_)
+        sort_idx = sort_idx[::-1]
+        self.eigenvalues_ = self.eigenvalues_[sort_idx]
+        self.modes_ = X1 @ self.eigenvectors_[:, sort_idx]
+        self.kef_ = X1 @ self.left_eigenvectors_[:, sort_idx]
 
     def predict(self, x):
         """
