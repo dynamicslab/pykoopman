@@ -1,208 +1,117 @@
 """
 Random fourier features
+
 """
-from itertools import chain
-from itertools import combinations
-from itertools import combinations_with_replacement as combinations_w_r
-
 import numpy as np
-from scipy import sparse
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.preprocessing._csr_polynomial_expansion import _csr_polynomial_expansion
 from sklearn.utils.validation import check_is_fitted
-from sklearn.utils.validation import FLOAT_DTYPES
 
-from ..common import check_array
 from ._base import BaseObservables
 
 
-class Polynomial(PolynomialFeatures, BaseObservables):
-    """Polynomial observables.
+class RandomFourierFeatures(BaseObservables):
+    """Random Fourier Features observables.
 
-    This is essentially just :code:`sklearn.preprocessing.PolynomialFeatures`
-    with support for complex numbers.
+    Here we only consider the following kernel:
 
-    Parameters
-    ----------
-    degree : int, optional (default 2)
-        The degree of the polynomial features.
-    interaction_only : boolean, optional (default False)
-        If true, only interaction features are produced: features that are
-        products of at most ``degree`` *distinct* input features (so not
-        ``x[1] ** 2``, ``x[0] * x[2] ** 3``, etc.).
-    include_bias : boolean, optional (default True)
-        If True (default), then include a bias column, the feature in which
-        all polynomial powers are zero (i.e. a column of ones - acts as an
-        intercept term in a linear model).
-    order : str in {'C', 'F'}, optional (default 'C')
-        Order of output array in the dense case. 'F' order is faster to
-        compute, but may slow down subsequent estimators.
+        k(x,y) = exp(-gamma*||x-y||^2)
+
+    if one include the state:
+
+        k(x,y) = x^y + exp(-gamma*||x-y||^2)
+
+    Notation in the original paper RR2007 is used.
+        D: the number of terms in the monte carlo summation.
+
     """
 
-    def __init__(self, degree=2, interaction_only=False, include_bias=True, order="C"):
-        if degree == 0:
-            raise ValueError(
-                "degree must be at least 1, otherwise inverse cannot be computed"
-            )
-        super(Polynomial, self).__init__(
-            degree=degree,
-            interaction_only=interaction_only,
-            include_bias=include_bias,
-            order=order,
-        )
+    def __init__(self, include_state=True, gamma=1.0, D=100, random_state=None):
+        self.include_state = include_state
+        self.gamma = gamma
+        self.D = D
+        self.random_state = random_state
+        super(RandomFourierFeatures, self).__init__()
 
     def fit(self, x, y=None):
-        """
-        Compute number of output features.
+        np.random.seed(self.random_state)
 
-        Parameters
-        ----------
-        x : np.ndarray, shape (n_samples, n_features)
-            Measurement data.
+        self.n_input_features_ = x.shape[1]
+        # although we have double the output dim, the convergence
+        # rate is described in only self.n_components
+        self.n_output_features_ = 2 * self.D
 
-        y : array-like, optional (default None)
-            Dummy input.
-        Returns
-        -------
-        self : fit :class:`pykoopman.observables.Polynomial` instance
-        """
-        self.n_consumed_samples = 0
-        return super(Polynomial, self).fit(x.real, y)
+        if self.include_state:
+            self.n_output_features_ += self.n_input_features_
+
+        # 1. generate (n_feature, n_component) random w
+        self.w = np.sqrt(2.0 * self.gamma) * np.random.normal(
+            0, 1, [self.n_input_features_, self.D]
+        )
+
+        # 3. get the measurement_matrix to map back to state
+        if self.include_state:
+            self.measurement_matrix_ = np.zeros(
+                (self.n_output_features_, self.n_input_features_)
+            )
+            self.measurement_matrix_[
+                : self.n_input_features_, : self.n_input_features_
+            ] = np.eye(self.n_input_features_)
+        else:
+            # we have to transform the data x in order to find a matrix by fitting
+            # z = np.zeros((x.shape[0], self.n_output_features_))
+            # z[:,:x.shape[1]] = x
+            # z[:,x.shape[1]:] = self._rff_lifting(x)
+            z = self._rff_lifting(x)
+            self.measurement_matrix_ = np.linalg.lstsq(z, x)[0]
+        return self
 
     def transform(self, x):
-        """Transform data to polynomial features.
-
-        Parameters
-        ----------
-        x : array-like or CSR/CSC sparse matrix, shape (n_samples, n_features)
-            The data to transform, row by row.
-            Prefer CSR over CSC for sparse input (for speed), but CSC is
-            required if the degree is 4 or higher. If the degree is less than
-            4 and the input format is CSC, it will be converted to CSR, have
-            its polynomial features generated, then converted back to CSC.
-            If the degree is 2 or 3, the method described in "Leveraging
-            Sparsity to Speed Up Polynomial Feature Expansions of CSR Matrices
-            Using K-Simplex Numbers" by Andrew Nystrom and John Hughes is
-            used, which is much faster than the method used on CSC input. For
-            this reason, a CSC input will be converted to CSR, and the output
-            will be converted back to CSC prior to being returned, hence the
-            preference of CSR.
-
-        Returns
-        -------
-        xp : np.ndarray or CSR/CSC sparse matrix, shape (n_samples, n_output_features)
-            The matrix of features, where n_output_features is the number of polynomial
-            features generated from the combination of inputs.
-        """
         check_is_fitted(self, "n_input_features_")
 
-        x = check_array(x, order="F", dtype=FLOAT_DTYPES, accept_sparse=("csr", "csc"))
+        z = np.zeros((x.shape[0], self.n_output_features_))
+        z_rff = self._rff_lifting(x)
 
-        n_samples, n_features = x.shape
-
-        if n_features != self.n_input_features_:
-            raise ValueError("x shape does not match training shape")
-
-        if sparse.isspmatrix_csr(x):
-            if self.degree > 3:
-                return self.transform(x.tocsc()).tocsr()
-            to_stack = []
-            if self.include_bias:
-                to_stack.append(np.ones(shape=(n_samples, 1), dtype=x.dtype))
-            to_stack.append(x)
-            for deg in range(2, self.degree + 1):
-                xp_next = _csr_polynomial_expansion(
-                    x.data,
-                    x.indices,
-                    x.indptr,
-                    x.shape[1],
-                    self.interaction_only,
-                    deg,
-                )
-                if xp_next is None:
-                    break
-                to_stack.append(xp_next)
-            xp = sparse.hstack(to_stack, format="csr")
-        elif sparse.isspmatrix_csc(x) and self.degree < 4:
-            return self.transform(x.tocsr()).tocsc()
+        if self.include_state:
+            z[:, : x.shape[1]] = x
+            z[:, x.shape[1] :] = z_rff
         else:
-            combinations = self._combinations(
-                n_features,
-                self.degree,
-                self.interaction_only,
-                self.include_bias,
-            )
-            if sparse.isspmatrix(x):
-                columns = []
-                for comb in combinations:
-                    if comb:
-                        out_col = 1
-                        for col_idx in comb:
-                            out_col = x[:, col_idx].multiply(out_col)
-                        columns.append(out_col)
-                    else:
-                        bias = sparse.csc_matrix(np.ones((x.shape[0], 1)))
-                        columns.append(bias)
-                xp = sparse.hstack(columns, dtype=x.dtype).tocsc()
-            else:
-                xp = np.empty(
-                    (n_samples, self.n_output_features_),
-                    dtype=x.dtype,
-                    order=self.order,
-                )
-                for i, comb in enumerate(combinations):
-                    xp[:, i] = x[:, comb].prod(1)
-
-        return xp
+            z = z_rff
+        return z
 
     def inverse(self, y):
-        """
-        Invert the transformation.
-
-        This function satisfies
-        :code:`self.inverse(self.transform(x)) == x`
-
-        Parameters
-        ----------
-        y: numpy.ndarray, shape (n_samples, n_output_features)
-            Data to which to apply the inverse.
-            Must have the same number of features as the transformed data
-
-        Returns
-        -------
-        x: numpy.ndarray, shape (n_samples, n_input_features)
-            Output of inverse map applied to y.
-        """
         check_is_fitted(self, "n_output_features_")
         if y.shape[1] != self.n_output_features_:
             raise ValueError(
                 "y has the wrong number of features (columns)."
                 f"Expected {self.n_output_features_}, received {y.shape[1]}"
             )
-        if self.include_bias:
-            return y[:, 1 : self.n_input_features_ + 1]
+
+        return y @ self.measurement_matrix_
+
+    def get_feature_names(self, input_features=None):
+        check_is_fitted(self, "n_input_features_")
+        if input_features is None:
+            input_features = [f"x{i}" for i in range(self.n_input_features_)]
         else:
-            return y[:, : self.n_input_features_]
+            if len(input_features) != self.n_input_features_:
+                raise ValueError(
+                    "input_features must have n_input_features_ "
+                    f"({self.n_input_features_}) elements"
+                )
 
-    @staticmethod
-    def _combinations(n_features, degree, interaction_only, include_bias):
-        comb = combinations if interaction_only else combinations_w_r
-        start = int(not include_bias)
-        return chain.from_iterable(
-            comb(range(n_features), i) for i in range(start, degree + 1)
-        )
+        if self.include_state:
+            # very easy to make mistake... python pass list by reference OMG
+            output_features = input_features[:]
+        else:
+            output_features = []
+        output_features += [f"cos(w_{i}'x)/sqrt({self.D})" for i in range(self.D)] + [
+            f"sin(w_{i}'x)/sqrt({self.D})" for i in range(self.D)
+        ]
 
-    @property
-    def powers_(self):
-        """Exponent for each of the inputs in the output."""
-        check_is_fitted(self)
+        return output_features
 
-        combinations = self._combinations(
-            n_features=self.n_features_in_,
-            degree=self.degree,
-            interaction_only=self.interaction_only,
-            include_bias=self.include_bias,
-        )
-        return np.vstack(
-            [np.bincount(c, minlength=self.n_features_in_) for c in combinations]
-        )
+    def _rff_lifting(self, x):
+        # 2. get the feature vector z
+        xw = np.dot(x, self.w)
+        z_rff = np.hstack([np.cos(xw), np.sin(xw)])
+        z_rff *= 1.0 / np.sqrt(self.D)
+        return z_rff

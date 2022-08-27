@@ -58,6 +58,7 @@ class CustomObservables(BaseObservables):
             )
         self.observable_names = observable_names
         self.interaction_only = interaction_only
+        self.include_state = False
 
     def fit(self, x, y=None):
         """

@@ -74,6 +74,7 @@ class TimeDelay(BaseObservables):
         if n_delays < 0:
             raise ValueError("n_delays must be a nonnegative int")
 
+        self.include_state = True
         self.delay = int(delay)
         self.n_delays = int(n_delays)
         self._n_consumed_samples = self.delay * self.n_delays

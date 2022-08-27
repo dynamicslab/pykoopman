@@ -108,6 +108,10 @@ class ConcatObservables(BaseObservables):
     def __init__(self, observables_list_=None):
         super(ConcatObservables, self).__init__()
         self.observables_list_ = observables_list_
+        assert hasattr(
+            self.observables_list_[0], "include_state"
+        ), "first observable must have `include_state' attribute"
+        self.include_state = self.observables_list_[0].include_state
 
     def fit(self, X, y=None):
         # first one must call fit of every observable in the observer list
@@ -119,14 +123,31 @@ class ConcatObservables(BaseObservables):
 
         # total number of output features takes care of redundant identity features
         # for polynomial feature, we will remove the 1 as well if include_bias is true
-        self.n_output_features_ = self.observables_list_[0].n_output_features_ + sum(
-            [
-                obs.n_output_features_ - obs.n_input_features_ - 1
-                if getattr(obs, "include_bias", False)
-                else obs.n_output_features_ - obs.n_input_features_
-                for obs in self.observables_list_[1:]
-            ]
-        )
+
+        first_obs_output_features = self.observables_list_[0].n_output_features_
+        s = 0
+        for obs in self.observables_list_[1:]:
+            assert hasattr(
+                obs, "include_state"
+            ), "observable Must have `include_state' attribute"
+            if obs.include_state:
+                s += obs.n_output_features_ - obs.n_input_features_
+            else:
+                s += obs.n_output_features_
+            if getattr(obs, "include_bias", False):
+                s -= 1
+
+        self.n_output_features_ = first_obs_output_features + s
+        #         # self.include_state=True
+
+        # self.n_output_features_ = self.observables_list_[0].n_output_features_ + sum(
+        #     [
+        #         obs.n_output_features_ - obs.n_input_features_ - 1
+        #         if getattr(obs, "include_bias", False)
+        #         else obs.n_output_features_ - obs.n_input_features_
+        #         for obs in self.observables_list_[1:]
+        #     ]
+        # )
 
         # take care of consuming samples in time delay observables: \
         # we will look for the largest delay
@@ -145,10 +166,22 @@ class ConcatObservables(BaseObservables):
         check_is_fitted(self, "n_input_features_")
         num_samples_updated = X.shape[0] - self.n_consumed_samples
         y_list = [self.observables_list_[0].transform(X)[-num_samples_updated:, :]]
-        y_list += [
-            obs.transform(X)[-num_samples_updated:, obs.n_input_features_ :]
-            for obs in self.observables_list_[1:]
-        ]
+
+        # only include those features that are not state
+        y_rest_list = []
+        for obs in self.observables_list_[1:]:
+            if obs.include_state:
+                y_rest_list.append(
+                    obs.transform(X)[-num_samples_updated:, obs.n_input_features_ :]
+                )
+            else:
+                y_rest_list.append(obs.transform(X)[-num_samples_updated:, :])
+        y_list += y_rest_list
+
+        # y_list += [
+        #     obs.transform(X)[-num_samples_updated:, obs.n_input_features_ :]
+        #     for obs in self.observables_list_[1:]
+        # ]
         y = np.hstack(y_list)
         return y
 
@@ -172,10 +205,11 @@ class ConcatObservables(BaseObservables):
         Just get the first n_input_features_
         """
         check_is_fitted(self, "n_consumed_samples")
-        obs1 = self.observables_list_[0]
 
         # todo: another if-else for inverse from fitted B. this is necessary for KDMD
 
+        # if first observable has state, we just use it done.
+        obs1 = self.observables_list_[0]
         if getattr(obs1, "include_bias", False):
             return y[:, 1 : self.n_input_features_ + 1]
         else:

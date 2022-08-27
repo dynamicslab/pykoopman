@@ -50,6 +50,7 @@ class Polynomial(PolynomialFeatures, BaseObservables):
             include_bias=include_bias,
             order=order,
         )
+        self.include_state = True
 
     def fit(self, x, y=None):
         """

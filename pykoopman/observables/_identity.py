@@ -13,6 +13,7 @@ class Identity(BaseObservables):
 
     def __init__(self):
         super().__init__()
+        self.include_state = True
 
     def fit(self, x, y=None):
         """

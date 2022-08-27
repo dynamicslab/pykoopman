@@ -11,6 +11,7 @@ from sklearn.utils.validation import check_is_fitted
 from pykoopman.observables import CustomObservables
 from pykoopman.observables import Identity
 from pykoopman.observables import Polynomial
+from pykoopman.observables import RandomFourierFeatures
 from pykoopman.observables import TimeDelay
 
 
@@ -276,13 +277,18 @@ def test_time_delay_inverse_two_obs(observables_1, observables_2, data_random):
 )
 @pytest.mark.parametrize(
     "observables_2",
-    [TimeDelay(delay=2, n_delays=3), TimeDelay(delay=1, n_delays=6)],
+    [
+        TimeDelay(delay=2, n_delays=3),
+        TimeDelay(delay=1, n_delays=6),
+        RandomFourierFeatures(include_state=True, gamma=0.3, D=3),
+    ],
 )
 @pytest.mark.parametrize(
     "observables_3",
     [
         TimeDelay(delay=2, n_delays=3),
         TimeDelay(delay=1, n_delays=6) + TimeDelay(delay=3, n_delays=3),
+        RandomFourierFeatures(include_state=False, gamma=0.01, D=2),
     ],
 )
 def test_time_delay_inverse_three_obs(
