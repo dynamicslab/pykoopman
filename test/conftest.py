@@ -3,6 +3,8 @@ Shared pytest fixtures for unit tests.
 
 Put any datasets that are used by multiple unit test files here.
 """
+import os.path
+
 import numpy as np
 import pytest
 
@@ -10,6 +12,8 @@ from pykoopman.common import advance_linear_system
 from pykoopman.common import drss
 from pykoopman.common import torus_dynamics
 from pykoopman.observables import CustomObservables
+
+my_path = os.path.abspath(os.path.dirname(__file__))
 
 
 @pytest.fixture
@@ -216,6 +220,7 @@ def data_torus_dt():
 
 @pytest.fixture
 def data_vdp_edmdc():
-    xpred = np.loadtxt("./data_vdp_for_edmdc.txt", delimiter=",")
+    # path = os.path.join(my_path, "../data/test.csv")
+    xpred = np.loadtxt(os.path.join(my_path, "data_vdp_for_edmdc.txt"), delimiter=",")
     # xpred = np.loadtxt("./test/data_vdp_for_edmdc.txt", delimiter=",")
     return xpred
