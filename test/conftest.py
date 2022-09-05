@@ -216,5 +216,6 @@ def data_torus_dt():
 
 @pytest.fixture
 def data_vdp_edmdc():
-    xpred = np.loadtxt("./test/data_vdp_for_edmdc.txt", delimiter=",")
+    xpred = np.loadtxt("./data_vdp_for_edmdc.txt", delimiter=",")
+    # xpred = np.loadtxt("./test/data_vdp_for_edmdc.txt", delimiter=",")
     return xpred
