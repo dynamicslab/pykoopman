@@ -58,6 +58,7 @@ class CustomObservables(BaseObservables):
             )
         self.observable_names = observable_names
         self.interaction_only = interaction_only
+        self.include_state = False
 
     def fit(self, x, y=None):
         """
@@ -89,6 +90,7 @@ class CustomObservables(BaseObservables):
 
         self.n_input_features_ = n_features
         self.n_output_features_ = n_output_features
+        self.n_consumed_samples = 0
 
         if self.observable_names is None:
             self.observable_names = list(
@@ -117,6 +119,7 @@ class CustomObservables(BaseObservables):
             Transformed data (observables).
         """
         check_is_fitted(self, "n_input_features_")
+        check_is_fitted(self, "n_output_features_")
         x = validate_input(x)
 
         n_samples, n_features = x.shape
@@ -156,10 +159,11 @@ class CustomObservables(BaseObservables):
         """
         y = validate_input(y)
         check_is_fitted(self, "n_input_features_")
+        check_is_fitted(self, "n_output_features_")
         if y.shape[1] != self.n_output_features_:
             raise ValueError(
                 "Wrong number of input features."
-                f"Expected y.shape[1] = {self.n_out_features_}; "
+                f"Expected y.shape[1] = {self.n_output_features_}; "
                 f"instead y.shape[1] = {y.shape[1]}."
             )
         # self.observables[0] is the identity, so original features are

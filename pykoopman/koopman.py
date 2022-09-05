@@ -452,7 +452,7 @@ class Koopman(BaseEstimator):
     @property
     def amplitudes(self):
         check_is_fitted(self, "model")
-        return self.model.steps[-1][1].amplitudes
+        return self.model.steps[-1][1].amplitudes_
 
     @property
     def eigenvalues(self):
