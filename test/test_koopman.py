@@ -7,8 +7,10 @@ from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
 
 from pykoopman import Koopman
+from pykoopman import observables
 from pykoopman import regression
 from pykoopman.common import drss
+from pykoopman.common import examples
 from pykoopman.observables import Identity
 from pykoopman.observables import Polynomial
 from pykoopman.observables import TimeDelay
@@ -143,7 +145,7 @@ def test_if_dmdc_model_is_accurate_with_known_controlmatrix(
     # model = Koopman()
 
     DMDc = regression.DMDc(svd_rank=3, control_matrix=B)
-    model = Koopman(regressor=DMDc).fit(X, C)
+    model = Koopman(regressor=DMDc).fit(X, u=C)
     Aest = model.state_transition_matrix
     assert_allclose(Aest, A, 1e-07, 1e-12)
 
@@ -156,7 +158,7 @@ def test_if_dmdc_model_is_accurate_with_unknown_controlmatrix(
 
     DMDc = regression.DMDc(svd_rank=3)
     model = Koopman(regressor=DMDc)
-    model.fit(X, C)
+    model.fit(X, u=C)
     Aest = model.state_transition_matrix
     Best = model.control_matrix
     assert_allclose(Aest, A, 1e-07, 1e-12)
@@ -167,7 +169,7 @@ def test_simulate_accuracy_dmdc(data_2D_linear_control_system):
     X, C, _, _ = data_2D_linear_control_system
 
     DMDc = regression.DMDc(svd_rank=3)
-    model = Koopman(regressor=DMDc).fit(X, C)
+    model = Koopman(regressor=DMDc).fit(X, u=C)
 
     n_steps = len(C)
     x_pred = model.simulate(X[0, :], C, n_steps=n_steps - 1)
@@ -184,7 +186,7 @@ def test_dmdc_for_highdim_system(data_drss):
 
     DMDc = regression.DMDc(svd_rank=7, svd_output_rank=5)
     model = Koopman(regressor=DMDc)
-    model.fit(Y, U)
+    model.fit(Y, u=U)
 
     # Check spectrum
     Aest = model.state_transition_matrix
@@ -231,3 +233,60 @@ def test_torus_discrete_time(data_torus_ct, data_torus_dt):
 
 
 # TODO: test torus mode id with dmdc
+
+
+def test_edmdc_vanderpol(data_vdp_edmdc):
+    xpred_ref = data_vdp_edmdc  # Test data from pre-computed Koopman model
+
+    np.random.seed(42)  # For reproducibility
+    n_states = 2
+    n_inputs = 1
+    dT = 0.01
+
+    # Create training data
+    n_traj = 200  # Number of trajectories
+    n_int = 1000  # Integration length
+
+    # Uniform forcing in [-1, 1]
+    u = 2 * np.random.random([n_int, n_traj]) - 1
+    # Uniform distribution of initial conditions
+    x = 2 * np.random.random([n_states, n_traj]) - 1
+
+    # Init
+    X = np.zeros((n_states, n_int * n_traj))
+    Y = np.zeros((n_states, n_int * n_traj))
+    U = np.zeros((n_inputs, n_int * n_traj))
+
+    # Integrate
+    for step in range(n_int):
+        y = examples.rk4(0, x, u[step, :], dT, examples.vdp_osc)
+        X[:, (step) * n_traj : (step + 1) * n_traj] = x
+        Y[:, (step) * n_traj : (step + 1) * n_traj] = y
+        U[:, (step) * n_traj : (step + 1) * n_traj] = u[step, :]
+        x = y
+
+    # Create Koopman model
+    EDMDc = regression.EDMDc()
+    RBF = observables.RadialBasisFunction(
+        rbf_type="thinplate",
+        n_centers=10,
+        centers=None,
+        kernel_width=1.0,
+        polyharmonic_coeff=1.0,
+    )
+    model = Koopman(observables=RBF, regressor=EDMDc)
+    model.fit(x=X.T, y=Y.T, u=U.T)
+
+    # Create test data
+    n_int = 300  # Integration length
+    u = np.array([-examples.square_wave(step + 1) for step in range(n_int)])
+    x = np.array([0.5, 0.5])
+    # x = np.array([[-0.1], [-0.5]])
+
+    # Prediction using Koopman model
+    Xkoop = model.simulate(x[np.newaxis, :], u[:, np.newaxis], n_steps=n_int - 1)
+
+    # Add initial condition to simulated data for comparison below
+    Xkoop = np.vstack([x[np.newaxis, :], Xkoop])
+
+    assert_allclose(Xkoop, xpred_ref, 1e-07, 1e-9)

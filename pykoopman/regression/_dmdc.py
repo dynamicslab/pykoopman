@@ -105,7 +105,7 @@ class DMDc(BaseRegressor):
         self.svd_output_rank = svd_output_rank
         self.control_matrix_ = control_matrix
 
-    def fit(self, x, u, y=None, dt=None):
+    def fit(self, x, y=None, u=None, dt=None):
         """
         Parameters
         ----------
@@ -121,14 +121,6 @@ class DMDc(BaseRegressor):
         self: returns a fitted ``DMDc`` instance
         """
         self.n_samples_, self.n_input_features_ = x.shape
-        # if dt is None:
-        #     self.time_ = dict([ ('tstart', 0),
-        #                         ('tend', self.n_samples_ - 1),
-        #                         ('dt', 1)])
-        # else:
-        #     self.time_ = dict([('tstart', 0),
-        #                        ('tend', dt*(self.n_samples_ - 1)),
-        #                        ('dt', dt)])
 
         if y is None:
             X1 = x[:-1, :]
@@ -260,24 +252,3 @@ class DMDc(BaseRegressor):
         check_is_fitted(self, "coef_")
         y = np.dot(self.state_matrix_, x.T) + np.dot(self.control_matrix_, u.T)
         return y.T
-
-    # @property
-    # def frequencies_(self):
-    #     """
-    #     Oscillation frequencies of Koopman modes/eigenvectors
-    #     """
-    #     check_is_fitted(self, "coef_")
-    #     dt = self.time_['dt']
-    #     return np.imag(np.log(self.eigenvalues_)/dt)/(2*np.pi)
-
-    # @property
-    # def eigenvalues_continuous_(self):
-    #     """
-    #     Continuous-time Koopman eigenvalues obtained from spectral decomposition of
-    #     the Koopman matrix
-    #     """
-    #     check_is_fitted(self, "coef_")
-    #     dt = self.time_['dt']
-    #     return np.log(self.eigenvalues_) / dt
-
-    # TODO: function to set time information --> in Koopman, here not necessary

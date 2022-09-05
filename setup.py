@@ -8,7 +8,7 @@ description = """Python package for computing data-driven approximations to
 url = "https://github.com/dynamicslab/pykoopman"
 email = "eurika@uw.edu, bdesilva@uw.edu, shawnpan@uw.edu"
 author = "Eurika Kaiser, Brian de Silva, Shaowu Pan"
-python = ">=3.7"
+python = ">=3.10"
 license = "MIT"
 classifiers = [
     "Programming Language :: Python",
@@ -39,7 +39,7 @@ setup(
     url=url,
     packages=find_packages(),
     classifiers=classifiers,
-    python_requires=">=3.6",
+    python_requires=">=3.10",
     install_requires=requirements,
     license=license,
 )

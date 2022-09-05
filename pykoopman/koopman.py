@@ -18,6 +18,8 @@ from .observables import TimeDelay
 from .regression import BaseRegressor
 from .regression import DMDc
 from .regression import DMDRegressor
+from .regression import EDMDc
+from .regression import EnsembleBaseRegressor
 
 
 class Koopman(BaseEstimator):
@@ -76,7 +78,9 @@ class Koopman(BaseEstimator):
         self.regressor = regressor
         self.quiet = quiet
 
-    def fit(self, x, u=None, dt=1):
+    def fit(self, x, y=None, u=None, dt=1):
+        # TODO: add time-derivative or time-shifted data y=None
+        # TODO: remove assumption of equispaced samples in time / consecutive samples
         """
         Fit the Koopman model by learning an approximate Koopman operator.
 
@@ -84,6 +88,11 @@ class Koopman(BaseEstimator):
         ----------
         x: numpy.ndarray, shape (n_samples, n_features)
             Measurement data to be fit. Each row should correspond to an example
+            and each column a feature. It is assumed that examples are
+            equi-spaced in time (i.e. a uniform timestep is assumed).
+
+        y: numpy.ndarray, shape (n_samples, n_features)
+            Target measurement data to be fit. Each row should correspond to an example
             and each column a feature. It is assumed that examples are
             equi-spaced in time (i.e. a uniform timestep is assumed).
 
@@ -105,24 +114,40 @@ class Koopman(BaseEstimator):
 
         if u is None:
             self.n_control_features_ = 0
-        elif not isinstance(self.regressor, DMDc):
+        elif not isinstance(self.regressor, DMDc) and not isinstance(
+            self.regressor, EDMDc
+        ):
             raise ValueError(
-                "Control input u was passed, but self.regressor is not DMDc"
+                "Control input u was passed, but self.regressor is not DMDc or EDMDc"
+            )
+
+        regressor = self.regressor
+        if y is not None:
+            regressor = EnsembleBaseRegressor(
+                regressor=self.regressor,
+                func=self.observables.transform,
+                inverse_func=self.observables.inverse,
             )
 
         steps = [
             ("observables", self.observables),
-            ("regressor", self.regressor),
+            ("regressor", regressor),
         ]
         self.model = Pipeline(steps)
 
         action = "ignore" if self.quiet else "default"
         with catch_warnings():
             filterwarnings(action, category=UserWarning)
-            if u is None:
+            if u is None and y is None:
                 self.model.fit(x)
             else:
-                self.model.fit(x, u)
+                self.model.fit(x, y, regressor__u=u)
+
+            if isinstance(self.model.steps[1][1], EnsembleBaseRegressor):
+                self.model.steps[1] = (
+                    self.model.steps[1][0],
+                    self.model.steps[1][1].regressor_,
+                )
 
         self.n_input_features_ = self.model.steps[0][1].n_input_features_
         self.n_output_features_ = self.model.steps[0][1].n_output_features_
@@ -336,9 +361,12 @@ class Koopman(BaseEstimator):
                 )
             return self.model.predict(X=x)
         else:
-            if not isinstance(self.regressor, DMDc):
+            if not isinstance(self.regressor, DMDc) and not isinstance(
+                self.regressor, EDMDc
+            ):
                 raise ValueError(
-                    "Control input u was passed, but self.regressor is not DMDc"
+                    "Control input u was passed, but self.regressor is not DMDc "
+                    "or EDMDc"
                 )
             return self.model.predict(X=x, u=u)
 
@@ -355,52 +383,60 @@ class Koopman(BaseEstimator):
     @property
     def state_transition_matrix(self):
         """
-        The state transition matrix A satisfies x' = Ax + Bu.
+        The state transition matrix A satisfies y' = Ay or y' = Ay + Bu, respectively,
+        where y = g(x).
         # TODO: consider whether we want to match sklearn and have A and B satisfy
-        # x' = xA + uB instead
+        # y' = yA + uB instead
         """
         check_is_fitted(self, "model")
-        if not isinstance(self.regressor, DMDc):
+        if isinstance(self.regressor, DMDBase):
             raise ValueError(
-                "self.regressor is not DMDc, so object has no "
-                "state_transition_matrix"
+                "this type of self.regressor has no state_transition_matrix"
             )
-        return self.model.steps[-1][1].state_matrix_
+
+        mat = self.koopman_matrix
+        if hasattr(self.model.steps[-1][1], "state_matrix_"):
+            mat = self.model.steps[-1][1].state_matrix_
+        return mat
 
     @property
     def control_matrix(self):
         """
-        The control matrix (or vector) B satisfies x' = Ax + Bu.
+        The control matrix (or vector) B satisfies y' = Ay + Bu.
         """
         check_is_fitted(self, "model")
-        if not isinstance(self.regressor, DMDc):
-            raise ValueError(
-                "self.regressor is not DMDc, so object has no control_matrix"
-            )
+        if isinstance(self.regressor, DMDBase):
+            raise ValueError("this type of self.regressor has no control_matrix")
         return self.model.steps[-1][1].control_matrix_
+
+    def measurement_matrix(self):
+        """
+        The measurement matrix (or vector) C satisfies x = Cy
+        """
+        check_is_fitted(self, "model")
+        if isinstance(self.regressor, DMDBase):
+            raise ValueError("this type of self.regressor has no measurement_matrix")
+        return self.model.steps[0][1].measurement_matrix_
 
     @property
     def projection_matrix(self):
         """
-        The control matrix (or vector) B satisfies x' = Ax + Bu.
+        Projection matrix
         """
         check_is_fitted(self, "model")
-        if not isinstance(self.regressor, DMDc):
-            raise ValueError(
-                "self.regressor is not DMDc, so object has no projection_matrix"
-            )
+        if isinstance(self.regressor, DMDBase):
+            raise ValueError("this type of self.regressor has no projection_matrix")
         return self.model.steps[-1][1].projection_matrix_
 
     @property
     def projection_matrix_output(self):
         """
-        The control matrix (or vector) B satisfies x' = Ax + Bu.
+        Output projection matrix
         """
         check_is_fitted(self, "model")
-        if not isinstance(self.regressor, DMDc):
+        if isinstance(self.regressor, DMDBase):
             raise ValueError(
-                "self.regressor is not DMDc, so object has no "
-                "projection_matrix_output"
+                "this type of self.regressor has no projection_matrix_output"
             )
         return self.model.steps[-1][1].projection_matrix_output_
 
