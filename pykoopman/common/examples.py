@@ -432,23 +432,23 @@ def rev_dvdp(t, x, u=0, dt=0.1):
     ]
 
 
-class Linear2Ddynamics():
+class Linear2Ddynamics:
     def __init__(self):
-        self.n_states = 2 # Number of states
+        self.n_states = 2  # Number of states
 
     def linear_map(self, x):
         return np.array([[0.8, -0.05], [0, 0.7]]) @ x
 
     def collect_data(self, x, n_int, n_traj):
         # Init
-        X = np.zeros((self.n_states, n_int*n_traj))
-        Y = np.zeros((self.n_states, n_int*n_traj))
+        X = np.zeros((self.n_states, n_int * n_traj))
+        Y = np.zeros((self.n_states, n_int * n_traj))
 
         # Integrate
         for step in range(n_int):
             y = self.linear_map(x)
-            X[:, (step)*n_traj:(step+1)*n_traj] = x
-            Y[:, (step)*n_traj:(step+1)*n_traj] = y
+            X[:, (step) * n_traj : (step + 1) * n_traj] = x
+            Y[:, (step) * n_traj : (step + 1) * n_traj] = y
             x = y
 
         return X, Y
@@ -457,10 +457,20 @@ class Linear2Ddynamics():
         n_modes = min(10, phi.shape[1])
         fig, axs = plt.subplots(2, n_modes, figsize=(3 * n_modes, 6))
         for i in range(n_modes):
-            axs[0, i].scatter(x[0, :], x[1, :], c=np.real(phi[:, i]), marker='o',
-                              cmap=plt.get_cmap('jet'))
-            axs[1, i].scatter(x[0, :], x[1, :], c=np.imag(phi[:, i]), marker='o',
-                              cmap=plt.get_cmap('jet'))
+            axs[0, i].scatter(
+                x[0, :],
+                x[1, :],
+                c=np.real(phi[:, i]),
+                marker="o",
+                cmap=plt.get_cmap("jet"),
+            )
+            axs[1, i].scatter(
+                x[0, :],
+                x[1, :],
+                c=np.imag(phi[:, i]),
+                marker="o",
+                cmap=plt.get_cmap("jet"),
+            )
 
 
 class slow_manifold:
@@ -472,7 +482,7 @@ class slow_manifold:
         self.n_states = 2
 
     def sys(self, t, x, u):
-        return np.array([self.mu * x[0, :], self.la * (x[1, :] - x[0, :]**2)])
+        return np.array([self.mu * x[0, :], self.la * (x[1, :] - x[0, :] ** 2)])
 
     def output(self, x):
         return x[0, :] ** 2 + x[1, :]
@@ -484,7 +494,7 @@ class slow_manifold:
         X = np.zeros((self.n_states, n_int * n_traj))
         for step in range(n_int):
             y = rk4(0, x, u[step, :], self.dt, self.sys)
-            X[:, (step)*n_traj:(step+1)*n_traj] = y
+            X[:, (step) * n_traj : (step + 1) * n_traj] = y
             x = y
         return X
 
@@ -503,8 +513,8 @@ class slow_manifold:
         Y = np.zeros((self.n_states, n_int * n_traj))
         for step in range(n_int):
             y = rk4(0, x, u[step, :], self.dt, self.sys)
-            X[:, (step) * n_traj:(step + 1) * n_traj] = x
-            Y[:, (step)*n_traj:(step+1)*n_traj] = y
+            X[:, (step) * n_traj : (step + 1) * n_traj] = x
+            Y[:, (step) * n_traj : (step + 1) * n_traj] = y
             x = y
         return X, Y
 
@@ -512,16 +522,15 @@ class slow_manifold:
         fig, axs = plt.subplots(1, 1, tight_layout=True, figsize=(12, 4))
         for traj_idx in range(n_traj):
             x = X[:, traj_idx::n_traj]
-            axs.plot(t[0:100], x[1, 0:100], 'k')
-        axs.set(
-            ylabel=r'$x_2$',
-            xlabel=r'$t$')
+            axs.plot(t[0:100], x[1, 0:100], "k")
+        axs.set(ylabel=r"$x_2$", xlabel=r"$t$")
 
     def visualize_state_space(self, X, Y, n_traj):
         fig, axs = plt.subplots(1, 1, tight_layout=True, figsize=(4, 4))
         for traj_idx in range(n_traj):
-            axs.plot([X[0, traj_idx::n_traj], Y[0, traj_idx::n_traj]],
-                     [X[1, traj_idx::n_traj], Y[1, traj_idx::n_traj]], '-k')
-        axs.set(
-            ylabel=r'$x_2$',
-            xlabel=r'$x_1$')
+            axs.plot(
+                [X[0, traj_idx::n_traj], Y[0, traj_idx::n_traj]],
+                [X[1, traj_idx::n_traj], Y[1, traj_idx::n_traj]],
+                "-k",
+            )
+        axs.set(ylabel=r"$x_2$", xlabel=r"$x_1$")

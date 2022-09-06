@@ -2,7 +2,6 @@ from warnings import catch_warnings
 from warnings import filterwarnings
 from warnings import warn
 
-import scipy
 import numpy as np
 from numpy import empty
 from numpy import vstack
@@ -375,7 +374,7 @@ class Koopman(BaseEstimator):
         """
         Provides the option to obtain a reduced-order model from the Koopman model
         """
-        if not hasattr(self.regressor, 'reduce'):
+        if not hasattr(self.regressor, "reduce"):
             raise AttributeError("regressor type does not have this option.")
 
         z = self.model.steps[0][1].transform(x)
@@ -523,8 +522,11 @@ class Koopman(BaseEstimator):
         linearity_error = []
         for i in range(len(self.eigenvalues)):
             xi = self.model.steps[-1][1].left_evecs[:, i]
-            linearity_error.append(np.linalg.norm(np.real(z @ xi) - np.real(
-                np.exp(omega[i] * t) * (z[0, :] @ xi))))
+            linearity_error.append(
+                np.linalg.norm(
+                    np.real(z @ xi) - np.real(np.exp(omega[i] * t) * (z[0, :] @ xi))
+                )
+            )
 
         sort_idx = np.argsort(linearity_error)
         efun_index = np.arange(len(linearity_error))[sort_idx]

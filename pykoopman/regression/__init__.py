@@ -7,5 +7,12 @@ from ._edmdc import EDMDc
 from ._havok import HAVOK
 from ._kef import KEF
 
-__all__ = ["DMDRegressor", "DMDc", "EDMD", "EDMDc", "EnsembleBaseRegressor",
-           "HAVOK", "KEF"]
+__all__ = [
+    "DMDRegressor",
+    "DMDc",
+    "EDMD",
+    "EDMDc",
+    "EnsembleBaseRegressor",
+    "HAVOK",
+    "KEF",
+]

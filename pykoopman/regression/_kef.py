@@ -75,8 +75,7 @@ class KEF(BaseRegressor):
 
     def _fit(self, X1, X2):
         M = X2.T @ np.linalg.pinv(X1.T)
-        [evals, left_evecs, right_evecs] = \
-                    scipy.linalg.eig(M, left=True)
+        [evals, left_evecs, right_evecs] = scipy.linalg.eig(M, left=True)
 
         sort_idx = np.argsort(evals)
         sort_idx = sort_idx[::-1]
@@ -107,11 +106,12 @@ class KEF(BaseRegressor):
                 else:
                     break
 
-        print('rank=', rank)
-        self.state_matrix_ = np.real(self.projection_matrix_[:, efun_index[:rank]] @
-                                     np.diag(self.eigenvalues_[efun_index[:rank]]) @
-                                     np.linalg.pinv(self.projection_matrix_[:,
-                                                    efun_index[:rank]])).T
+        print("rank=", rank)
+        self.state_matrix_ = np.real(
+            self.projection_matrix_[:, efun_index[:rank]]
+            @ np.diag(self.eigenvalues_[efun_index[:rank]])
+            @ np.linalg.pinv(self.projection_matrix_[:, efun_index[:rank]])
+        ).T
         self.projection_matrix_ = self.projection_matrix_[:, efun_index[:rank]]
         self.eigenvalues_ = self.eigenvalues_[efun_index[:rank]]
         self.rank = rank
@@ -142,8 +142,11 @@ class KEF(BaseRegressor):
         linearity_error = []
         for i in range(len(self.eigenvalues_)):
             xi = self.left_evecs[:, i]
-            linearity_error.append(np.linalg.norm(np.real(z @ xi) - np.real(
-                np.exp(omega[i] * t) * (z[0, :] @ xi))))
+            linearity_error.append(
+                np.linalg.norm(
+                    np.real(z @ xi) - np.real(np.exp(omega[i] * t) * (z[0, :] @ xi))
+                )
+            )
 
         sort_idx = np.argsort(linearity_error)
         efun_index = np.arange(len(linearity_error))[sort_idx]
@@ -165,6 +168,11 @@ class KEF(BaseRegressor):
         """
         check_is_fitted(self, "coef_")
         y = np.linalg.multi_dot(
-            [self.projection_matrix_, np.diag(self.eigenvalues_), scipy.linalg.pinv(
-                self.projection_matrix_), x.T]).T
+            [
+                self.projection_matrix_,
+                np.diag(self.eigenvalues_),
+                scipy.linalg.pinv(self.projection_matrix_),
+                x.T,
+            ]
+        ).T
         return y

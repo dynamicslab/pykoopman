@@ -264,8 +264,7 @@ class RadialBasisFunction(BaseObservables):
         output_features = []
         if self.include_states is True:
             output_features.extend([f"{xi}(t)" for xi in input_features])
-        output_features.extend([f"phi(x(t)-c{i})" for i in range(
-                self.n_centers)])
+        output_features.extend([f"phi(x(t)-c{i})" for i in range(self.n_centers)])
         return output_features
 
     def _rbf_lifting(self, x):
