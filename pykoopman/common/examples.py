@@ -461,3 +461,67 @@ class Linear2Ddynamics():
                               cmap=plt.get_cmap('jet'))
             axs[1, i].scatter(x[0, :], x[1, :], c=np.imag(phi[:, i]), marker='o',
                               cmap=plt.get_cmap('jet'))
+
+
+class slow_manifold:
+    def __init__(self, mu=-0.05, la=-1.0, dt=0.01):
+        self.mu = mu
+        self.la = la
+        self.b = self.la / (self.la - 2 * self.mu)
+        self.dt = dt
+        self.n_states = 2
+
+    def sys(self, t, x, u):
+        return np.array([self.mu * x[0, :], self.la * (x[1, :] - x[0, :]**2)])
+
+    def output(self, x):
+        return x[0, :] ** 2 + x[1, :]
+
+    def simulate(self, x0, n_int):
+        n_traj = x0.shape[1]
+        x = x0
+        u = np.zeros((n_int, 1))
+        X = np.zeros((self.n_states, n_int * n_traj))
+        for step in range(n_int):
+            y = rk4(0, x, u[step, :], self.dt, self.sys)
+            X[:, (step)*n_traj:(step+1)*n_traj] = y
+            x = y
+        return X
+
+    def collect_data_continuous(self, x0):
+        n_traj = x0.shape[1]
+        u = np.zeros((1, n_traj))
+        X = x0
+        Y = self.sys(0, x0, u)
+        return X, Y
+
+    def collect_data_discrete(self, x0, n_int):
+        n_traj = x0.shape[1]
+        x = x0
+        u = np.zeros((n_int, n_traj))
+        X = np.zeros((self.n_states, n_int * n_traj))
+        Y = np.zeros((self.n_states, n_int * n_traj))
+        for step in range(n_int):
+            y = rk4(0, x, u[step, :], self.dt, self.sys)
+            X[:, (step) * n_traj:(step + 1) * n_traj] = x
+            Y[:, (step)*n_traj:(step+1)*n_traj] = y
+            x = y
+        return X, Y
+
+    def visualize_trajectories(self, t, X, n_traj):
+        fig, axs = plt.subplots(1, 1, tight_layout=True, figsize=(12, 4))
+        for traj_idx in range(n_traj):
+            x = X[:, traj_idx::n_traj]
+            axs.plot(t[0:100], x[1, 0:100], 'k')
+        axs.set(
+            ylabel=r'$x_2$',
+            xlabel=r'$t$')
+
+    def visualize_state_space(self, X, Y, n_traj):
+        fig, axs = plt.subplots(1, 1, tight_layout=True, figsize=(4, 4))
+        for traj_idx in range(n_traj):
+            axs.plot([X[0, traj_idx::n_traj], Y[0, traj_idx::n_traj]],
+                     [X[1, traj_idx::n_traj], Y[1, traj_idx::n_traj]], '-k')
+        axs.set(
+            ylabel=r'$x_2$',
+            xlabel=r'$x_1$')

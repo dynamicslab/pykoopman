@@ -78,13 +78,9 @@ class KEF(BaseRegressor):
         return self
 
     def _fit(self, X1, X2):
-        VVt = X1.T @ X1
-        WVt = X2.T @ X1
-        M = WVt @ np.linalg.pinv(VVt)
-
-        # Compute Koopman modes, eigenvectors, eigenvalues
+        M = X2.T @ np.linalg.pinv(X1.T)
         [evals, left_evecs, right_evecs] = \
-            scipy.linalg.eig(M, left=True)
+                    scipy.linalg.eig(M, left=True)
 
         sort_idx = np.argsort(evals)
         sort_idx = sort_idx[::-1]
@@ -96,41 +92,54 @@ class KEF(BaseRegressor):
         self.eigenvalues_ = evals
         self.modes_ = X1 @ right_evecs
         self.kef_ = X1 @ left_evecs
+        self.right_evecs = right_evecs
+        self.left_evecs = left_evecs
 
         self.projection_matrix_ = right_evecs
-        self.state_matrix_ = np.real(self.projection_matrix_ @
-                                     np.diag(evals) @
-                                     np.linalg.pinv(self.projection_matrix_))
+        # self.state_matrix_ = np.real(self.projection_matrix_ @
+        #                              np.diag(evals) @
+        #                              np.linalg.pinv(self.projection_matrix_))
+        self.state_matrix_ = M
         self.coef_ = self.state_matrix_
 
-
-    def reduce(self, t, x, y, rank=None):
-        self.test_data = {
-            'time': t,
-            'state': x,
-            'obsv': y
-        }
+    def reduce(self, t, x, z, omega, rank=None):
 
         # Select valid Koopman eigenfunctions
+        efun_index, linearity_error = self._evaluate_efuns(t, z, omega)
         if rank is None:
-            rank = self._evaluate_efuns()
+            rank = 0
+            for err in linearity_error:
+                if err < 1:
+                    rank += 1
+                else:
+                    break
 
-        self.projection_matrix_ = self.projection_matrix_[:, :rank]
-        self.eigenvalues_ = self.eigenvalues_[:rank]
-        self.state_matrix_ = np.real(self.projection_matrix_[:, :rank] @
-                                     np.diag(self.eigenvalues_[:rank]) @
-                                     np.linalg.pinv(self.projection_matrix_[:, :rank]))
+        print('rank=', rank)
+        self.state_matrix_ = np.real(self.projection_matrix_[:, efun_index[:rank]] @
+                                     np.diag(self.eigenvalues_[efun_index[:rank]]) @
+                                     np.linalg.pinv(self.projection_matrix_[:,
+                                                    efun_index[:rank]])).T
+        self.projection_matrix_ = self.projection_matrix_[:, efun_index[:rank]]
+        self.eigenvalues_ = self.eigenvalues_[efun_index[:rank]]
+        self.rank = rank
+        self.efun_index = efun_index
+        self.linearity_error = linearity_error
 
-    def _evaluate_efuns(self):
+    def _evaluate_efuns(self, t, z, omega):
         """
         Validity check of eigenfunctions
         phi(x(t)) == phi(x(0))*exp(lambda*t)
         """
+        linearity_error = []
         for i in range(len(self.eigenvalues_)):
-            self.kef_[:, i]
+            xi = self.left_evecs[:, i]
+            linearity_error.append(np.linalg.norm(np.real(z @ xi) - np.real(
+                np.exp(omega[i] * t) * (z[0, :] @ xi))))
 
-        r = 5
-        return r
+        sort_idx = np.argsort(linearity_error)
+        efun_index = np.arange(len(linearity_error))[sort_idx]
+        linearity_error = [linearity_error[i] for i in sort_idx]
+        return efun_index, linearity_error
 
     def predict(self, x):
         """

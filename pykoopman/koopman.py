@@ -2,6 +2,7 @@ from warnings import catch_warnings
 from warnings import filterwarnings
 from warnings import warn
 
+import scipy
 import numpy as np
 from numpy import empty
 from numpy import vstack
@@ -370,6 +371,16 @@ class Koopman(BaseEstimator):
                 )
             return self.model.predict(X=x, u=u)
 
+    def reduce(self, t, x, rank=None):
+        """
+        Provides the option to obtain a reduced-order model from the Koopman model
+        """
+        if not hasattr(self.regressor, 'reduce'):
+            raise AttributeError("regressor type does not have this option.")
+
+        z = self.model.steps[0][1].transform(x)
+        self.model.steps[-1][1].reduce(t, x, z, self.eigenvalues_continuous, rank)
+
     @property
     def koopman_matrix(self):
         """
@@ -409,6 +420,7 @@ class Koopman(BaseEstimator):
             raise ValueError("this type of self.regressor has no control_matrix")
         return self.model.steps[-1][1].control_matrix_
 
+    @property
     def measurement_matrix(self):
         """
         The measurement matrix (or vector) C satisfies x = Cy
@@ -419,6 +431,30 @@ class Koopman(BaseEstimator):
         if not isinstance(self.observables, RadialBasisFunction):
             raise ValueError("this type of self.observable has no measurement_matrix")
         return self.model.steps[0][1].measurement_matrix_
+
+    def validate_model(self, t, x):
+        """
+        Checks linearity of the trained Koopman model
+        """
+        check_is_fitted(self, "model")
+        X = self.model.steps[0][1].transform(x)
+        [evals, left_evecs, right_evecs] = \
+            scipy.linalg.eig(self.koopman_matrix, left=True)
+
+        sort_idx = np.argsort(evals)
+        sort_idx = sort_idx[::-1]
+        evals = evals[sort_idx]
+        left_evecs = left_evecs[:, sort_idx]
+        right_evecs = right_evecs[:, sort_idx]
+
+        linearity_error = []
+        for i in range(right_evecs.shape[1]):
+            xi = right_evecs[:, i]
+            linearity_error.append(
+                np.linalg.norm(np.real(X @ xi) -
+                               np.real(np.exp(evals[i] * t) * (X[0, :] @ xi))))
+
+        return linearity_error
 
     @property
     def projection_matrix(self):
@@ -492,3 +528,28 @@ class Koopman(BaseEstimator):
         """
         check_is_fitted(self, "model")
         return self.model.steps[-1][1].kef_
+
+    @property
+    def eigenfunctions_projected(self):
+        """
+        Approximate Koopman eigenfunctions of the low-dimensional operator
+        """
+        check_is_fitted(self, "model")
+        return self.model.steps[-1][1].left_evecs
+
+    def validity_check(self, t, z):
+        """
+        Validity check (i.e. linearity check ) of eigenfunctions
+        phi(x(t)) == phi(x(0))*exp(lambda*t)
+        """
+        omega = self.eigenvalues_continuous
+        linearity_error = []
+        for i in range(len(self.eigenvalues_)):
+            xi = self.left_evecs[:, i]
+            linearity_error.append(np.linalg.norm(np.real(z @ xi) - np.real(
+                np.exp(omega[i] * t) * (z[0, :] @ xi))))
+
+        sort_idx = np.argsort(linearity_error)
+        efun_index = np.arange(len(linearity_error))[sort_idx]
+        linearity_error = [linearity_error[i] for i in sort_idx]
+        return efun_index, linearity_error
