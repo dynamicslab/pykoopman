@@ -7,12 +7,13 @@ from ._base import BaseRegressor
 
 class KEF(BaseRegressor):
     """
-    Regressor for Koopman eigenfunction form.
+    Regressor for Koopman eigenfunction form. Requires further strategy to optimize
+    the regressor based on identified, good eigenfunctions that behave sufficiently
+    linear in time.
 
-    Aims to determine the system matrices A,C
-    that satisfy y' = Ay and x = Cy, where y' is the time-shifted
-    observable with y0 = phi(x0). C is the measurement matrix that maps back to the
-    state.
+    Aims to determine the system matrices A
+    that satisfy y' = Ay where y' is the time-shifted
+    observable with y0 = phi(x0).
 
     The objective functions,
     :math:`\\|Y'-AY\\|_F`,
@@ -20,9 +21,8 @@ class KEF(BaseRegressor):
     decomposition.
 
     See the following reference for more details:
-        `M.O. Williams , I.G. Kevrekidis, C.W. Rowley
-        "A Data–Driven Approximation of the Koopman Operator:
-        Extending Dynamic Mode Decomposition."
+        `Kaiser, E., Kutz, J.N., Brunton, S.L.
+        "Data-driven discovery of Koopman eigenfunctions for control."
         Journal of Nonlinear Science, Vol. 25, 1307-1346, 2015.
         <https://link.springer.com/article/10.1007/s00332-015-9258-5>`_
 
@@ -39,10 +39,6 @@ class KEF(BaseRegressor):
         Identified state transition matrix A of the underlying system.
 
     projection_matrix_ : array, shape (n_input_features_+n_control_features_, svd_rank)
-        Projection matrix into low-dimensional subspace.
-
-    projection_matrix_output_ : array, shape (n_input_features_+n_control_features_,
-                                              svd_output_rank)
         Projection matrix into low-dimensional subspace.
     """
 
@@ -96,15 +92,12 @@ class KEF(BaseRegressor):
         self.left_evecs = left_evecs
 
         self.projection_matrix_ = right_evecs
-        # self.state_matrix_ = np.real(self.projection_matrix_ @
-        #                              np.diag(evals) @
-        #                              np.linalg.pinv(self.projection_matrix_))
         self.state_matrix_ = M
         self.coef_ = self.state_matrix_
 
     def reduce(self, t, x, z, omega, rank=None):
 
-        # Select valid Koopman eigenfunctions
+        # Select valid Koopman eigenfunctions and determine optimal rank
         efun_index, linearity_error = self._evaluate_efuns(t, z, omega)
         if rank is None:
             rank = 0
@@ -129,6 +122,22 @@ class KEF(BaseRegressor):
         """
         Validity check of eigenfunctions
         phi(x(t)) == phi(x(0))*exp(lambda*t)
+
+        Parameters
+        ----------
+        t: numpy ndarray, shape (n_samples, )
+            Time vector upon which to base prediction.
+        z: numpy ndarray, shape (n_samples, n_features)
+            Transformed measurement data upon which to base prediction.
+        omega: numpy ndarray, shape (n_features, )
+            Continuous-time eigenvalues of the Koopman operator.
+
+        Returns
+        -------
+        efun_index: list, shape (n_features)
+            Ranked list of eigenfunction indices, ranked by increasing linearity error
+        linearity_error: list, shape (n_features)
+            Linearity error corresponding to the eigenfunction index in efun_index
         """
         linearity_error = []
         for i in range(len(self.eigenvalues_)):
@@ -155,10 +164,6 @@ class KEF(BaseRegressor):
 
         """
         check_is_fitted(self, "coef_")
-        # y = x @ self.state_matrix_.T
-        # y = b @ np.diag(self.eigenvalues_) @ self.modes_
-        # y = np.real(x @ np.linalg.pinv(self.projection_matrix_) @ np.diag(self.eigenvalues_) @  \
-        #     self.projection_matrix_)
         y = np.linalg.multi_dot(
             [self.projection_matrix_, np.diag(self.eigenvalues_), scipy.linalg.pinv(
                 self.projection_matrix_), x.T]).T
