@@ -432,30 +432,6 @@ class Koopman(BaseEstimator):
             raise ValueError("this type of self.observable has no measurement_matrix")
         return self.model.steps[0][1].measurement_matrix_
 
-    def validate_model(self, t, x):
-        """
-        Checks linearity of the trained Koopman model
-        """
-        check_is_fitted(self, "model")
-        X = self.model.steps[0][1].transform(x)
-        [evals, left_evecs, right_evecs] = \
-            scipy.linalg.eig(self.koopman_matrix, left=True)
-
-        sort_idx = np.argsort(evals)
-        sort_idx = sort_idx[::-1]
-        evals = evals[sort_idx]
-        left_evecs = left_evecs[:, sort_idx]
-        right_evecs = right_evecs[:, sort_idx]
-
-        linearity_error = []
-        for i in range(right_evecs.shape[1]):
-            xi = right_evecs[:, i]
-            linearity_error.append(
-                np.linalg.norm(np.real(X @ xi) -
-                               np.real(np.exp(evals[i] * t) * (X[0, :] @ xi))))
-
-        return linearity_error
-
     @property
     def projection_matrix(self):
         """
@@ -537,15 +513,16 @@ class Koopman(BaseEstimator):
         check_is_fitted(self, "model")
         return self.model.steps[-1][1].left_evecs
 
-    def validity_check(self, t, z):
+    def validity_check(self, t, x):
         """
         Validity check (i.e. linearity check ) of eigenfunctions
         phi(x(t)) == phi(x(0))*exp(lambda*t)
         """
+        z = self.observables.transform(x)
         omega = self.eigenvalues_continuous
         linearity_error = []
-        for i in range(len(self.eigenvalues_)):
-            xi = self.left_evecs[:, i]
+        for i in range(len(self.eigenvalues)):
+            xi = self.model.steps[-1][1].left_evecs[:, i]
             linearity_error.append(np.linalg.norm(np.real(z @ xi) - np.real(
                 np.exp(omega[i] * t) * (z[0, :] @ xi))))
 

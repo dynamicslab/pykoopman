@@ -95,6 +95,8 @@ class EDMD(BaseRegressor):
         self.eigenvalues_ = self.eigenvalues_[sort_idx]
         self.modes_ = X1 @ self.eigenvectors_[:, sort_idx]
         self.kef_ = X1 @ self.left_eigenvectors_[:, sort_idx]
+        self.left_evecs = self.left_eigenvectors_[:, sort_idx]
+        self.right_evecs = self.eigenvectors_[:, sort_idx]
 
     def predict(self, x):
         """
