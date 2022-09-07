@@ -258,3 +258,14 @@ def data_rev_dvdp():
         Xtest[step + 1, :] = y
 
     return dT, X0, Xtrain, Ytrain, Xtest
+
+
+@pytest.fixture
+def data_for_vality_check():
+    A = np.array([[-0.9, -0.3], [0.2, -0.7]])
+    B = np.zeros((2, 1))
+    C = np.eye(2)
+    x0 = np.array([-2, 2])
+    N = 50
+    X, Y = advance_linear_system(x0, np.zeros((1, N)), N, A, B, C)
+    return X, np.arange(N)

@@ -3,6 +3,7 @@ from warnings import filterwarnings
 from warnings import warn
 
 import numpy as np
+import scipy
 from numpy import empty
 from numpy import vstack
 from pydmd import DMD
@@ -517,11 +518,17 @@ class Koopman(BaseEstimator):
         Validity check (i.e. linearity check ) of eigenfunctions
         phi(x(t)) == phi(x(0))*exp(lambda*t)
         """
+        if not hasattr(self.model.steps[-1][1], "left_evecs"):
+            [evals, left_evecs, right_evecs] = scipy.linalg.eig(
+                self.state_transition_matrix, left=True
+            )
+        else:
+            left_evecs = self.model.steps[-1][1].left_evecs
         z = self.observables.transform(x)
         omega = self.eigenvalues_continuous
         linearity_error = []
         for i in range(len(self.eigenvalues)):
-            xi = self.model.steps[-1][1].left_evecs[:, i]
+            xi = left_evecs[:, i]
             linearity_error.append(
                 np.linalg.norm(
                     np.real(z @ xi) - np.real(np.exp(omega[i] * t) * (z[0, :] @ xi))

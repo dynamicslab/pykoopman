@@ -305,3 +305,11 @@ def test_accuracy_of_edmd_prediction(data_rev_dvdp):
     Xkoop = np.vstack([Xtest[0, :][np.newaxis, :], Xkoop])
 
     assert_allclose(Xtest, Xkoop, atol=2e-2, rtol=1e-10)
+
+
+def test_accuracy_koopman_validity_check(data_for_vality_check):
+    X, t = data_for_vality_check
+    model = Koopman()
+    model.fit(X, dt=1)
+    efun_index, linearity_error = model.validity_check(t, X)
+    assert_allclose([0, 0], linearity_error, rtol=1e-10, atol=1e-10)
