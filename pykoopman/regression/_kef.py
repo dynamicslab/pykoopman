@@ -20,11 +20,11 @@ class KEF(BaseRegressor):
     are minimized using least-squares regression and singular value
     decomposition.
 
-    See the following reference for more details:
+    See the following references for more details:
         `Kaiser, E., Kutz, J.N., Brunton, S.L.
         "Data-driven discovery of Koopman eigenfunctions for control."
-        Journal of Nonlinear Science, Vol. 25, 1307-1346, 2015.
-        <https://link.springer.com/article/10.1007/s00332-015-9258-5>`_
+        Machine Learning: Science and Technology, Vol. 2(3), 035023, 2021.
+        <https://iopscience.iop.org/article/10.1088/2632-2153/abf0f5>`_
 
     Parameters
     ----------
