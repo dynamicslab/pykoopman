@@ -293,10 +293,14 @@ def test_accuracy_of_edmd_prediction(data_rev_dvdp):
     dT, X0, Xtrain, Ytrain, Xtest = data_rev_dvdp
 
     EDMD = regression.EDMD()
-    RBF = observables.RadialBasisFunction(rbf_type='thinplate', n_centers=20,
-                                          centers=None, kernel_width=1.0,
-                                          polyharmonic_coeff=1.0,
-                                          include_states=True)
+    RBF = observables.RadialBasisFunction(
+        rbf_type="thinplate",
+        n_centers=20,
+        centers=None,
+        kernel_width=1.0,
+        polyharmonic_coeff=1.0,
+        include_states=True,
+    )
 
     model = Koopman(observables=RBF, regressor=EDMD)
     model.fit(Xtrain.T, y=Ytrain.T)

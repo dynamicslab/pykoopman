@@ -243,8 +243,8 @@ def data_rev_dvdp():
     Ytrain = np.zeros((n_states, n_int * n_traj))
     for step in range(n_int):
         y = rev_dvdp(0, x, 0, dT)
-        Xtrain[:, (step) * n_traj:(step + 1) * n_traj] = x
-        Ytrain[:, (step) * n_traj:(step + 1) * n_traj] = y
+        Xtrain[:, (step) * n_traj : (step + 1) * n_traj] = x
+        Ytrain[:, (step) * n_traj : (step + 1) * n_traj] = y
         x = y
 
     x0 = np.array([-0.3, -0.2])
