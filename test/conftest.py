@@ -274,10 +274,10 @@ def data_for_vality_check():
     X, Y = advance_linear_system(x0, np.zeros((1, N)), N, A, B, C)
     return X, np.arange(N)
 
+
 @pytest.fixture
 def data_vdp_edmdc():
     # path = os.path.join(my_path, "../data/test.csv")
     xpred = np.loadtxt(os.path.join(my_path, "data_vdp_for_edmdc.txt"), delimiter=",")
     # xpred = np.loadtxt("./test/data_vdp_for_edmdc.txt", delimiter=",")
     return xpred
-
