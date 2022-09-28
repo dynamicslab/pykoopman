@@ -3,6 +3,8 @@ from sklearn.utils.validation import check_is_fitted
 
 from ._base import BaseRegressor
 
+# from pydmd import DMDBase
+
 
 class DMDc(BaseRegressor):
     """
@@ -240,3 +242,7 @@ class DMDc(BaseRegressor):
         check_is_fitted(self, "coef_")
         y = np.dot(self.state_matrix_, x.T) + np.dot(self.control_matrix_, u.T)
         return y.T
+
+    # @property
+    # def control_matrix(self):
+    #     return self.control_matrix_

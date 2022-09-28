@@ -70,7 +70,7 @@ class Koopman(BaseEstimator):
         if observables is None:
             observables = Identity()
         if regressor is None:
-            regressor = DMD(svd_rank=2)
+            regressor = DMD(svd_rank=2)  # default svd rank 2
         if isinstance(regressor, DMDBase):
             regressor = DMDRegressor(regressor)
         elif not isinstance(regressor, (BaseRegressor)):
@@ -386,7 +386,7 @@ class Koopman(BaseEstimator):
         """
         The Koopman matrix K satisfying g(X') = g(X) * K
         where g denotes the observables map and X' denotes x advanced
-        one timestep.
+        one timestep. Note that if there has some low rank, then K is
         """
         check_is_fitted(self, "n_output_features_")
         return self.model.steps[-1][1].coef_
@@ -466,7 +466,7 @@ class Koopman(BaseEstimator):
     @property
     def amplitudes(self):
         check_is_fitted(self, "model")
-        return self.model.steps[-1][1].amplitudes
+        return self.model.steps[-1][1].amplitudes_
 
     @property
     def eigenvalues(self):

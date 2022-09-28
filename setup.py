@@ -3,8 +3,8 @@ from setuptools import setup
 
 
 name = "pykoopman"
-description = """Python package for computing data-driven approximations to
-    the Koopman operator."""
+description = """Python package for computing data-driven approximations
+to the Koopman operator."""
 url = "https://github.com/dynamicslab/pykoopman"
 email = "eurika@uw.edu, bdesilva@uw.edu, shawnpan@uw.edu"
 author = "Eurika Kaiser, Brian de Silva, Shaowu Pan"
@@ -12,8 +12,7 @@ python = ">=3.10"
 license = "MIT"
 classifiers = [
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.10",
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",

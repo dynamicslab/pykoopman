@@ -11,6 +11,7 @@ from sklearn.utils.validation import check_is_fitted
 from pykoopman.observables import CustomObservables
 from pykoopman.observables import Identity
 from pykoopman.observables import Polynomial
+from pykoopman.observables import RandomFourierFeatures
 from pykoopman.observables import TimeDelay
 
 
@@ -30,6 +31,12 @@ def data_small():
     ],
 )
 def test_if_fitted(observables, data_random):
+    """
+    we iterate over each observable object, first we
+    test if it correctly raise NotFittedError when it is not fitted
+    but called to .transform, .inverse, and .get_feature_names
+    then we fit it, and check if it is fitted at the final step.
+    """
     x = data_random
     with pytest.raises(NotFittedError):
         observables.transform(x)
@@ -45,6 +52,73 @@ def test_if_fitted(observables, data_random):
 
 
 @pytest.mark.parametrize(
+    "observables_1",
+    [
+        Identity(),
+        Polynomial(),
+        TimeDelay(),
+        pytest.lazy_fixture("data_custom_observables"),
+    ],
+)
+@pytest.mark.parametrize(
+    "observables_2",
+    [
+        Identity(),
+        Polynomial(),
+        TimeDelay(),
+        pytest.lazy_fixture("data_custom_observables"),
+    ],
+)
+def test_if_fitted_two_obs(observables_1, observables_2, data_random):
+    """
+    we iterate over each observable object, first we
+    test if it correctly raise NotFittedError when it is not fitted
+    but called to .transform, .inverse, and .get_feature_names
+    then we fit it, and check if it is fitted at the final step.
+    """
+    observables = observables_1 + observables_2
+    test_if_fitted(observables, data_random)
+
+
+@pytest.mark.parametrize(
+    "observables_1",
+    [
+        Identity(),
+        Polynomial(),
+        TimeDelay(),
+        pytest.lazy_fixture("data_custom_observables"),
+    ],
+)
+@pytest.mark.parametrize(
+    "observables_2",
+    [
+        Identity(),
+        Polynomial(),
+        TimeDelay(),
+        pytest.lazy_fixture("data_custom_observables"),
+    ],
+)
+@pytest.mark.parametrize(
+    "observables_3",
+    [
+        Identity(),
+        Polynomial(),
+        TimeDelay(),
+        pytest.lazy_fixture("data_custom_observables"),
+    ],
+)
+def test_if_fitted_three_obs(observables_1, observables_2, observables_3, data_random):
+    """
+    we iterate over each observable object, first we
+    test if it correctly raise NotFittedError when it is not fitted
+    but called to .transform, .inverse, and .get_feature_names
+    then we fit it, and check if it is fitted at the final step.
+    """
+    observables = observables_1 + observables_2 + observables_3
+    test_if_fitted(observables, data_random)
+
+
+@pytest.mark.parametrize(
     "observables",
     [
         Identity(),
@@ -57,8 +131,95 @@ def test_if_fitted(observables, data_random):
     ],
 )
 def test_inverse(observables, data_random):
+    """
+    we iterate over all obs to check if the fit_transform works,
+    and if the output of fit_transform can be reverse back to x nicely
+    with .inverse
+    """
     x = data_random
     assert_allclose(observables.inverse(observables.fit_transform(x)), x)
+
+
+@pytest.mark.parametrize(
+    "observables_1",
+    [
+        Identity(),
+        Polynomial(),
+        Polynomial(degree=1),
+        Polynomial(degree=4),
+        Polynomial(include_bias=False),
+        Polynomial(degree=3, include_bias=False),
+        pytest.lazy_fixture("data_custom_observables"),
+    ],
+)
+@pytest.mark.parametrize(
+    "observables_2",
+    [
+        Identity(),
+        Polynomial(),
+        Polynomial(degree=1),
+        Polynomial(degree=4),
+        Polynomial(include_bias=False),
+        Polynomial(degree=3, include_bias=False),
+        pytest.lazy_fixture("data_custom_observables"),
+    ],
+)
+def test_inverse_two_obs(observables_1, observables_2, data_random):
+    """
+    we iterate over each observable object, first we
+    test if it correctly raise NotFittedError when it is not fitted
+    but called to .transform, .inverse, and .get_feature_names
+    then we fit it, and check if it is fitted at the final step.
+    """
+    observables = observables_1 + observables_2
+    test_inverse(observables, data_random)
+
+
+@pytest.mark.parametrize(
+    "observables_1",
+    [
+        Identity(),
+        Polynomial(),
+        Polynomial(degree=1),
+        Polynomial(degree=4),
+        Polynomial(include_bias=False),
+        Polynomial(degree=3, include_bias=False),
+        pytest.lazy_fixture("data_custom_observables"),
+    ],
+)
+@pytest.mark.parametrize(
+    "observables_2",
+    [
+        Identity(),
+        Polynomial(),
+        Polynomial(degree=1),
+        Polynomial(degree=4),
+        Polynomial(include_bias=False),
+        Polynomial(degree=3, include_bias=False),
+        pytest.lazy_fixture("data_custom_observables"),
+    ],
+)
+@pytest.mark.parametrize(
+    "observables_3",
+    [
+        Identity(),
+        Polynomial(),
+        Polynomial(degree=1),
+        Polynomial(degree=4),
+        Polynomial(include_bias=False),
+        Polynomial(degree=3, include_bias=False),
+        pytest.lazy_fixture("data_custom_observables"),
+    ],
+)
+def test_inverse_three_obs(observables_1, observables_2, observables_3, data_random):
+    """
+    we iterate over each observable object, first we
+    test if it correctly raise NotFittedError when it is not fitted
+    but called to .transform, .inverse, and .get_feature_names
+    then we fit it, and check if it is fitted at the final step.
+    """
+    observables = observables_1 + observables_2 + observables_3
+    test_inverse(observables, data_random)
 
 
 def test_time_delay_inverse(data_random):
@@ -69,6 +230,74 @@ def test_time_delay_inverse(data_random):
 
     observables = TimeDelay(delay=delay, n_delays=n_delays)
     y = observables.fit_transform(x)
+    # First few rows of x are deleted which don't have enough
+    # time history
+    assert_array_equal(observables.inverse(y), x[n_deleted_rows:])
+
+
+@pytest.mark.parametrize(
+    "observables_1",
+    [
+        Identity(),
+        Polynomial(),
+        Polynomial(degree=1),
+        Polynomial(degree=4),
+        Polynomial(include_bias=False),
+        Polynomial(degree=3, include_bias=False),
+        TimeDelay(delay=1, n_delays=2),
+        pytest.lazy_fixture("data_custom_observables"),
+    ],
+)
+@pytest.mark.parametrize(
+    "observables_2",
+    [TimeDelay(delay=2, n_delays=3), TimeDelay(delay=1, n_delays=6)],
+)
+def test_time_delay_inverse_two_obs(observables_1, observables_2, data_random):
+    x = data_random
+    observables = observables_1 + observables_2
+    y = observables.fit_transform(x)
+    n_deleted_rows = observables.n_consumed_samples
+    # First few rows of x are deleted which don't have enough
+    # time history
+    assert_array_equal(observables.inverse(y), x[n_deleted_rows:])
+
+
+@pytest.mark.parametrize(
+    "observables_1",
+    [
+        Identity(),
+        Polynomial(),
+        Polynomial(degree=1),
+        Polynomial(degree=4),
+        Polynomial(include_bias=False),
+        Polynomial(degree=3, include_bias=False),
+        TimeDelay(delay=1, n_delays=2),
+        pytest.lazy_fixture("data_custom_observables"),
+    ],
+)
+@pytest.mark.parametrize(
+    "observables_2",
+    [
+        TimeDelay(delay=2, n_delays=3),
+        TimeDelay(delay=1, n_delays=6),
+        RandomFourierFeatures(include_state=True, gamma=0.3, D=3),
+    ],
+)
+@pytest.mark.parametrize(
+    "observables_3",
+    [
+        TimeDelay(delay=2, n_delays=3),
+        TimeDelay(delay=1, n_delays=6) + TimeDelay(delay=3, n_delays=3),
+        RandomFourierFeatures(include_state=False, gamma=0.01, D=2),
+    ],
+)
+def test_time_delay_inverse_three_obs(
+    observables_1, observables_2, observables_3, data_random
+):
+    x = data_random
+    observables = observables_1 + observables_2 + observables_3
+    y = observables.fit_transform(x)
+    n_deleted_rows = observables.n_consumed_samples
     # First few rows of x are deleted which don't have enough
     # time history
     assert_array_equal(observables.inverse(y), x[n_deleted_rows:])
@@ -152,11 +381,12 @@ def test_feature_names(
     )
 
 
+# TODO: rewrite Polynomial to handle cplx. nums.  S: no we don't need this
 @pytest.mark.parametrize(
     "observables",
     [
         Identity(),
-        Polynomial(),  # TODO: rewrite Polynomial to handle cplx. nums.
+        Polynomial(),
         TimeDelay(),
         pytest.lazy_fixture("data_custom_observables"),
     ],
