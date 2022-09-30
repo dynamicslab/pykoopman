@@ -4,4 +4,4 @@ numpy
 scipy
 pydmd @ git+https://github.com/mathLab/PyDMD@c98ede0#egg=pydmd
 optht
-scipy<1.9.0
+scipy

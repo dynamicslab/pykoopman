@@ -70,7 +70,7 @@ class Koopman(BaseEstimator):
         if observables is None:
             observables = Identity()
         if regressor is None:
-            regressor = DMD(svd_rank=2)  # default svd rank 2
+            regressor = DMDRegressor(DMD(svd_rank=2))  # default svd rank 2
         if isinstance(regressor, DMDBase):
             regressor = DMDRegressor(regressor)
         elif not isinstance(regressor, (BaseRegressor)):
@@ -522,6 +522,7 @@ class Koopman(BaseEstimator):
             [evals, left_evecs, right_evecs] = scipy.linalg.eig(
                 self.state_transition_matrix, left=True
             )
+
         else:
             left_evecs = self.model.steps[-1][1].left_evecs
         z = self.observables.transform(x)
@@ -531,9 +532,17 @@ class Koopman(BaseEstimator):
             xi = left_evecs[:, i]
             linearity_error.append(
                 np.linalg.norm(
-                    np.real(z @ xi) - np.real(np.exp(omega[i] * t) * (z[0, :] @ xi))
+                    # np.real(z @ xi) - np.real(np.exp(omega[i] * t) * (z[0, :] @ xi))
+                    np.real(z @ xi)
+                    - np.real(np.exp(omega[i].conj() * t) * (z[0, :] @ xi))
                 )
             )
+        # surprise (shaowu wrote):
+        # scipy 1.9.1
+        # from scipy.linalg import eig
+        # eval,lvec, rvec = eig(A,left=True)
+        # np.linalg.norm(A.T@lvec - lvec @ np.diag(eval)) != 1e-16
+        # np.linalg.norm(A.T@lvec - lvec @ np.diag(eval.conj())) == 1e-16
 
         sort_idx = np.argsort(linearity_error)
         efun_index = np.arange(len(linearity_error))[sort_idx]

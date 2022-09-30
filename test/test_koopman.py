@@ -31,10 +31,8 @@ def test_predict_shape(data_random):
 
 def test_simulate_accuracy(data_2D_superposition):
     x = data_2D_superposition
-
-    regressor = DMD(svd_rank=10)
+    regressor = regression.DMDRegressor(DMD(svd_rank=10))
     model = Koopman(regressor=regressor).fit(x)
-
     n_steps = 10
     x_pred = model.simulate(x[0], n_steps=n_steps)
     assert_allclose(x[1 : n_steps + 1], x_pred)
