@@ -3,7 +3,6 @@ from warnings import filterwarnings
 from warnings import warn
 
 import numpy as np
-import scipy
 from numpy import empty
 from numpy import vstack
 from pydmd import DMD
@@ -519,10 +518,10 @@ class Koopman(BaseEstimator):
         phi(x(t)) == phi(x(0))*exp(lambda*t)
         """
         if not hasattr(self.model.steps[-1][1], "left_evecs"):
-            [evals, left_evecs, right_evecs] = scipy.linalg.eig(
-                self.state_transition_matrix, left=True
-            )
-
+            # [evals, left_evecs, right_evecs] = scipy.linalg.eig(
+            #     self.state_transition_matrix, left=True
+            # )
+            evals, left_evecs = np.linalg.eig(self.state_transition_matrix.T)
         else:
             left_evecs = self.model.steps[-1][1].left_evecs
         z = self.observables.transform(x)
@@ -532,18 +531,9 @@ class Koopman(BaseEstimator):
             xi = left_evecs[:, i]
             linearity_error.append(
                 np.linalg.norm(
-                    np.real(z @ xi)
-                    - np.real(np.exp(omega[i] * t) * (z[0, :] @ xi))
-                    # np.real(z @ xi)
-                    # - np.real(np.exp(omega[i].conj() * t) * (z[0, :] @ xi))
+                    np.real(z @ xi) - np.real(np.exp(omega[i] * t) * (z[0, :] @ xi))
                 )
             )
-        # surprise (shaowu wrote):
-        # scipy 1.9.1
-        # from scipy.linalg import eig
-        # eval,lvec, rvec = eig(A,left=True)
-        # np.linalg.norm(A.T@lvec - lvec @ np.diag(eval)) != 1e-16
-        # np.linalg.norm(A.T@lvec - lvec @ np.diag(eval.conj())) == 1e-16
 
         sort_idx = np.argsort(linearity_error)
         efun_index = np.arange(len(linearity_error))[sort_idx]
