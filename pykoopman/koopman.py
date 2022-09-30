@@ -532,7 +532,8 @@ class Koopman(BaseEstimator):
             xi = left_evecs[:, i]
             linearity_error.append(
                 np.linalg.norm(
-                    np.real(z @ xi) - np.real(np.exp(omega[i] * t) * (z[0, :] @ xi))
+                    np.real(z @ xi)
+                    - np.real(np.exp(omega[i] * t) * (z[0, :] @ xi))
                     # np.real(z @ xi)
                     # - np.real(np.exp(omega[i].conj() * t) * (z[0, :] @ xi))
                 )
