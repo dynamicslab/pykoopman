@@ -522,6 +522,8 @@ class Koopman(BaseEstimator):
             [evals, left_evecs, right_evecs] = scipy.linalg.eig(
                 self.state_transition_matrix, left=True
             )
+            # todo: maybe on github, the order of eigenvalues is
+            # different from the order I have here...
             # evals, left_evecs = np.linalg.eig(self.state_transition_matrix.T)
         else:
             left_evecs = self.model.steps[-1][1].left_evecs

@@ -307,10 +307,8 @@ def test_accuracy_of_edmd_prediction(data_rev_dvdp):
 
     model = Koopman(observables=RBF, regressor=EDMD)
     model.fit(Xtrain.T, y=Ytrain.T)
-
     Xkoop = model.simulate(Xtest[0, :][np.newaxis, :], n_steps=np.shape(Xtest)[0] - 1)
     Xkoop = np.vstack([Xtest[0, :][np.newaxis, :], Xkoop])
-
     assert_allclose(Xtest, Xkoop, atol=2e-2, rtol=1e-10)
 
 
