@@ -75,7 +75,10 @@ class KEF(BaseRegressor):
 
     def _fit(self, X1, X2):
         M = X2.T @ np.linalg.pinv(X1.T)
-        [evals, left_evecs, right_evecs] = scipy.linalg.eig(M, left=True)
+
+        # [evals, left_evecs, right_evecs] = scipy.linalg.eig(M, left=True)
+        evals, right_evecs = np.linalg.eig(M)
+        _, left_evecs = np.linalg.eig(M.T)
 
         sort_idx = np.argsort(evals)
         sort_idx = sort_idx[::-1]
