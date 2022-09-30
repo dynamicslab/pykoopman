@@ -3,6 +3,7 @@ from warnings import filterwarnings
 from warnings import warn
 
 import numpy as np
+import scipy
 from numpy import empty
 from numpy import vstack
 from pydmd import DMD
@@ -14,6 +15,7 @@ from sklearn.utils.validation import check_is_fitted
 
 from .common import validate_input
 from .observables import Identity
+from .observables import RadialBasisFunction
 from .observables import TimeDelay
 from .regression import BaseRegressor
 from .regression import DMDc
@@ -68,7 +70,7 @@ class Koopman(BaseEstimator):
         if observables is None:
             observables = Identity()
         if regressor is None:
-            regressor = DMD(svd_rank=2)  # default svd rank 2
+            regressor = DMDRegressor(DMD(svd_rank=2))  # default svd rank 2
         if isinstance(regressor, DMDBase):
             regressor = DMDRegressor(regressor)
         elif not isinstance(regressor, (BaseRegressor)):
@@ -79,8 +81,6 @@ class Koopman(BaseEstimator):
         self.quiet = quiet
 
     def fit(self, x, y=None, u=None, dt=1):
-        # TODO: add time-derivative or time-shifted data y=None
-        # TODO: remove assumption of equispaced samples in time / consecutive samples
         """
         Fit the Koopman model by learning an approximate Koopman operator.
 
@@ -88,21 +88,22 @@ class Koopman(BaseEstimator):
         ----------
         x: numpy.ndarray, shape (n_samples, n_features)
             Measurement data to be fit. Each row should correspond to an example
-            and each column a feature. It is assumed that examples are
-            equi-spaced in time (i.e. a uniform timestep is assumed).
+            and each column a feature. If only x is provided, it is assumed that
+            examples are equi-spaced in time (i.e. a uniform timestep is assumed).
 
-        y: numpy.ndarray, shape (n_samples, n_features)
-            Target measurement data to be fit. Each row should correspond to an example
-            and each column a feature. It is assumed that examples are
-            equi-spaced in time (i.e. a uniform timestep is assumed).
+        y: numpy.ndarray, shape (n_samples, n_features), (default=None)
+            Target measurement data to be fit, i.e. it is assumed y = fun(x). Each row
+            should correspond to an example and each column a feature. The samples in
+            x and y are generally not required to be consecutive and equi-spaced.
 
-        u: numpy.ndarray, shape (n_samples, n_control_features)
+        u: numpy.ndarray, shape (n_samples, n_control_features), (default=None)
             Control/actuation/external parameter data. Each row should correspond
             to one sample and each column a control variable or feature.
             The control variable may be amplitude of an actuator or an external,
-            time-varying parameter. It is assumed that samples are equi-spaced
-            in time (i.e. a uniform timestep is assumed) and correspond to the
-            samples in x.
+            time-varying parameter. It is assumed that samples in u occur at the
+            time instances of the corresponding samples in x,
+            e.g. x(t+1) = fun(x(t), u(t)).
+
         dt: float, (default=1)
             Time step between samples
 
@@ -138,10 +139,10 @@ class Koopman(BaseEstimator):
         action = "ignore" if self.quiet else "default"
         with catch_warnings():
             filterwarnings(action, category=UserWarning)
-            if u is None and y is None:
-                self.model.fit(x)
+            if u is None:
+                self.model.fit(x, y, regressor__dt=dt)
             else:
-                self.model.fit(x, y, regressor__u=u)
+                self.model.fit(x, y, regressor__u=u, regressor__dt=dt)
 
             if isinstance(self.model.steps[1][1], EnsembleBaseRegressor):
                 self.model.steps[1] = (
@@ -370,6 +371,16 @@ class Koopman(BaseEstimator):
                 )
             return self.model.predict(X=x, u=u)
 
+    def reduce(self, t, x, rank=None):
+        """
+        Provides the option to obtain a reduced-order model from the Koopman model
+        """
+        if not hasattr(self.regressor, "reduce"):
+            raise AttributeError("regressor type does not have this option.")
+
+        z = self.model.steps[0][1].transform(x)
+        self.model.steps[-1][1].reduce(t, x, z, self.eigenvalues_continuous, rank)
+
     @property
     def koopman_matrix(self):
         """
@@ -409,13 +420,16 @@ class Koopman(BaseEstimator):
             raise ValueError("this type of self.regressor has no control_matrix")
         return self.model.steps[-1][1].control_matrix_
 
+    @property
     def measurement_matrix(self):
         """
         The measurement matrix (or vector) C satisfies x = Cy
+        TODO: implement measurement matrices for other observable types,
+        then remove error
         """
         check_is_fitted(self, "model")
-        if isinstance(self.regressor, DMDBase):
-            raise ValueError("this type of self.regressor has no measurement_matrix")
+        if not isinstance(self.observables, RadialBasisFunction):
+            raise ValueError("this type of self.observable has no measurement_matrix")
         return self.model.steps[0][1].measurement_matrix_
 
     @property
@@ -482,4 +496,55 @@ class Koopman(BaseEstimator):
         check_is_fitted(self, "model")
         dt = self.time["dt"]
         return np.log(self.eigenvalues) / dt
-        # return self.model.steps[-1][1].eigenvalues_continuous_
+
+    @property
+    def eigenfunctions(self):
+        """
+        Approximate Koopman eigenfunctions
+        """
+        check_is_fitted(self, "model")
+        return self.model.steps[-1][1].kef_
+
+    @property
+    def eigenfunctions_projected(self):
+        """
+        Approximate Koopman eigenfunctions of the low-dimensional operator
+        """
+        check_is_fitted(self, "model")
+        return self.model.steps[-1][1].left_evecs
+
+    def validity_check(self, t, x):
+        """
+        Validity check (i.e. linearity check ) of eigenfunctions
+        phi(x(t)) == phi(x(0))*exp(lambda*t)
+        """
+        if not hasattr(self.model.steps[-1][1], "left_evecs"):
+            [evals, left_evecs, right_evecs] = scipy.linalg.eig(
+                self.state_transition_matrix, left=True
+            )
+
+        else:
+            left_evecs = self.model.steps[-1][1].left_evecs
+        z = self.observables.transform(x)
+        omega = self.eigenvalues_continuous
+        linearity_error = []
+        for i in range(len(self.eigenvalues)):
+            xi = left_evecs[:, i]
+            linearity_error.append(
+                np.linalg.norm(
+                    # np.real(z @ xi) - np.real(np.exp(omega[i] * t) * (z[0, :] @ xi))
+                    np.real(z @ xi)
+                    - np.real(np.exp(omega[i].conj() * t) * (z[0, :] @ xi))
+                )
+            )
+        # surprise (shaowu wrote):
+        # scipy 1.9.1
+        # from scipy.linalg import eig
+        # eval,lvec, rvec = eig(A,left=True)
+        # np.linalg.norm(A.T@lvec - lvec @ np.diag(eval)) != 1e-16
+        # np.linalg.norm(A.T@lvec - lvec @ np.diag(eval.conj())) == 1e-16
+
+        sort_idx = np.argsort(linearity_error)
+        efun_index = np.arange(len(linearity_error))[sort_idx]
+        linearity_error = [linearity_error[i] for i in sort_idx]
+        return efun_index, linearity_error

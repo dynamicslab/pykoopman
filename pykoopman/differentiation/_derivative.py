@@ -39,9 +39,6 @@ class Derivative(BaseEstimator):
     def set_params(self, **params):
         """
         Set the parameters of this estimator.
-        Modification of the pysindy method to allow unknown kwargs. This allows using
-        the full range of derivative parameters that are not defined as member variables
-        in sklearn grid search.
 
         Returns
         -------

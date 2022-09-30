@@ -7,9 +7,12 @@ import os.path
 
 import numpy as np
 import pytest
+import scipy
 
 from pykoopman.common import advance_linear_system
 from pykoopman.common import drss
+from pykoopman.common import lorenz
+from pykoopman.common import rev_dvdp
 from pykoopman.common import torus_dynamics
 from pykoopman.observables import CustomObservables
 
@@ -216,6 +219,60 @@ def data_torus_dt():
     xhat = torus.Xhat[torus.mask.reshape(torus.n_states**2) == 1, :]
 
     return xhat
+
+
+@pytest.fixture
+def data_lorenz():
+    x0 = [-8, 8, 27]  # initial condition
+    dt = 0.001
+    t = np.linspace(dt, 200, 200000)
+    x = scipy.integrate.odeint(lorenz, x0, t, atol=1e-12, rtol=1e-12)
+
+    return t, x, dt
+
+
+@pytest.fixture
+def data_rev_dvdp():
+    np.random.seed(42)  # for reproducibility
+    n_states = 2  # Number of states
+    dT = 0.1  # Timestep
+    n_traj = 51  # Number of trajectories
+    n_int = 1  # Integration length
+
+    # Uniform distribution of initial conditions
+    x = X0 = 2 * np.random.random([n_states, n_traj]) - 1
+
+    # training data
+    Xtrain = np.zeros((n_states, n_int * n_traj))
+    Ytrain = np.zeros((n_states, n_int * n_traj))
+    for step in range(n_int):
+        y = rev_dvdp(0, x, 0, dT)
+        Xtrain[:, (step) * n_traj : (step + 1) * n_traj] = x
+        Ytrain[:, (step) * n_traj : (step + 1) * n_traj] = y
+        x = y
+
+    x0 = np.array([-0.3, -0.2])
+    t = np.arange(0, 10, dT)
+
+    # test data
+    Xtest = np.zeros((len(t), n_states))
+    Xtest[0, :] = x0
+    for step in range(len(t) - 1):
+        y = rev_dvdp(0, Xtest[step, :][:, np.newaxis], 0, dT)
+        Xtest[step + 1, :] = y
+
+    return dT, X0, Xtrain, Ytrain, Xtest
+
+
+@pytest.fixture
+def data_for_vality_check():
+    A = np.array([[-0.9, -0.3], [0.2, -0.7]])
+    B = np.zeros((2, 1))
+    C = np.eye(2)
+    x0 = np.array([-2, 2])
+    N = 50
+    X, Y = advance_linear_system(x0, np.zeros((1, N)), N, A, B, C)
+    return X, np.arange(N)
 
 
 @pytest.fixture

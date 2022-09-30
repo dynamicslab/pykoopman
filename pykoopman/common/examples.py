@@ -415,3 +415,122 @@ def rk4(t, x, u, _dt=0.01, func=vdp_osc):
 
 def square_wave(step):
     return (-1.0) ** (round(step / 30.0))
+
+
+def lorenz(x, t, sigma=10, beta=8 / 3, rho=28):
+    return [
+        sigma * (x[1] - x[0]),
+        x[0] * (rho - x[2]) - x[1],
+        x[0] * x[1] - beta * x[2],
+    ]
+
+
+def rev_dvdp(t, x, u=0, dt=0.1):
+    return [
+        x[0, :] - x[1, :] * dt,
+        x[1, :] + (x[0, :] - x[1, :] + x[0, :] ** 2 * x[1, :]) * dt,
+    ]
+
+
+class Linear2Ddynamics:
+    def __init__(self):
+        self.n_states = 2  # Number of states
+
+    def linear_map(self, x):
+        return np.array([[0.8, -0.05], [0, 0.7]]) @ x
+
+    def collect_data(self, x, n_int, n_traj):
+        # Init
+        X = np.zeros((self.n_states, n_int * n_traj))
+        Y = np.zeros((self.n_states, n_int * n_traj))
+
+        # Integrate
+        for step in range(n_int):
+            y = self.linear_map(x)
+            X[:, (step) * n_traj : (step + 1) * n_traj] = x
+            Y[:, (step) * n_traj : (step + 1) * n_traj] = y
+            x = y
+
+        return X, Y
+
+    def visualize_modes(self, x, phi):
+        n_modes = min(10, phi.shape[1])
+        fig, axs = plt.subplots(2, n_modes, figsize=(3 * n_modes, 6))
+        for i in range(n_modes):
+            axs[0, i].scatter(
+                x[0, :],
+                x[1, :],
+                c=np.real(phi[:, i]),
+                marker="o",
+                cmap=plt.get_cmap("jet"),
+            )
+            axs[1, i].scatter(
+                x[0, :],
+                x[1, :],
+                c=np.imag(phi[:, i]),
+                marker="o",
+                cmap=plt.get_cmap("jet"),
+            )
+
+
+class slow_manifold:
+    def __init__(self, mu=-0.05, la=-1.0, dt=0.01):
+        self.mu = mu
+        self.la = la
+        self.b = self.la / (self.la - 2 * self.mu)
+        self.dt = dt
+        self.n_states = 2
+
+    def sys(self, t, x, u):
+        return np.array([self.mu * x[0, :], self.la * (x[1, :] - x[0, :] ** 2)])
+
+    def output(self, x):
+        return x[0, :] ** 2 + x[1, :]
+
+    def simulate(self, x0, n_int):
+        n_traj = x0.shape[1]
+        x = x0
+        u = np.zeros((n_int, 1))
+        X = np.zeros((self.n_states, n_int * n_traj))
+        for step in range(n_int):
+            y = rk4(0, x, u[step, :], self.dt, self.sys)
+            X[:, (step) * n_traj : (step + 1) * n_traj] = y
+            x = y
+        return X
+
+    def collect_data_continuous(self, x0):
+        n_traj = x0.shape[1]
+        u = np.zeros((1, n_traj))
+        X = x0
+        Y = self.sys(0, x0, u)
+        return X, Y
+
+    def collect_data_discrete(self, x0, n_int):
+        n_traj = x0.shape[1]
+        x = x0
+        u = np.zeros((n_int, n_traj))
+        X = np.zeros((self.n_states, n_int * n_traj))
+        Y = np.zeros((self.n_states, n_int * n_traj))
+        for step in range(n_int):
+            y = rk4(0, x, u[step, :], self.dt, self.sys)
+            X[:, (step) * n_traj : (step + 1) * n_traj] = x
+            Y[:, (step) * n_traj : (step + 1) * n_traj] = y
+            x = y
+        return X, Y
+
+    def visualize_trajectories(self, t, X, n_traj):
+        fig, axs = plt.subplots(1, 1, tight_layout=True, figsize=(12, 4))
+        for traj_idx in range(n_traj):
+            x = X[:, traj_idx::n_traj]
+            axs.plot(t[0:100], x[1, 0:100], "k")
+        axs.set(ylabel=r"$x_2$", xlabel=r"$t$")
+
+    def visualize_state_space(self, X, Y, n_traj):
+        fig, axs = plt.subplots(1, 1, tight_layout=True, figsize=(4, 4))
+        for traj_idx in range(n_traj):
+            axs.plot(
+                [X[0, traj_idx::n_traj], Y[0, traj_idx::n_traj]],
+                [X[1, traj_idx::n_traj], Y[1, traj_idx::n_traj]],
+                "-k",
+            )
+        axs.set(ylabel=r"$x_2$", xlabel=r"$x_1$")

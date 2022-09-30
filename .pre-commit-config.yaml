@@ -2,21 +2,21 @@
 fail_fast: false
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: main
+  rev: v4.3.0
   hooks:
     - id: check-added-large-files
       args: ["--maxkb=775"]
     - id: check-merge-conflict
 - repo: https://github.com/asottile/reorder_python_imports
-  rev: v1.0.1
+  rev: v3.8.3
   hooks:
     - id: reorder-python-imports
 - repo: https://github.com/ambv/black
-  rev: stable
+  rev: 22.8.0
   hooks:
     - id: black
 - repo: https://gitlab.com/pycqa/flake8
-  rev: master
+  rev: 3.9.2
   hooks:
     - id: flake8
       args: ["--config=setup.cfg"]

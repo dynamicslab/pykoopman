@@ -1,19 +1,11 @@
-from numpy import arange
-from pydmd import DMD
-from pydmd import DMDBase
-from sklearn.base import BaseEstimator
-from sklearn.pipeline import Pipeline
+import numpy as np
 from sklearn.utils.validation import check_is_fitted
 
-from .common import drop_nan_rows
-from .common import validate_input
 from .differentiation import Derivative
-from .observables import Identity
-from .regression import BaseRegressor
-from .regression import DMDRegressor
+from .koopman import Koopman
 
 
-class KoopmanContinuous(BaseEstimator):
+class KoopmanContinuous(Koopman):
     """
     Continuous-time Koopman class.
 
@@ -44,84 +36,39 @@ class KoopmanContinuous(BaseEstimator):
     """
 
     def __init__(
-        self, observables=None, differentiator=None, regressor=None, dt_default=1
+        self,
+        observables=None,
+        differentiator=Derivative(kind="finite_difference", k=1),
+        regressor=None,
     ):
-        if observables is None:
-            observables = Identity()
-        if differentiator is None:
-            differentiator = Derivative(kind="finite_difference", k=1)
-        if regressor is None:
-            regressor = DMD()
-        if not isinstance(dt_default, float) and not isinstance(dt_default, int):
-            raise ValueError("dt_default must be a positive number")
-        elif dt_default <= 0:
-            raise ValueError("dt_default must be a positive number")
-        else:
-            self.dt_default = dt_default
 
-        self.observables = observables
+        super().__init__(observables, regressor)
         self.differentiator = differentiator
-        self.regressor = regressor
 
-    def fit(self, x, x_dot=None, dt=None, t=None, x_shift=None):
-        if dt is None:
-            dt = self.dt_default
+    def predict(self, x, t=0, u=None):
+        """Predict using continuous-time Koopman model"""
+        check_is_fitted(self, "model")
 
-        if t is None:
-            t = dt * arange(x.shape[0])
-
-        # TODO: validate data
-        x = validate_input(x)
-
-        # TODO: this will probably need to change as we need to compute derivatives
-        # after computing observables
-        if x_dot is None:
-            x_dot = self.differentiator(x, t)
-
-        # Some differentiation methods generate NaN entries at endpoints
-        x_dot, x = drop_nan_rows(x_dot, x)
-
-        if isinstance(self.regressor, DMDBase):
-            regressor = DMDRegressor(self.regressor)
+        if u is None:
+            ypred = self.model.predict(X=x, t=t)
         else:
-            regressor = BaseRegressor(self.regressor)
+            ypred = self.model.predict(X=x, u=u, t=t)
 
-        steps = [
-            ("observables", self.observables),
-            ("regressor", regressor),
-        ]
-        self.model = Pipeline(steps)
+        output = []
+        for k in range(ypred.shape[0]):
+            output.append(np.squeeze(self.observables.inverse(ypred[k][np.newaxis, :])))
 
-        # TODO: make this solves the correct problem
-        self.model.fit(x, x_dot)
+        return output
 
-        self.n_input_features_ = self.model.steps[0][1].n_input_features_
-        self.n_output_features_ = self.model.steps[0][1].n_output_features_
-
-        return self
-
-    def predict(self, x):
+    def simulate(self, x, t=0, u=None):
+        """Simulate continuous-time Koopman model"""
         check_is_fitted(self, "model")
-        return self.observables.inverse(self._step(x))
 
-    def simulate(self, x, n_steps=1):
-        check_is_fitted(self, "model")
-        # Could have an option to only return the end state and not all
-        # intermediate states to save memory.
-        output = [self.predict(x)]
-        for k in range(n_steps - 1):
-            output.append(self.predict(output[-1]))
+        # output = [self.predict(x)]
+        # for k in range(n_steps - 1):
+        #     output.append(self.predict(output[-1]))
+        pass
 
-    def _step(self, x):
-        # TODO: rename this
-        check_is_fitted(self, "model")
-        return self.model.predict(X=x, u=None)
-
-    @property
-    def koopman_matrix(self):
-        """
-        Get the Koopman matrix K such that
-        g(X') = g(X) * K
-        """
-        check_is_fitted(self, "model")
-        return self.model.steps[-1][1].coef_
+    def _step(self, x, u=None):
+        """For consistency kept."""
+        raise NotImplementedError("ContinuousKoopman does not have a step function.")

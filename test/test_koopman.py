@@ -31,10 +31,8 @@ def test_predict_shape(data_random):
 
 def test_simulate_accuracy(data_2D_superposition):
     x = data_2D_superposition
-
-    regressor = DMD(svd_rank=10)
+    regressor = regression.DMDRegressor(DMD(svd_rank=10))
     model = Koopman(regressor=regressor).fit(x)
-
     n_steps = 10
     x_pred = model.simulate(x[0], n_steps=n_steps)
     assert_allclose(x[1 : n_steps + 1], x_pred)
@@ -235,8 +233,7 @@ def test_torus_discrete_time(data_torus_ct, data_torus_dt):
 # TODO: test torus mode id with dmdc
 
 
-def test_edmdc_vanderpol(data_vdp_edmdc):
-    xpred_ref = data_vdp_edmdc  # Test data from pre-computed Koopman model
+def test_edmdc_vanderpol():
 
     np.random.seed(42)  # For reproducibility
     n_states = 2
@@ -289,4 +286,37 @@ def test_edmdc_vanderpol(data_vdp_edmdc):
     # Add initial condition to simulated data for comparison below
     Xkoop = np.vstack([x[np.newaxis, :], Xkoop])
 
-    assert_allclose(Xkoop, xpred_ref, 1e-07, 1e-9)
+    assert_allclose(
+        Xkoop[-1, :], [-8.473305929876546738e-01, 6.199389628993866308e-02], 1e-07, 1e-9
+    )
+
+
+def test_accuracy_of_edmd_prediction(data_rev_dvdp):
+    np.random.seed(42)  # for reproducibility
+    dT, X0, Xtrain, Ytrain, Xtest = data_rev_dvdp
+
+    EDMD = regression.EDMD()
+    RBF = observables.RadialBasisFunction(
+        rbf_type="thinplate",
+        n_centers=20,
+        centers=None,
+        kernel_width=1.0,
+        polyharmonic_coeff=1.0,
+        include_states=True,
+    )
+
+    model = Koopman(observables=RBF, regressor=EDMD)
+    model.fit(Xtrain.T, y=Ytrain.T)
+
+    Xkoop = model.simulate(Xtest[0, :][np.newaxis, :], n_steps=np.shape(Xtest)[0] - 1)
+    Xkoop = np.vstack([Xtest[0, :][np.newaxis, :], Xkoop])
+
+    assert_allclose(Xtest, Xkoop, atol=2e-2, rtol=1e-10)
+
+
+def test_accuracy_koopman_validity_check(data_for_vality_check):
+    X, t = data_for_vality_check
+    model = Koopman()
+    model.fit(X, dt=1)
+    efun_index, linearity_error = model.validity_check(t, X)
+    assert_allclose([0, 0], linearity_error, rtol=1e-10, atol=1e-10)

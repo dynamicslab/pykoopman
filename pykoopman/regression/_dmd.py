@@ -1,11 +1,12 @@
 from warnings import warn
 
+from numpy import identity
 from pydmd import DMDBase
 from sklearn.utils.validation import check_is_fitted
 
 from ._base import BaseRegressor
 
-# from numpy import identity
+# import numpy as np
 
 # todo: can't we just call DMD in PyKoopman, which is actually calling DMD
 # from pydmd? -- No. we want that explicit call so we can use other dmd
@@ -27,7 +28,7 @@ class DMDRegressor(BaseRegressor):
             raise ValueError("regressor must be a subclass of DMDBase from pydmd.")
         super(DMDRegressor, self).__init__(regressor)
 
-    def fit(self, x, y=None):
+    def fit(self, x, y=None, dt=1):
         """
         Parameters
         ----------
@@ -50,13 +51,13 @@ class DMDRegressor(BaseRegressor):
         # note that pydmd only stores the low-rank `A' matrix, which makes
         # sense in high-dimensional system but we focus on low-dimensional,
         # but highly nonlinear system
-        # self._coef_ = self.regressor.predict(identity(x.shape[1])).T
+        self._coef_ = self.regressor.predict(identity(x.shape[1])).T
 
+        # 2022-09-28: shaowu wrote: the following would be inconsistent with other xDMD
         # but in order to follow the guidelines of using pydmd as much as we can
         # we should use the atilde from them. but remember to transpose
-        self._coef_ = self.regressor.atilde.T
+        # self._coef_ = self.regressor.atilde.T
 
-        # Get Koopman modes, eigenvectors, eigenvalues from pydmd
         self._amplitudes_ = self.regressor.amplitudes
         self._eigenvalues_ = self.regressor.eigs
         self._modes_ = self.regressor.modes

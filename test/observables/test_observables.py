@@ -381,7 +381,8 @@ def test_feature_names(
     )
 
 
-# TODO: rewrite Polynomial to handle cplx. nums.  S: no we don't need this
+# so far it does not support complex number for random fourier features.
+# shaowu does not think complex.number is necessary at all
 @pytest.mark.parametrize(
     "observables",
     [
