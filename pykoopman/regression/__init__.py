@@ -1,6 +1,6 @@
 from ._base import BaseRegressor
 from ._base_ensemble import EnsembleBaseRegressor
-from ._dmd import DMDRegressor
+from ._dmd import PyDMDRegressor
 from ._dmdc import DMDc
 from ._edmd import EDMD
 from ._edmdc import EDMDc
@@ -9,10 +9,10 @@ from ._kdmd import KDMD
 from ._kef import KEF
 
 __all__ = [
-    "DMDRegressor",
-    "DMDc",
+    "PyDMDRegressor",
     "EDMD",
     "KDMD",
+    "DMDc",
     "EDMDc",
     "EnsembleBaseRegressor",
     "HAVOK",

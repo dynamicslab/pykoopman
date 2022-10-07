@@ -1,6 +1,7 @@
 """
 Time-delay observables
 """
+import numpy as np
 from numpy import arange
 from numpy import empty
 from sklearn.utils.validation import check_is_fitted
@@ -100,6 +101,13 @@ class TimeDelay(BaseObservables):
         self.n_input_features_ = n_features
         self.n_output_features_ = n_features * (1 + self.n_delays)
 
+        self.measurement_matrix_ = np.zeros(
+            (self.n_input_features_, self.n_output_features_)
+        )
+        self.measurement_matrix_[
+            : self.n_input_features_, : self.n_input_features_
+        ] = np.eye(self.n_input_features_)
+
         return self
 
     def transform(self, x):
@@ -151,37 +159,6 @@ class TimeDelay(BaseObservables):
             ].flatten()
 
         return y
-
-    def inverse(self, y):
-        """
-        Invert the transformation.
-
-        This function satisfies
-        :code:`self.inverse(self.transform(x)) == x[self._n_consumed_samples:]`
-
-        Parameters
-        ----------
-        y: array-like, shape (n_samples, n_output_features)
-            Data to which to apply the inverse.
-            Must have the same number of features as the transformed data
-
-        Returns
-        -------
-        x: array-like, shape (n_samples, n_input_features)
-            Output of inverse map applied to y.
-        """
-        check_is_fitted(self, "n_input_features_")
-        check_is_fitted(self, "n_output_features_")
-        if y.shape[1] != self.n_output_features_:
-            raise ValueError(
-                "Wrong number of input features."
-                f"Expected y.shape[1] = {self.n_output_features_}; "
-                f"instead y.shape[1] = {y.shape[1]}."
-            )
-
-        # The first n_input_features_ columns correspond to the un-delayed
-        # measurements
-        return y[:, : self.n_input_features_]
 
     def get_feature_names(self, input_features=None):
         """

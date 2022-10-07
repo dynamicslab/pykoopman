@@ -1,4 +1,7 @@
+# from warnings import warn
 import numpy as np
+import scipy
+from pydmd.dmdbase import DMDTimeDict
 from sklearn.utils.validation import check_is_fitted
 
 from ._base import BaseRegressor
@@ -66,6 +69,7 @@ class EDMD(BaseRegressor):
         self: returns a fitted ``EDMD`` instance
         """
         self.n_samples_, self.n_input_features_ = x.shape
+
         if y is None:
             X1 = x[:-1, :]
             X2 = x[1:, :]
@@ -73,35 +77,14 @@ class EDMD(BaseRegressor):
             X1 = x
             X2 = y
 
-        self._fit(X1, X2)
+        self._state_matrix_ = np.linalg.lstsq(X1, X2)[0].T  # [0:Nlift, 0:Nlift]
+        self._coef_ = self._state_matrix_
+        [self._eigenvalues_, self.eigenvectors_] = scipy.linalg.eig(self.state_matrix_)
+
+        self._unnormalized_modes = self.eigenvectors_
+        self.C = np.linalg.inv(self.eigenvectors_)
+
         return self
-
-    def _fit(self, X1, X2):
-        Nlift = X1.shape[1]
-        W = X2.T
-        V = X1.T
-        VVt = V @ V.T
-        WVt = W @ V.T
-        M = WVt @ np.linalg.pinv(VVt)
-        self.state_matrix_ = M[0:Nlift, 0:Nlift]
-        self.coef_ = M
-
-        # Compute Koopman modes, eigenvectors, eigenvalues
-        # [
-        #     self.eigenvalues_,
-        #     self.left_eigenvectors_,
-        #     self.eigenvectors_,
-        # ] = scipy.linalg.eig(self.state_matrix_, left=True)
-        self.eigenvalues_, self.eigenvectors_ = np.linalg.eig(self.state_matrix_)
-        _, self.left_eigenvectors_ = np.linalg.eig(self.state_matrix_.T)
-
-        sort_idx = np.argsort(self.eigenvalues_)
-        sort_idx = sort_idx[::-1]
-        self.eigenvalues_ = self.eigenvalues_[sort_idx]
-        self.modes_ = X1 @ self.eigenvectors_[:, sort_idx]
-        self.kef_ = X1 @ self.left_eigenvectors_[:, sort_idx]
-        self.left_evecs = self.left_eigenvectors_[:, sort_idx]
-        self.right_evecs = self.eigenvectors_[:, sort_idx]
 
     def predict(self, x):
         """
@@ -119,3 +102,48 @@ class EDMD(BaseRegressor):
         check_is_fitted(self, "coef_")
         y = x @ self.state_matrix_.T
         return y
+
+    @property
+    def coef_(self):
+        check_is_fitted(self, "_coef_")
+        return self._coef_
+
+    @property
+    def state_matrix_(self):
+        check_is_fitted(self, "_state_matrix_")
+        return self._state_matrix_
+
+    @property
+    def eigenvalues_(self):
+        check_is_fitted(self, "_eigenvalues_")
+        return self._eigenvalues_
+
+    @property
+    def unnormalized_modes(self):
+        check_is_fitted(self, "_unnormalized_modes")
+        return self._unnormalized_modes
+
+    def compute_eigen_phi(self, x):
+        """
+        input data x is a row-wise data
+        """
+        # compute eigenfunction - one column if x is a row
+        return self.C @ x.T
+
+    def _set_initial_time_dictionary(self, time_dict):
+        """
+        Set the initial values for the class fields `time_dict` and
+        `original_time`. This is usually called in `fit()` and never again.
+
+        :param time_dict: Initial time dictionary for this DMD instance.
+        :type time_dict: dict
+        """
+        if not ("t0" in time_dict and "tend" in time_dict and "dt" in time_dict):
+            raise ValueError('time_dict must contain the keys "t0", "tend" and "dt".')
+        if len(time_dict) > 3:
+            raise ValueError(
+                'time_dict must contain only the keys "t0", "tend" and "dt".'
+            )
+
+        self._original_time = DMDTimeDict(dict(time_dict))
+        self._dmd_time = DMDTimeDict(dict(time_dict))

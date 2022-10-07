@@ -50,7 +50,7 @@ class RandomFourierFeatures(BaseObservables):
         # 3. get the measurement_matrix to map back to state
         if self.include_state:
             self.measurement_matrix_ = np.zeros(
-                (self.n_output_features_, self.n_input_features_)
+                (self.n_input_features_, self.n_output_features_)
             )
             self.measurement_matrix_[
                 : self.n_input_features_, : self.n_input_features_
@@ -61,34 +61,25 @@ class RandomFourierFeatures(BaseObservables):
             # z[:,:x.shape[1]] = x
             # z[:,x.shape[1]:] = self._rff_lifting(x)
             z = self._rff_lifting(x)
-            self.measurement_matrix_ = np.linalg.lstsq(z, x)[0]
+            self.measurement_matrix_ = np.linalg.lstsq(z, x)[0].T
+
         return self
 
     def transform(self, x):
         check_is_fitted(self, "n_input_features_")
-
         z = np.zeros((x.shape[0], self.n_output_features_))
         z_rff = self._rff_lifting(x)
-
         if self.include_state:
             z[:, : x.shape[1]] = x
             z[:, x.shape[1] :] = z_rff
         else:
             z = z_rff
+
         return z
-
-    def inverse(self, y):
-        check_is_fitted(self, "n_output_features_")
-        if y.shape[1] != self.n_output_features_:
-            raise ValueError(
-                "y has the wrong number of features (columns)."
-                f"Expected {self.n_output_features_}, received {y.shape[1]}"
-            )
-
-        return y @ self.measurement_matrix_
 
     def get_feature_names(self, input_features=None):
         check_is_fitted(self, "n_input_features_")
+
         if input_features is None:
             input_features = [f"x{i}" for i in range(self.n_input_features_)]
         else:

@@ -3,7 +3,6 @@ from warnings import filterwarnings
 from warnings import warn
 
 import numpy as np
-import scipy
 from numpy import empty
 from numpy import vstack
 from pydmd import DMD
@@ -15,13 +14,15 @@ from sklearn.utils.validation import check_is_fitted
 
 from .common import validate_input
 from .observables import Identity
-from .observables import RadialBasisFunction
 from .observables import TimeDelay
 from .regression import BaseRegressor
 from .regression import DMDc
-from .regression import DMDRegressor
 from .regression import EDMDc
 from .regression import EnsembleBaseRegressor
+from .regression import PyDMDRegressor
+
+# from .observables import RadialBasisFunction
+# from .regression import KDMD
 
 
 class Koopman(BaseEstimator):
@@ -70,9 +71,9 @@ class Koopman(BaseEstimator):
         if observables is None:
             observables = Identity()
         if regressor is None:
-            regressor = DMDRegressor(DMD(svd_rank=2))  # default svd rank 2
+            regressor = PyDMDRegressor(DMD(svd_rank=2))  # default svd rank 2
         if isinstance(regressor, DMDBase):
-            regressor = DMDRegressor(regressor)
+            regressor = PyDMDRegressor(regressor)
         elif not isinstance(regressor, (BaseRegressor)):
             raise TypeError("Regressor must be from valid class")
 
@@ -122,8 +123,11 @@ class Koopman(BaseEstimator):
                 "Control input u was passed, but self.regressor is not DMDc or EDMDc"
             )
 
-        regressor = self.regressor
-        if y is not None:
+        if y is None:  # or isinstance(self.regressor, PyDMDRegressor):
+            # if there is only 1 trajectory OR regressor is PyDMD
+            regressor = self.regressor
+        else:
+            # multiple traj
             regressor = EnsembleBaseRegressor(
                 regressor=self.regressor,
                 func=self.observables.transform,
@@ -143,7 +147,6 @@ class Koopman(BaseEstimator):
                 self.model.fit(x, y, regressor__dt=dt)
             else:
                 self.model.fit(x, y, regressor__u=u, regressor__dt=dt)
-
             if isinstance(self.model.steps[1][1], EnsembleBaseRegressor):
                 self.model.steps[1] = (
                     self.model.steps[1][0],
@@ -154,6 +157,17 @@ class Koopman(BaseEstimator):
         self.n_output_features_ = self.model.steps[0][1].n_output_features_
         if hasattr(self.model.steps[1][1], "n_control_features_"):
             self.n_control_features_ = self.model.steps[1][1].n_control_features_
+
+        if y is None:
+            if hasattr(self.observables, "n_consumed_samples"):
+                g0 = self.observables.transform(
+                    x[0 : 1 + self.observables.n_consumed_samples]
+                )
+            else:
+                g0 = self.observables.transform(x[0:1])
+            self._amplitudes = np.abs(self.compute_eigen_phi_column(g0))
+        else:
+            self._amplitudes = None
 
         self.time = dict(
             [
@@ -381,12 +395,27 @@ class Koopman(BaseEstimator):
         z = self.model.steps[0][1].transform(x)
         self.model.steps[-1][1].reduce(t, x, z, self.eigenvalues_continuous, rank)
 
+    def compute_eigen_phi_column(self, x):
+        """
+        given x as row vector
+        outputs phi as a column vector
+        """
+        return self.model.steps[-1][1].compute_eigen_phi(x)
+
     @property
     def koopman_matrix(self):
         """
-        The Koopman matrix K satisfying g(X') = g(X) * K
-        where g denotes the observables map and X' denotes x advanced
-        one timestep. Note that if there has some low rank, then K is
+        Autonomous case:
+            - the Koopman matrix K satisfying g(X') = g(X) * K
+            where g denotes the observables map and X' denotes x advanced
+            one timestep. Note that if there has some low rank, then K is
+
+        Controlled case with known input
+            - x' = Ax + Bu,
+            - returns the A
+
+        Controlled case with unknown input:
+            - x' = K [x u]^T
         """
         check_is_fitted(self, "n_output_features_")
         return self.model.steps[-1][1].coef_
@@ -395,9 +424,7 @@ class Koopman(BaseEstimator):
     def state_transition_matrix(self):
         """
         The state transition matrix A satisfies y' = Ay or y' = Ay + Bu, respectively,
-        where y = g(x).
-        # TODO: consider whether we want to match sklearn and have A and B satisfy
-        # y' = yA + uB instead
+        where y = g(x) and y is a low-rank representation.
         """
         check_is_fitted(self, "model")
         if isinstance(self.regressor, DMDBase):
@@ -405,15 +432,16 @@ class Koopman(BaseEstimator):
                 "this type of self.regressor has no state_transition_matrix"
             )
 
-        mat = self.koopman_matrix
         if hasattr(self.model.steps[-1][1], "state_matrix_"):
-            mat = self.model.steps[-1][1].state_matrix_
-        return mat
+            return self.model.steps[-1][1].state_matrix_
+        else:
+            return self.koopman_matrix
 
     @property
     def control_matrix(self):
         """
         The control matrix (or vector) B satisfies y' = Ay + Bu.
+        y is the reduced system state
         """
         check_is_fitted(self, "model")
         if isinstance(self.regressor, DMDBase):
@@ -421,21 +449,42 @@ class Koopman(BaseEstimator):
         return self.model.steps[-1][1].control_matrix_
 
     @property
+    def reduced_state_transition_matrix(self):
+        check_is_fitted(self, "model")
+        if isinstance(self.regressor, DMDBase):
+            raise ValueError(
+                "this type of self.regressor has no state_transition_matrix"
+            )
+
+        if hasattr(self.model.steps[-1][1], "reduced_state_matrix_"):
+            return self.model.steps[-1][1].reduced_state_matrix_
+
+    @property
+    def reduced_control_matrix(self):
+        """
+        The control matrix (or vector) B satisfies y' = Ay + Bu.
+        y is the reduced system state
+        """
+        check_is_fitted(self, "model")
+        if isinstance(self.regressor, DMDBase):
+            raise ValueError("this type of self.regressor has no control_matrix")
+        return self.model.steps[-1][1].reduced_control_matrix_
+
+    @property
     def measurement_matrix(self):
         """
         The measurement matrix (or vector) C satisfies x = Cy
-        TODO: implement measurement matrices for other observable types,
-        then remove error
         """
         check_is_fitted(self, "model")
-        if not isinstance(self.observables, RadialBasisFunction):
-            raise ValueError("this type of self.observable has no measurement_matrix")
+        # if not isinstance(self.observables, RadialBasisFunction):
+        #     raise ValueError("this type of self.observable has no measurement_matrix")
         return self.model.steps[0][1].measurement_matrix_
 
     @property
     def projection_matrix(self):
         """
         Projection matrix
+            - "encoder" left-mul maps to the low-dimensional space
         """
         check_is_fitted(self, "model")
         if isinstance(self.regressor, DMDBase):
@@ -446,6 +495,7 @@ class Koopman(BaseEstimator):
     def projection_matrix_output(self):
         """
         Output projection matrix
+            - "decoder": left mul maps to the original state space
         """
         check_is_fitted(self, "model")
         if isinstance(self.regressor, DMDBase):
@@ -460,13 +510,13 @@ class Koopman(BaseEstimator):
         Koopman modes
         """
         check_is_fitted(self, "model")
-        return self.model.steps[-1][1].modes_
+        return self.measurement_matrix @ self.model.steps[-1][1].unnormalized_modes
 
-    # TODO: add property "amplititute" to get the lifted from a given x
     @property
     def amplitudes(self):
         check_is_fitted(self, "model")
-        return self.model.steps[-1][1].amplitudes_
+        return self._amplitudes
+        # return self.model.steps[-1][1].amplitudes_
 
     @property
     def eigenvalues(self):
@@ -505,36 +555,30 @@ class Koopman(BaseEstimator):
         check_is_fitted(self, "model")
         return self.model.steps[-1][1].kef_
 
-    @property
-    def eigenfunctions_projected(self):
-        """
-        Approximate Koopman eigenfunctions of the low-dimensional operator
-        """
-        check_is_fitted(self, "model")
-        return self.model.steps[-1][1].left_evecs
+    # @property
+    # def eigenfunctions_projected(self):
+    #     """
+    #     Approximate Koopman eigenfunctions of the low-dimensional operator
+    #     """
+    #     check_is_fitted(self, "model")
+    #     return self.model.steps[-1][1].left_evecs
 
     def validity_check(self, t, x):
         """
         Validity check (i.e. linearity check ) of eigenfunctions
         phi(x(t)) == phi(x(0))*exp(lambda*t)
         """
-        if not hasattr(self.model.steps[-1][1], "left_evecs"):
-            [evals, left_evecs, right_evecs] = scipy.linalg.eig(
-                self.state_transition_matrix, left=True
-            )
-            # todo: maybe on github, the order of eigenvalues is
-            # different from the order I have here...
-            # evals, left_evecs = np.linalg.eig(self.state_transition_matrix.T)
-        else:
-            left_evecs = self.model.steps[-1][1].left_evecs
+
         z = self.observables.transform(x)
+        phi = self.compute_eigen_phi_column(z)
         omega = self.eigenvalues_continuous
         linearity_error = []
         for i in range(len(self.eigenvalues)):
-            xi = left_evecs[:, i]
             linearity_error.append(
                 np.linalg.norm(
-                    np.real(z @ xi) - np.real(np.exp(omega[i] * t) * (z[0, :] @ xi))
+                    np.real(phi[i, :])
+                    - np.real(np.exp(omega[i] * t) * (phi[i, 0:1]))
+                    # np.real(z @ xi) - np.real(np.exp(omega[i] * t) * (z[0, :] @ xi))
                 )
             )
 

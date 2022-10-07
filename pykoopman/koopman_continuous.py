@@ -64,6 +64,8 @@ class KoopmanContinuous(Koopman):
         """Simulate continuous-time Koopman model"""
         check_is_fitted(self, "model")
 
+        # Note: the above method predict is doing simulation.
+
         # output = [self.predict(x)]
         # for k in range(n_steps - 1):
         #     output.append(self.predict(output[-1]))

@@ -46,6 +46,21 @@ def data_2D_superposition():
 
 
 @pytest.fixture
+def data_2D_linear_real_system():
+    A = np.array([[1.5, 0], [0, 0.1]])
+    B = np.array([[1], [0]])
+    x0 = np.array([4, 7])
+    u = 0 * np.array([-4, -2, -1, -0.5, 0, 0.5, 1, 3, 5])
+    n = len(u) + 1
+    x = np.zeros([n, len(x0)])
+    x[0, :] = x0
+    for i in range(n - 1):
+        x[i + 1, :] = A.dot(x[i, :]) + B.dot(u[np.newaxis, i])
+    X = x
+    return X
+
+
+@pytest.fixture
 def data_1D_cosine():
     t = np.linspace(0, 2 * np.pi, 200)
     x = np.cos(3 * t)

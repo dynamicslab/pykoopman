@@ -11,8 +11,6 @@ from sklearn.utils.validation import check_is_fitted
 
 from ._base import BaseRegressor
 
-# from numpy import identity
-
 
 class KDMD(BaseRegressor):
     """
@@ -46,7 +44,7 @@ class KDMD(BaseRegressor):
                 "kernel must be a subclass of sklearn.gaussian_process.kernel"
             )
 
-    def fit(self, x, y=None):
+    def fit(self, x, y=None, dt=1):
         """
         Parameters
         ----------
@@ -55,20 +53,34 @@ class KDMD(BaseRegressor):
 
         Returns
         -------
-        self: retucrns a fit ``DMDRegressor`` instance
+        self: returns a fit ``DMDRegressor`` instance
         """
         if y is not None:
             warn("pydmd regressors do not require the y argument when fitting.")
         self.n_samples_, self.n_input_features_ = x.shape
-        # We transpose x because PyDMD assumes examples are columns, not rows
-        self._regressor_fit(x.T)
+        self._snapshots, self._snapshots_shape = _col_major_2darray(x.T)
+        n_samples = self._snapshots.shape[1]
+        X = self._snapshots[:, :-1]
+        Y = self._snapshots[:, 1:]
 
-        self._coef_ = self._regressor_atilde.T
+        # tlsq on X and Y
+        self._X, self._Y = compute_tlsq(X, Y, self.tlsq_rank)
 
-        # Get Koopman modes, eigenvectors, eigenvalues from pydmd
-        # self._amplitudes_ = self._regressor_amplitudes
-        # self._eigenvalues_ = self._regressor_eigs
-        # self._modes_ = self._regressor_modes
+        # compute KDMD operators, eigenvalues, and koopman modes
+        # note that this method is built by considering row-wise collected data
+        [
+            self._coef_,
+            self._eigenvalues_,
+            self._eigenvectors_,
+            self._unnormalized_modes,
+        ] = self._regressor_compute_kdmdoperator(self._X.T, self._Y.T)
+
+        # Default timesteps
+        self._set_initial_time_dictionary({"t0": 0, "tend": n_samples - 1, "dt": 1})
+
+        # _coef_ as the transpose
+        # self._coef_ = self._regressor_atilde.T
+
         return self
 
     def predict(self, x):
@@ -85,78 +97,74 @@ class KDMD(BaseRegressor):
 
         """
         check_is_fitted(self, "coef_")
-        return self._regression_predict(x.T).T
 
-    def _regressor_fit(self, x):
+        phi = self.compute_eigen_phi(x)
+        phi_next = np.diag(self.eigenvalues_) @ phi
+        x_next_T = self._unnormalized_modes @ phi_next
+        return np.real(x_next_T).T
+
+    @property
+    def coef_(self):
+        check_is_fitted(self, "_coef_")
+        return self._coef_
+
+    @property
+    def state_matrix_(self):
+        check_is_fitted(self, "_state_matrix_")
+        return self._state_matrix_
+
+    @property
+    def eigenvalues_(self):
+        check_is_fitted(self, "_eigenvalues_")
+        return self._eigenvalues_
+
+    @property
+    def unnormalized_modes(self):
+        check_is_fitted(self, "_unnormalized_modes")
+        return self._unnormalized_modes
+
+    def compute_eigen_phi(self, x):
         """
-        here we assume data snapshots is column-wise collected:
-        i.e., X = [x_1, x_2, ... , x_M]
+        input data x is a row-wise data
         """
-        # 0. transpose the matrix
-        self._snapshots, self._snapshots_shape = _col_major_2darray(x)
-        n_samples = self._snapshots.shape[1]
-        X = self._snapshots[:, :-1]
-        Y = self._snapshots[:, 1:]
-
-        # 1. tlsq on X and Y
-        self._X, self._Y = compute_tlsq(X, Y, self.tlsq_rank)
-
-        # 2. compute KDMD operators, eigenvalues, and koopman modes
-        # note that this method is built by considering row-wise collected data
-        (
-            self._eigenvalues_,
-            self._eigenvectors_,
-            self._modes_,
-            self._unnormalized_modes,
-            self._amplitudes_,
-        ) = self._regressor_compute_kdmdoperator(self._X.T, self._Y.T)
-
-        # Default timesteps
-        self._set_initial_time_dictionary({"t0": 0, "tend": n_samples - 1, "dt": 1})
-
-        # 6. get _coef_ as the transpose
-        self._coef_ = self._regressor_atilde.T
-
-        return self
-
-    def _regression_predict(self, x):
-        """x is column-wise collected (n_features, n_samples)"""
-
-        KXx = self.kernel(self._X.T, x.T)
-        phi_x_T = self.C @ KXx
-
-        x_next = self._unnormalized_modes @ np.diag(self.eigenvalues_) @ phi_x_T
-        x_next = np.real(x_next)
-        return x_next
+        # compute eigenfunction - one column if x is a row
+        return self.C @ self.kernel(self._X, x)
 
     def _regressor_compute_kdmdoperator(self, X, Y):
         """
-        here we assume X,Y are rowwise collected. so we can directly use existing
+        here we assume X,Y are row-wise collected. so we can directly use existing
         formulas.
         """
-        # 2. compute kernel K(X,X)
+        # compute kernel K(X,X)
         # since sklearn kernel function takes rowwise collected data.
         KXX = self.kernel(X, X)
         KYX = self.kernel(Y, X)
 
-        # 3. compute eig of PD matrix, so it is SVD
+        # compute eig of PD matrix, so it is SVD
         U, s2, _ = compute_svd(KXX, self.svd_rank)
         s = np.sqrt(
             s2
         )  # remember that we need sigma, but svd or eig only gives you the s^2
 
-        # 4. optional compute tiknoiv reg
+        # optional compute tiknoiv reg
         if self.tikhonov_regularization is not None:
             s = (
                 s**2 + self.tikhonov_regularization * np.linalg.norm(X)
             ) * np.reciprocal(s)
 
-        # 5. compute k_kdmd
-        atilde = np.linalg.multi_dot(
-            [np.diag(np.reciprocal(s)), U.T.conj(), KYX, U, np.diag(np.reciprocal(s))]
+        # compute k_kdmd
+        # atilde = np.linalg.multi_dot([
+        #     np.diag(np.reciprocal(s)),
+        #     U.T.conj(),
+        #     KYX,
+        #     U,
+        #     np.diag(np.reciprocal(s))
+        # ])
+        koopman_matrix = np.linalg.multi_dot(
+            [np.diag(np.reciprocal(s)), U.T.conj(), KYX.T, U, np.diag(np.reciprocal(s))]
         )
 
-        # 5. optional compute fb
+        # optional compute fb
         if self.forward_backward:
             KYY = self.kernel(Y, Y)
             KXY = KYX.T
@@ -171,54 +179,41 @@ class KDMD(BaseRegressor):
                 [
                     np.diag(np.reciprocal(bs)),
                     bU.T.conj(),
-                    KXY,
+                    KXY.T,
                     bU,
                     np.diag(np.reciprocal(bs)),
                 ]
             )
-            atilde = sqrtm(atilde.dot(np.linalg.inv(atilde_back)))
+            koopman_matrix = sqrtm(koopman_matrix @ np.linalg.inv(atilde_back))
 
-        self._regressor_atilde = atilde
+        # self._regressor_atilde = atilde
+        self._state_matrix_ = koopman_matrix
 
-        # 6. compute eigenquantities
-        koopman_eigvals, koopman_eigenvectors = np.linalg.eig(atilde)
+        # compute eigenquantities
+        koopman_eigvals, koopman_eigenvectors = np.linalg.eig(koopman_matrix)
 
-        # 7. compute modes
-        # modes = np.linalg.pinv(np.linalg.multi_dot([
-        #     KXX,
-        #     U,
-        #     np.diag(np.reciprocal(s)),
-        #     koopman_eigenvectors
-        # ])) @ X
+        # compute unnormalized modes
+        BV = np.linalg.lstsq(U @ np.diag(s), X, rcond=None)[0].T
+        unnormalized_modes = BV @ koopman_eigenvectors
 
-        A_ = np.linalg.multi_dot(
-            [KXX, U, np.diag(np.reciprocal(s)), koopman_eigenvectors]
-        )
-        b_ = X
-        unnormalized_modes = np.linalg.lstsq(A_, b_, rcond=None)[0]
+        # compute eigenfunction
+        self.C = np.linalg.inv(koopman_eigenvectors) @ np.diag(np.reciprocal(s)) @ U.T
 
-        # consistent with pydmd fashion so that row is the system dimension
-        unnormalized_modes = unnormalized_modes.T
-        # 7.5 make sure each column is normalized.
-        normalized_modes = unnormalized_modes @ np.diag(
-            1.0 / np.linalg.norm(unnormalized_modes, axis=0)
-        )
+        # amplititute
 
-        # 8. amplititute
         # follow pydmd fashion, use least square to get it.
-        a = np.linalg.lstsq(normalized_modes, self._snapshots.T[0], rcond=None)[0]
+        # a = np.linalg.lstsq(normalized_modes, self._snapshots.T[0], rcond=None)[0]
 
-        # 9. compute C matrix for prediction
+        # compute C matrix for prediction
         # x_test_next = np.real(B^T * Lambda^k * C * kernel(X, x_test))
-        self.C = koopman_eigenvectors.T @ np.diag(np.reciprocal(s)) @ U.T
+        # self.C = koopman_eigenvectors.T @ np.diag(np.reciprocal(s)) @ U.T
 
-        return (
+        return [
+            koopman_matrix,
             koopman_eigvals,
             koopman_eigenvectors,
-            normalized_modes,
             unnormalized_modes,
-            a,
-        )
+        ]
 
     def _set_initial_time_dictionary(self, time_dict):
         """
@@ -237,40 +232,6 @@ class KDMD(BaseRegressor):
 
         self._original_time = DMDTimeDict(dict(time_dict))
         self._dmd_time = DMDTimeDict(dict(time_dict))
-
-    @property
-    def coef_(self):
-        check_is_fitted(self, "_coef_")
-        return self._coef_
-
-    @property
-    def eigenvalues_(self):
-        check_is_fitted(self, "_eigenvalues_")
-        return self._eigenvalues_
-
-    @property
-    def eigenvectors_(self):
-        check_is_fitted(self, "_eigenvectors_")
-        return self._eigenvectors_
-
-    @property
-    def amplitudes_(self):
-        check_is_fitted(self, "_amplitudes_")
-        return self._amplitudes_
-
-    @property
-    def modes_(self):
-        check_is_fitted(self, "_modes_")
-        return self._modes_.T  # so that it will be (n_modes, n_system_dim)
-
-    @property
-    def unnormalized_modes(self):
-        check_is_fitted(self, "_modes_")
-        return self._unnormalized_modes
-
-    @property
-    def regressor_atilde(self):
-        return self._regressor_atilde
 
 
 # get the data in 2D shape. referred to pydmd

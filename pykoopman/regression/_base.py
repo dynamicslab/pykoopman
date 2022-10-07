@@ -12,13 +12,14 @@ class BaseRegressor(BaseEstimator):
     """
 
     def __init__(self, regressor):
+        # check .fit
         if not hasattr(regressor, "fit") or not callable(getattr(regressor, "fit")):
             raise AttributeError("regressor does not have a callable fit method")
+        # check .predict
         if not hasattr(regressor, "predict") or not callable(
             getattr(regressor, "predict")
         ):
             raise AttributeError("regressor does not have a callable predict method")
-
         self.regressor = regressor
 
     def fit(self, x, y=None):

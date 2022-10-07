@@ -14,6 +14,8 @@ from pykoopman.common import examples
 from pykoopman.observables import Identity
 from pykoopman.observables import Polynomial
 from pykoopman.observables import TimeDelay
+from pykoopman.regression import EDMD
+from pykoopman.regression import PyDMDRegressor
 
 
 def test_fit(data_random):
@@ -31,9 +33,24 @@ def test_predict_shape(data_random):
 
 def test_simulate_accuracy(data_2D_superposition):
     x = data_2D_superposition
-    regressor = regression.DMDRegressor(DMD(svd_rank=10))
+    regressor = regression.PyDMDRegressor(DMD(svd_rank=10))
     model = Koopman(regressor=regressor).fit(x)
     n_steps = 10
+    x_pred = model.simulate(x[0], n_steps=n_steps)
+    assert_allclose(x[1 : n_steps + 1], x_pred)
+
+
+def test_dmd_on_nonconsecutive_data_accuracy(data_2D_linear_real_system):
+    x = data_2D_linear_real_system
+    regressor = regression.PyDMDRegressor(
+        DMD(svd_rank=2, tlsq_rank=0, forward_backward=False)
+    )
+    x_pair = np.hstack([x[:-1], x[1:]])
+    x_pair_random = x_pair[np.random.permutation(x_pair.shape[0])]
+    model = Koopman(regressor=regressor).fit(
+        x=x_pair_random[:, :2], y=x_pair_random[:, 2:]
+    )
+    n_steps = 9
     x_pred = model.simulate(x[0], n_steps=n_steps)
     assert_allclose(x[1 : n_steps + 1], x_pred)
 
@@ -123,11 +140,9 @@ def test_observables_integration_accuracy(data_1D_cosine, observables):
 
 def test_simulate_with_time_delay(data_2D_superposition):
     x = data_2D_superposition
-
     observables = TimeDelay()
     model = Koopman(observables=observables)
     model.fit(x)
-
     n_steps = 10
     n_consumed_samples = observables.n_consumed_samples
     x_pred = model.simulate(x[: n_consumed_samples + 1], n_steps=n_steps)
@@ -187,7 +202,7 @@ def test_dmdc_for_highdim_system(data_drss):
     model.fit(Y, u=U)
 
     # Check spectrum
-    Aest = model.state_transition_matrix
+    Aest = model.reduced_state_transition_matrix
     W, V = np.linalg.eig(A)
     West, Vest = np.linalg.eig(Aest)
 
@@ -295,7 +310,8 @@ def test_accuracy_of_edmd_prediction(data_rev_dvdp):
     np.random.seed(42)  # for reproducibility
     dT, X0, Xtrain, Ytrain, Xtest = data_rev_dvdp
 
-    EDMD = regression.EDMD()
+    regressor = regression.EDMD()
+    # regressor = PyDMDRegressor(DMD(svd_rank=22))
     RBF = observables.RadialBasisFunction(
         rbf_type="thinplate",
         n_centers=20,
@@ -305,16 +321,20 @@ def test_accuracy_of_edmd_prediction(data_rev_dvdp):
         include_states=True,
     )
 
-    model = Koopman(observables=RBF, regressor=EDMD)
+    model = Koopman(observables=RBF, regressor=regressor)
     model.fit(Xtrain.T, y=Ytrain.T)
     Xkoop = model.simulate(Xtest[0, :][np.newaxis, :], n_steps=np.shape(Xtest)[0] - 1)
     Xkoop = np.vstack([Xtest[0, :][np.newaxis, :], Xkoop])
     assert_allclose(Xtest, Xkoop, atol=2e-2, rtol=1e-10)
 
 
-def test_accuracy_koopman_validity_check(data_for_vality_check):
+@pytest.mark.parametrize(
+    "regressor",
+    [PyDMDRegressor(DMD(svd_rank=2)), EDMD()],
+)
+def test_accuracy_koopman_validity_check(data_for_vality_check, regressor):
     X, t = data_for_vality_check
-    model = Koopman()
+    model = Koopman(regressor=regressor)
     model.fit(X, dt=1)
     efun_index, linearity_error = model.validity_check(t, X)
     assert_allclose([0, 0], linearity_error, rtol=1e-10, atol=1e-10)

@@ -26,6 +26,7 @@ class KEF(BaseRegressor):
         Machine Learning: Science and Technology, Vol. 2(3), 035023, 2021.
         <https://iopscience.iop.org/article/10.1088/2632-2153/abf0f5>`_
 
+    TODO: shaowu need to go back here.
     Parameters
     ----------
 

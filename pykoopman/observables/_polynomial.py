@@ -68,7 +68,18 @@ class Polynomial(PolynomialFeatures, BaseObservables):
         self : fit :class:`pykoopman.observables.Polynomial` instance
         """
         self.n_consumed_samples = 0
-        return super(Polynomial, self).fit(x.real, y)
+
+        y_poly_out = super(Polynomial, self).fit(x.real, y)
+
+        self.measurement_matrix_ = np.zeros([x.shape[1], y_poly_out.n_output_features_])
+        if self.include_bias:
+            self.measurement_matrix_[: x.shape[1], 1 : 1 + x.shape[1]] = np.eye(
+                x.shape[1]
+            )
+        else:
+            self.measurement_matrix_[: x.shape[1], : x.shape[1]] = np.eye(x.shape[1])
+
+        return y_poly_out
 
     def transform(self, x):
         """Transform data to polynomial features.
@@ -155,35 +166,6 @@ class Polynomial(PolynomialFeatures, BaseObservables):
                     xp[:, i] = x[:, comb].prod(1)
 
         return xp
-
-    def inverse(self, y):
-        """
-        Invert the transformation.
-
-        This function satisfies
-        :code:`self.inverse(self.transform(x)) == x`
-
-        Parameters
-        ----------
-        y: numpy.ndarray, shape (n_samples, n_output_features)
-            Data to which to apply the inverse.
-            Must have the same number of features as the transformed data
-
-        Returns
-        -------
-        x: numpy.ndarray, shape (n_samples, n_input_features)
-            Output of inverse map applied to y.
-        """
-        check_is_fitted(self, "n_output_features_")
-        if y.shape[1] != self.n_output_features_:
-            raise ValueError(
-                "y has the wrong number of features (columns)."
-                f"Expected {self.n_output_features_}, received {y.shape[1]}"
-            )
-        if self.include_bias:
-            return y[:, 1 : self.n_input_features_ + 1]
-        else:
-            return y[:, : self.n_input_features_]
 
     @staticmethod
     def _combinations(n_features, degree, interaction_only, include_bias):

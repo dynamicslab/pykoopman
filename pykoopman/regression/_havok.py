@@ -102,7 +102,9 @@ class HAVOK(BaseRegressor):
 
         # calculate time derivative dxdt & normalize
         dVh = self.differentiator(Vh[: self.svd_rank - 1, :].T, t)
-        dVh, t, Vh = drop_nan_rows(dVh, t, Vh.T)
+        dVh, t, Vh = drop_nan_rows(
+            dVh, t, Vh.T
+        )  # this line actually makes vh and dvh transposed
 
         # regression on intrinsic variables v
         xi = np.zeros((self.svd_rank - 1, self.svd_rank))
@@ -110,20 +112,34 @@ class HAVOK(BaseRegressor):
             xi[i, :] = np.linalg.lstsq(Vh[:, : self.svd_rank], dVh[:, i], rcond=None)[0]
 
         self.forcing_signal = Vh[:, self.svd_rank - 1]
-        self.state_matrix_ = xi[:, : self.svd_rank - 1]
-        self.control_matrix_ = xi[:, self.svd_rank - 1]
+        self._reduced_state_matrix_ = xi[:, : self.svd_rank - 1]
+        self._reduced_control_matrix_ = xi[:, self.svd_rank - 1]
 
         self.svals = s
         self.measurement_matrix_ = U[:, : self.svd_rank - 1] @ np.diag(
             s[: self.svd_rank - 1]
         )
 
-        self.coef_ = self.state_matrix_
-        self.projection_matrix_ = U[:, : self.svd_rank - 1]
-        self.projection_matrix_output_ = U[:, : self.svd_rank - 1]
+        self._coef_ = np.hstack(
+            [self.reduced_state_matrix_, self.reduced_control_matrix_.reshape(-1, 1)]
+        )
+        self._projection_matrix_ = self.measurement_matrix_
+        self._projection_matrix_output_ = self.measurement_matrix_
 
-        [eigenvalues_, self.eigenvectors_] = np.linalg.eig(self.state_matrix_)
-        self.eigenvalues_ = np.exp(eigenvalues_ * dt)  # discrete time
+        [eigenvalues_, self.eigenvectors_] = np.linalg.eig(self.reduced_state_matrix_)
+        # because we fit the model in continuous time,
+        # so we need to convert to discrete time
+        self.eigenvalues_ = np.exp(eigenvalues_ * dt)
+
+        self._unnormalized_modes = self.measurement_matrix_ @ self.eigenvectors_
+
+        self.C = np.linalg.multi_dot(
+            [
+                np.linalg.inv(self.eigenvectors_),
+                np.diag(np.reciprocal(s[: self.svd_rank - 1])),
+                U[:, : self.svd_rank - 1].T,
+            ]
+        )
 
     def predict(self, x, u, t):
         """
@@ -153,15 +169,53 @@ class HAVOK(BaseRegressor):
 
         check_is_fitted(self, "coef_")
         y0 = (
-            np.linalg.inv(np.diag(self.svals[: self.svd_rank - 1]))
-            @ self.projection_matrix_.T
+            # np.linalg.inv(np.diag(self.svals[: self.svd_rank - 1]))
+            # @
+            np.linalg.pinv(self.projection_matrix_)
             @ x.T
         )
         sys = lti(
-            self.state_matrix_,
-            self.control_matrix_[:, np.newaxis],
+            self.reduced_state_matrix_,
+            self.reduced_control_matrix_[:, np.newaxis],
             self.measurement_matrix_,
             np.zeros((self.n_input_features_, self.n_control_features_)),
         )
         tout, ypred, xpred = lsim(sys, U=u, T=t, X0=y0.T)
         return ypred
+
+    @property
+    def coef_(self):
+        check_is_fitted(self, "_coef_")
+        return self._coef_
+
+    @property
+    def reduced_state_matrix_(self):
+        check_is_fitted(self, "_reduced_state_matrix_")
+        return self._reduced_state_matrix_
+
+    @property
+    def reduced_control_matrix_(self):
+        check_is_fitted(self, "_reduced_control_matrix_")
+        return self._reduced_control_matrix_
+
+    @property
+    def projection_matrix_(self):
+        check_is_fitted(self, "_projection_matrix_")
+        return self._projection_matrix_
+
+    @property
+    def projection_matrix_output_(self):
+        check_is_fitted(self, "_projection_matrix_output_")
+        return self._projection_matrix_output_
+
+    @property
+    def unnormalized_modes(self):
+        check_is_fitted(self, "_unnormalized_modes")
+        return self._unnormalized_modes
+
+    def compute_eigen_phi(self, x):
+        """
+        input data x is a row-wise data
+        """
+        # compute eigenfunction - one column if x is a row
+        return self.C @ x.T

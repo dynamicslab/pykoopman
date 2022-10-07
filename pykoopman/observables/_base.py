@@ -68,10 +68,11 @@ class BaseObservables(TransformerMixin, BaseEstimator):
         """
         raise NotImplementedError
 
-    @abc.abstractmethod
     def inverse(self, y):
         """
-        Compute inverse mapping satisfying
+        Invert the transformation.
+
+        This function satisfies
         :code:`self.inverse(self.transform(x)) == x`
 
         Parameters
@@ -79,13 +80,24 @@ class BaseObservables(TransformerMixin, BaseEstimator):
         y: array-like, shape (n_samples, n_output_features)
             Data to which to apply the inverse.
             Must have the same number of features as the transformed data
-        """
-        raise NotImplementedError
 
-    @property
-    def size(self):
-        check_is_fitted(self)
-        return self.n_output_features_
+        Returns
+        -------
+        x: array-like, shape (n_samples, n_input_features)
+            Output of inverse map applied to y.
+            In this case, x is identical to y.
+        """
+        check_is_fitted(self, ["n_input_features_", "measurement_matrix_"])
+        if y.ndim == 1:
+            y = y.reshape(1, -1)
+        if y.shape[1] != self.n_output_features_:
+            raise ValueError(
+                "Wrong number of input features."
+                f"Expected y.shape[1] = {self.n_output_features_}; "
+                f"instead y.shape[1] = {y.shape[1]}."
+            )
+
+        return y @ self.measurement_matrix_.T
 
     def __add__(self, other):
         if isinstance(self, ConcatObservables):
@@ -93,9 +105,16 @@ class BaseObservables(TransformerMixin, BaseEstimator):
         else:
             return ConcatObservables([self, other])
 
+    @property
+    def size(self):
+        check_is_fitted(self)
+        return self.n_output_features_
+
 
 # learned from https://github.com/dynamicslab/pysindy/blob/
 # d0d96f4466b9c16cdd349fdc515abe9081e5b2cf/pysindy/feature_library/base.py#L235
+
+
 class ConcatObservables(BaseObservables):
     """
     when two BaseObservables are concated, we will only keep the first one having
@@ -134,7 +153,9 @@ class ConcatObservables(BaseObservables):
                 s += obs.n_output_features_ - obs.n_input_features_
             else:
                 s += obs.n_output_features_
-            if getattr(obs, "include_bias", False):
+            if getattr(obs, "include_bias", False) and hasattr(
+                self.observables_list_[0], "include_bias"
+            ):
                 s -= 1
 
         self.n_output_features_ = first_obs_output_features + s
@@ -158,6 +179,17 @@ class ConcatObservables(BaseObservables):
                     max_n_consumed_samples, obs.n_consumed_samples
                 )
         self.n_consumed_samples = max_n_consumed_samples
+
+        # measurement_matrix comes from the first observable
+        self.measurement_matrix_ = np.zeros(
+            [self.n_input_features_, self.n_output_features_]
+        )
+        first_obs_measurement_matrix = self.observables_list_[0].measurement_matrix_
+        self.measurement_matrix_[
+            : first_obs_measurement_matrix.shape[0],
+            : first_obs_measurement_matrix.shape[1],
+        ] = first_obs_measurement_matrix
+
         return self
 
     def transform(self, X):
@@ -171,11 +203,15 @@ class ConcatObservables(BaseObservables):
         y_rest_list = []
         for obs in self.observables_list_[1:]:
             if obs.include_state:
-                y_rest_list.append(
-                    obs.transform(X)[-num_samples_updated:, obs.n_input_features_ :]
-                )
+                y_new = obs.transform(X)[-num_samples_updated:, obs.n_input_features_ :]
             else:
-                y_rest_list.append(obs.transform(X)[-num_samples_updated:, :])
+                y_new = obs.transform(X)[-num_samples_updated:, :]
+            if getattr(obs, "include_bias", False) and hasattr(
+                self.observables_list_[0], "include_bias"
+            ):
+                y_new = y_new[:, 1:]
+
+            y_rest_list.append(y_new)
         y_list += y_rest_list
 
         # y_list += [
@@ -204,13 +240,24 @@ class ConcatObservables(BaseObservables):
         """
         Just get the first n_input_features_
         """
-        check_is_fitted(self, "n_consumed_samples")
 
-        # todo: another if-else for inverse from fitted B. this is necessary for KDMD
+        # check_is_fitted(self, "n_consumed_samples")
+        #
+        # # if first observable has state, we just use it done.
+        # obs1 = self.observables_list_[0]
+        # if getattr(obs1, "include_bias", False):
+        #     return y[:, 1 : self.n_input_features_ + 1]
+        # else:
+        #     return y[:, : self.n_input_features_]
 
-        # if first observable has state, we just use it done.
-        obs1 = self.observables_list_[0]
-        if getattr(obs1, "include_bias", False):
-            return y[:, 1 : self.n_input_features_ + 1]
-        else:
-            return y[:, : self.n_input_features_]
+        check_is_fitted(self, ["n_input_features_", "measurement_matrix_"])
+        if y.shape[1] != self.n_output_features_:
+            raise ValueError(
+                "Wrong number of input features."
+                f"Expected y.shape[1] = {self.n_output_features_}; "
+                f"instead y.shape[1] = {y.shape[1]}."
+            )
+
+        # dim_output_first_obs = self.observables_list_[0].n_output_features_
+
+        return y @ self.measurement_matrix_.T

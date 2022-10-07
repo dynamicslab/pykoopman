@@ -87,7 +87,7 @@ class EDMDc(BaseRegressor):
             if len(u) > X1.shape[0]:
                 u = u[:-1]
             C = u[np.newaxis, :]
-        elif u.ndim == 2:
+        else:
             if u.shape[0] > X1.shape[0]:
                 u = u[:-1, :]
             C = u
@@ -109,8 +109,6 @@ class EDMDc(BaseRegressor):
 
         # Compute Koopman modes, eigenvectors, eigenvalues
         [self.eigenvalues_, self.eigenvectors_] = np.linalg.eig(self.state_matrix_)
-        # TODO
-        # self.modes_ =
 
     def predict(self, x, u):
         """

@@ -174,7 +174,8 @@ class RadialBasisFunction(BaseObservables):
                 )
 
         xlift = self._rbf_lifting(x)
-        self.measurement_matrix_ = x.T @ np.linalg.pinv(xlift.T)
+        # self.measurement_matrix_ = x.T @ np.linalg.pinv(xlift.T)
+        self.measurement_matrix_ = np.linalg.lstsq(xlift, x)[0].T
 
         return self
 
@@ -206,34 +207,6 @@ class RadialBasisFunction(BaseObservables):
 
         y = self._rbf_lifting(x)
         return y
-
-    def inverse(self, y):
-        """
-        Invert the transformation using the fitted measurement matrix.
-
-        This function satisfies
-        :code:`self.inverse(self.transform(x)) ~= x[self._n_consumed_samples:]`
-
-        Parameters
-        ----------
-        y: array-like, shape (n_samples, n_output_features)
-            Data to which to apply the inverse.
-            Must have the same number of features as the transformed data
-
-        Returns
-        -------
-        x: array-like, shape (n_samples, n_input_features)
-            Output of inverse map applied to y.
-        """
-        check_is_fitted(self, ["n_input_features_", "measurement_matrix_"])
-        if y.shape[1] != self.n_output_features_:
-            raise ValueError(
-                "Wrong number of input features."
-                f"Expected y.shape[1] = {self.n_out_features_}; "
-                f"instead y.shape[1] = {y.shape[1]}."
-            )
-
-        return y @ self.measurement_matrix_.T
 
     def get_feature_names(self, input_features=None):
         """

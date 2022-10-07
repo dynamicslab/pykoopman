@@ -4,6 +4,7 @@ Linear observables
 from itertools import combinations
 from itertools import combinations_with_replacement
 
+import numpy as np
 from numpy import empty
 from sklearn.utils.validation import check_is_fitted
 
@@ -58,7 +59,7 @@ class CustomObservables(BaseObservables):
             )
         self.observable_names = observable_names
         self.interaction_only = interaction_only
-        self.include_state = False
+        self.include_state = True
 
     def fit(self, x, y=None):
         """
@@ -99,8 +100,17 @@ class CustomObservables(BaseObservables):
                     range(len(self.observables)),
                 )
             )
+
         # First map is the identity
         self.observable_names.insert(0, identity_name)
+
+        # since the first map is identity
+        self.measurement_matrix_ = np.zeros(
+            (self.n_input_features_, self.n_output_features_)
+        )
+        self.measurement_matrix_[
+            : self.n_input_features_, : self.n_input_features_
+        ] = np.eye(self.n_input_features_)
 
         return self
 
@@ -137,38 +147,6 @@ class CustomObservables(BaseObservables):
                 observables_idx += 1
 
         return x_transformed
-
-    def inverse(self, y):
-        """
-        Invert the transformation.
-
-        This function satisfies
-        :code:`self.inverse(self.transform(x)) == x`
-
-        Parameters
-        ----------
-        y: array-like, shape (n_samples, n_output_features)
-            Data to which to apply the inverse.
-            Must have the same number of features as the transformed data
-
-        Returns
-        -------
-        x: array-like, shape (n_samples, n_input_features)
-            Output of inverse map applied to y.
-            In this case, x is identical to y.
-        """
-        y = validate_input(y)
-        check_is_fitted(self, "n_input_features_")
-        check_is_fitted(self, "n_output_features_")
-        if y.shape[1] != self.n_output_features_:
-            raise ValueError(
-                "Wrong number of input features."
-                f"Expected y.shape[1] = {self.n_output_features_}; "
-                f"instead y.shape[1] = {y.shape[1]}."
-            )
-        # self.observables[0] is the identity, so original features are
-        # just the first self.n_input_features_ columns
-        return y[:, : self.n_input_features_]
 
     def get_feature_names(self, input_features=None):
         """

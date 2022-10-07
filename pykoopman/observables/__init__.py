@@ -9,7 +9,7 @@ __all__ = [
     "CustomObservables",
     "Identity",
     "Polynomial",
-    "TimeDelay",
     "RadialBasisFunction",
     "RandomFourierFeatures",
+    "TimeDelay",
 ]
