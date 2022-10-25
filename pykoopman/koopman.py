@@ -395,12 +395,12 @@ class Koopman(BaseEstimator):
         z = self.model.steps[0][1].transform(x)
         self.model.steps[-1][1].reduce(t, x, z, self.eigenvalues_continuous, rank)
 
-    def compute_eigen_phi_column(self, x):
+    def compute_eigen_phi_column(self, z):
         """
-        given x as row vector
+        given z as row vector
         outputs phi as a column vector
         """
-        return self.model.steps[-1][1].compute_eigen_phi(x)
+        return self.model.steps[-1][1].compute_eigen_phi(z)
 
     @property
     def koopman_matrix(self):
@@ -555,13 +555,19 @@ class Koopman(BaseEstimator):
         check_is_fitted(self, "model")
         return self.model.steps[-1][1].kef_
 
-    # @property
-    # def eigenfunctions_projected(self):
-    #     """
-    #     Approximate Koopman eigenfunctions of the low-dimensional operator
-    #     """
-    #     check_is_fitted(self, "model")
-    #     return self.model.steps[-1][1].left_evecs
+    def compute_eigenfunction(self, x):
+        z = self.observables.transform(x)
+        phi = self.compute_eigen_phi_column(z)
+        return phi.T
+
+    def integrate_eigenfunction(self, t, x0):
+        omega = self.eigenvalues_continuous
+        phi0 = self.compute_eigenfunction(x0).T
+        phit = []
+        for i in range(len(omega)):
+            phit_i = np.exp(omega[i] * t) * phi0[i]
+            phit.append(phit_i)
+        return np.vstack(phit).T  # (n_samples, #_eigenmodes)
 
     def validity_check(self, t, x):
         """
@@ -569,16 +575,15 @@ class Koopman(BaseEstimator):
         phi(x(t)) == phi(x(0))*exp(lambda*t)
         """
 
-        z = self.observables.transform(x)
-        phi = self.compute_eigen_phi_column(z)
+        phi = self.compute_eigenfunction(x)
         omega = self.eigenvalues_continuous
         linearity_error = []
         for i in range(len(self.eigenvalues)):
             linearity_error.append(
                 np.linalg.norm(
-                    np.real(phi[i, :])
-                    - np.real(np.exp(omega[i] * t) * (phi[i, 0:1]))
-                    # np.real(z @ xi) - np.real(np.exp(omega[i] * t) * (z[0, :] @ xi))
+                    # np.real(phi[i, :]) - np.real(np.exp(omega[i] * t) * (phi[i, 0:1]))
+                    phi[:, i]
+                    - np.exp(omega[i] * t) * phi[0:1, i]
                 )
             )
 

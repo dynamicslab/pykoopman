@@ -426,10 +426,12 @@ def lorenz(x, t, sigma=10, beta=8 / 3, rho=28):
 
 
 def rev_dvdp(t, x, u=0, dt=0.1):
-    return [
-        x[0, :] - x[1, :] * dt,
-        x[1, :] + (x[0, :] - x[1, :] + x[0, :] ** 2 * x[1, :]) * dt,
-    ]
+    return np.array(
+        [
+            x[0, :] - x[1, :] * dt,
+            x[1, :] + (x[0, :] - x[1, :] + x[0, :] ** 2 * x[1, :]) * dt,
+        ]
+    )
 
 
 class Linear2Ddynamics:

@@ -274,7 +274,7 @@ def data_rev_dvdp():
     Xtest[0, :] = x0
     for step in range(len(t) - 1):
         y = rev_dvdp(0, Xtest[step, :][:, np.newaxis], 0, dT)
-        Xtest[step + 1, :] = y
+        Xtest[step + 1, :] = y.ravel()
 
     return dT, X0, Xtrain, Ytrain, Xtest
 

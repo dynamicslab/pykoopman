@@ -55,15 +55,21 @@ class KDMD(BaseRegressor):
         -------
         self: returns a fit ``DMDRegressor`` instance
         """
-        if y is not None:
-            warn("pydmd regressors do not require the y argument when fitting.")
+        # if y is not None:
+        #    warn("pydmd regressors do not require the y argument when fitting.")
         self.n_samples_, self.n_input_features_ = x.shape
-        self._snapshots, self._snapshots_shape = _col_major_2darray(x.T)
-        n_samples = self._snapshots.shape[1]
-        X = self._snapshots[:, :-1]
-        Y = self._snapshots[:, 1:]
+        n_samples = self.n_samples_
+        if y is None:
+            self._snapshots, self._snapshots_shape = _col_major_2darray(x.T)
+            # self._snapshots.shape[1]
+            X = self._snapshots[:, :-1]
+            Y = self._snapshots[:, 1:]
+        else:
+            # if we have pairs of data
+            X = x.T
+            Y = y.T
 
-        # tlsq on X and Y
+        # tlsq on X and Y - features, samples
         self._X, self._Y = compute_tlsq(X, Y, self.tlsq_rank)
 
         # compute KDMD operators, eigenvalues, and koopman modes
@@ -128,7 +134,7 @@ class KDMD(BaseRegressor):
         input data x is a row-wise data
         """
         # compute eigenfunction - one column if x is a row
-        return self.C @ self.kernel(self._X, x)
+        return self.C @ self.kernel(self._X.T, x)
 
     def _regressor_compute_kdmdoperator(self, X, Y):
         """
@@ -142,9 +148,8 @@ class KDMD(BaseRegressor):
 
         # compute eig of PD matrix, so it is SVD
         U, s2, _ = compute_svd(KXX, self.svd_rank)
-        s = np.sqrt(
-            s2
-        )  # remember that we need sigma, but svd or eig only gives you the s^2
+        s = np.sqrt(s2)
+        # remember that we need sigma, but svd or eig only gives you the s^2
 
         # optional compute tiknoiv reg
         if self.tikhonov_regularization is not None:
@@ -152,14 +157,6 @@ class KDMD(BaseRegressor):
                 s**2 + self.tikhonov_regularization * np.linalg.norm(X)
             ) * np.reciprocal(s)
 
-        # compute k_kdmd
-        # atilde = np.linalg.multi_dot([
-        #     np.diag(np.reciprocal(s)),
-        #     U.T.conj(),
-        #     KYX,
-        #     U,
-        #     np.diag(np.reciprocal(s))
-        # ])
         koopman_matrix = np.linalg.multi_dot(
             [np.diag(np.reciprocal(s)), U.T.conj(), KYX.T, U, np.diag(np.reciprocal(s))]
         )
@@ -198,15 +195,6 @@ class KDMD(BaseRegressor):
 
         # compute eigenfunction
         self.C = np.linalg.inv(koopman_eigenvectors) @ np.diag(np.reciprocal(s)) @ U.T
-
-        # amplititute
-
-        # follow pydmd fashion, use least square to get it.
-        # a = np.linalg.lstsq(normalized_modes, self._snapshots.T[0], rcond=None)[0]
-
-        # compute C matrix for prediction
-        # x_test_next = np.real(B^T * Lambda^k * C * kernel(X, x_test))
-        # self.C = koopman_eigenvectors.T @ np.diag(np.reciprocal(s)) @ U.T
 
         return [
             koopman_matrix,
