@@ -4,7 +4,6 @@ PyKoopman
 |Build| |Docs| |PyPI|
 
 **PyKoopman** is a Python package for computing data-driven approximations to the Koopman operator.
-TODO: improve descriptions
 
 
 Installation
