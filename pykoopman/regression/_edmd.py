@@ -1,4 +1,6 @@
 # from warnings import warn
+from __future__ import annotations
+
 import numpy as np
 import scipy
 from pydmd.dmdbase import DMDTimeDict

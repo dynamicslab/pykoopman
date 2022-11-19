@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ._base import BaseAnalyzer
 from ._ms_pd21 import ModesSelectionPAD21
 from ._pruned_koopman import PrunedKoopman

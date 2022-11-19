@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 from sklearn.utils import check_array as skl_check_array
 

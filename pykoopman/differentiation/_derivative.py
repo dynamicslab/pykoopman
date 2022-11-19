@@ -3,6 +3,8 @@ Wrapper classes for differentiation methods from the :doc:`derivative:index` pac
 
 Some default values used here may differ from those used in :doc:`derivative:index`.
 """
+from __future__ import annotations
+
 from derivative import dxdt
 from numpy import arange
 from sklearn.base import BaseEstimator

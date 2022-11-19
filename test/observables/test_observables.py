@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 from numpy import hstack
 from numpy import iscomplexobj

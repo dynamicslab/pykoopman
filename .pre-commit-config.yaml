@@ -7,16 +7,20 @@ repos:
     - id: check-added-large-files
       args: ["--maxkb=775"]
     - id: check-merge-conflict
-- repo: https://github.com/asottile/reorder_python_imports
-  rev: v3.8.3
-  hooks:
-    - id: reorder-python-imports
+    - id: trailing-whitespace
+    - id: end-of-file-fixer
+-   repo: https://github.com/asottile/reorder_python_imports
+    rev: v3.9.0
+    hooks:
+      -   id: reorder-python-imports
+          exclude: ^(pre_commit/resources/|testing/resources/python3_hooks_repo/)
+          args: [--py37-plus, --add-import, 'from __future__ import annotations']
 - repo: https://github.com/ambv/black
   rev: 22.8.0
   hooks:
     - id: black
-- repo: https://gitlab.com/pycqa/flake8
-  rev: 3.9.2
+- repo: https://github.com/PyCQA/flake8
+  rev: 5.0.4
   hooks:
     - id: flake8
       args: ["--config=setup.cfg"]

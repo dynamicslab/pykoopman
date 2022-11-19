@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 import scipy
 from sklearn.utils.validation import check_is_fitted

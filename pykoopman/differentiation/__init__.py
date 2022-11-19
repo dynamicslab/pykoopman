@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ._derivative import Derivative
 from ._finite_difference import FiniteDifference
 

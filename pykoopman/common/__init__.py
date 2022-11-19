@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from .examples import advance_linear_system
 from .examples import drss
 from .examples import Linear2Ddynamics

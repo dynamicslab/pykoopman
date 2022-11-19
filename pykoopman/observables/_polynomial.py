@@ -1,6 +1,8 @@
 """
 Polynomial observables
 """
+from __future__ import annotations
+
 from itertools import chain
 from itertools import combinations
 from itertools import combinations_with_replacement as combinations_w_r

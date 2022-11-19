@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ._custom_observables import CustomObservables
 from ._identity import Identity
 from ._polynomial import Polynomial

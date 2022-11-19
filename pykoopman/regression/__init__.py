@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ._base import BaseRegressor
 from ._base_ensemble import EnsembleBaseRegressor
 from ._dmd import PyDMDRegressor

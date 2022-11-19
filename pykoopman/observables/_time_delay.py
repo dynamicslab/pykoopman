@@ -1,6 +1,8 @@
 """
 Time-delay observables
 """
+from __future__ import annotations
+
 import numpy as np
 from numpy import arange
 from numpy import empty

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from warnings import catch_warnings
 from warnings import filterwarnings
 from warnings import warn

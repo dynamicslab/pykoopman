@@ -1,6 +1,8 @@
 """
 Linear observables
 """
+from __future__ import annotations
+
 from itertools import combinations
 from itertools import combinations_with_replacement
 

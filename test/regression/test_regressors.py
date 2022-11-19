@@ -1,4 +1,6 @@
 """Tests for pykoopman.regression objects and methods."""
+from __future__ import annotations
+
 import pytest
 
 from pykoopman.regression import BaseRegressor

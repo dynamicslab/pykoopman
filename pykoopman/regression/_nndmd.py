@@ -4,6 +4,9 @@
 # import tensorflow as tf
 # from sklearn.utils.validation import check_is_fitted
 # TODO: Shaowu [11/18/2022] write a wrapper for external NN based Koopman package
+from __future__ import annotations
+
+
 class NNDMD(object):
     def __init__(self):
         pass
