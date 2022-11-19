@@ -27,7 +27,7 @@ class PrunedKoopman(object):
 
     C_ : numpy.ndarray
         The matrix that maps selected Koopman eigenfunctions
-        back to the system state :math:`x = C $\phi$`.
+        back to the system state :math:`x = C \\phi`.
     """
 
     def __init__(self, model: Koopman, sweep_index: np.ndarray):

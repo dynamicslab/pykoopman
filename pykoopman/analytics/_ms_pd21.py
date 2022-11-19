@@ -94,7 +94,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
         self.dir = "./"
 
         if type(validate_data_traj) != list:
-            raise NotImplemented
+            raise NotImplementedError
 
         # loop over each validation trajectory
         Q_i = []
@@ -254,7 +254,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
         X = np.vstack([tmp["x"] for tmp in self.validate_data_traj])
         num_alpha = len(ALPHA_RANGE)
 
-        ## 1. normalize the features by making modal amplititute to 1 for all features
+        # 1. normalize the features by making modal amplititute to 1 for all features
         # phi_tilde_scaled = np.copy(phi_tilde)
         # i0 = 0
         # for tmp in self.validate_data_traj:
@@ -268,8 +268,8 @@ class ModesSelectionPAD21(BaseAnalyzer):
 
         # print(phi_tilde_scaled[0,:])
 
-        ## 2. augmenting the complex AX=B problem into a AX=B problem with real entries
-        ##    since current package only support real number array
+        # 2. augmenting the complex AX=B problem into a AX=B problem with real entries
+        #    since current package only support real number array
 
         a = np.hstack([np.real(phi_tilde_scaled), -np.imag(phi_tilde_scaled)])
         b = np.hstack([np.imag(phi_tilde_scaled), np.real(phi_tilde_scaled)])
@@ -296,7 +296,8 @@ class ModesSelectionPAD21(BaseAnalyzer):
         # combine them into complex arrary for final results!
         coefs_enet_comp = coefs_enet_real + 1j * coefs_enet_imag
 
-        ## 2.5 remove feature that is smaller than 'self.truncation_threshold' of the max. because most often,
+        # 2.5 remove feature that is smaller than 'self.truncation_threshold'
+        # of the max. because most often,
         for i_alpha in range(coefs_enet_comp.shape[2]):
             for i_target in range(coefs_enet_comp.shape[0]):
                 coef_cutoff_value = self.truncation_threshold * np.max(
@@ -307,7 +308,8 @@ class ModesSelectionPAD21(BaseAnalyzer):
                 )
                 coefs_enet_comp[i_target, index_remove, i_alpha] = 0 + 0j
 
-        ## 2.7 given features selected, do LS-refit to remove the bias of any kind of regularization
+        # 2.7 given features selected, do LS-refit to remove the bias of any kind
+        # of regularization
         for i_alpha in range(coefs_enet_comp.shape[2]):
             bool_non_zero = np.linalg.norm(coefs_enet_comp[:, :, i_alpha], axis=0) > 0
             phi_tilde_scaled_reduced = phi_tilde_scaled[:, bool_non_zero]
@@ -319,7 +321,8 @@ class ModesSelectionPAD21(BaseAnalyzer):
             ] = coef_enet_comp_reduced_i_alpha.T
             coefs_enet_comp[:, np.invert(bool_non_zero), i_alpha] = 0
 
-        ## 3. compute residual for parameter sweep. so I can draw the trade off plot between num. non-zero vs rec. resdiual
+        # 3. compute residual for parameter sweep. so I can draw the trade off
+        # plot between num. non-zero vs rec. resdiual
 
         # convert complex array into mag.
         coefs_enet = np.abs(coefs_enet_comp)
@@ -340,7 +343,8 @@ class ModesSelectionPAD21(BaseAnalyzer):
         for ii in range(coefs_enet.shape[2]):
             non_zero_index_per_alpha = []
             for i_component in range(num_target_components):
-                # non_zero_index_per_alpha_per_target = abs(coefs_enet[i_component, :, ii]) > 0
+                # non_zero_index_per_alpha_per_target =
+                # abs(coefs_enet[i_component, :, ii]) > 0
                 non_zero_index_per_alpha_per_target = abs(
                     coefs_enet[i_component, :, ii]
                 ) > 0 * np.max(abs(coefs_enet[i_component, :, ii]))
@@ -351,7 +355,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
             num_non_zero_all_alpha.append(np.sum(non_zero_index_per_alpha_all_targets))
         num_non_zero_all_alpha = np.array(num_non_zero_all_alpha)
 
-        ## print a table for non-zero alpha
+        # print a table for non-zero alpha
         sparse_error_table = PrettyTable()
         sparse_error_table.field_names = [
             "index",
@@ -409,23 +413,6 @@ class ModesSelectionPAD21(BaseAnalyzer):
                 plt.tight_layout()
                 plt.show()
 
-            # total number of non-zero terms1
-
-            # plt.figure(figsize=(6,6))
-            # num_non_zeros = [len((coefs_enet[i_component, abs(coefs_enet[i_component, :, ii]) >0*np.max(abs(coefs_enet[i_component,:,ii])), ii]))
-            #                  for ii in range(coefs_enet.shape[2])]
-            # plt.plot(alphas_enet_log_negative, num_non_zeros , 'k^-')
-            # plt.xlabel(r'-$\log_{10}(\alpha)$',fontsize = 16)
-            # plt.ylabel('number of selected features',fontsize = 16)
-            # # lgd = plt.legend(bbox_to_anchor=(1, 0.5))
-            # if print_figure:
-            #     plt.savefig(self.dir + 'multi-elastic-net-coef-non-zeros-' + str(i_component+1) + '.png',
-            #                 bbox_inches='tight')
-            #     plt.close()
-            # else:
-            #     plt.tight_layout()
-            #     plt.show()
-
         #####################################################################
         # figure set 2 -- reconstruction MSE vs alpha
         fig = plt.figure(figsize=(6, 6))
@@ -447,7 +434,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
             plt.tight_layout()
             plt.show()
 
-        ## 4. find the selected index within top L best eigenmodes for each alpha
+        # 4. find the selected index within top L best eigenmodes for each alpha
         sweep_index_list = []
         for ii, alpha in enumerate(alphas_enet):
             # compute selected index

@@ -46,7 +46,7 @@ class KDMD(BaseRegressor):
     tikhonov_regularization : bool or NoneType, default=None
         Tikhonov parameter for the regularization.
         If `None`, no regularization is applied, if `float`, it is used as the
-        :math:`\lambda` tikhonov parameter.
+        :math:`\\lambda` tikhonov parameter.
 
     kernel : sklearn.gaussian_process.Kernel
         An instance of kernel from sklearn
@@ -67,7 +67,7 @@ class KDMD(BaseRegressor):
     tikhonov_regularization : bool or NoneType, default=None
         Tikhonov parameter for the regularization.
         If `None`, no regularization is applied, if `float`, it is used as the
-        :math:`\lambda` tikhonov parameter.
+        :math:`\\lambda` tikhonov parameter.
 
     kernel : sklearn.gaussian_process.Kernel
         An instance of kernel from sklearn
@@ -85,8 +85,8 @@ class KDMD(BaseRegressor):
         Shape of column-wise data matrix
 
     _X : numpy.ndarray, shape (n_input_features_, n_samples)
-        Training features columnwise arranged. This is needed in KDMD in order to perform
-        prediction, since KDMD is a nonparametric model.
+        Training features columnwise arranged. This is needed in KDMD in
+         order to perform prediction, since KDMD is a nonparametric model.
 
     _Y : numpy.ndarray, shape (n_input_features_, n_samples)
         Training target, columnwise arranged.

@@ -43,11 +43,12 @@ class EDMDc(BaseRegressor):
     control_matrix_ : numpy.ndarray, shape (n_input_features_, n_control_features_)
         Identified control matrix B of the underlying system.
 
-    projection_matrix_ : numpy.ndarray, shape (n_input_features_+n_control_features_, svd_rank)
+    projection_matrix_ : numpy.ndarray, shape (n_input_features_+
+    n_control_features_, svd_rank)
         Projection matrix into low-dimensional subspace.
 
-    projection_matrix_output_ : numpy.ndarray, shape (n_input_features_+n_control_features_,
-                                              svd_output_rank)
+    projection_matrix_output_ : numpy.ndarray, shape (n_input_features_+
+    n_control_features_, svd_output_rank)
         Projection matrix into low-dimensional subspace.
     """
 

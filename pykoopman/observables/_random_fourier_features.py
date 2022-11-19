@@ -16,7 +16,8 @@ class RandomFourierFeatures(BaseObservables):
     See the following reference for more details:
         `Rahimi, A., & Recht, B. (2007). "Random features for large-scale
         kernel machines". Advances in neural information processing systems
-        , 20. <https://proceedings.neurips.cc/paper/2007/file/013a006f03dbc5392effeb8f18fda755-Paper.pdf>`_
+        , 20. <https://proceedings.neurips.cc/paper/2007/file/013a006f03dbc
+        5392effeb8f18fda755-Paper.pdf>`_
 
     Parameters
     ----------

@@ -54,7 +54,7 @@ class PyDMDRegressor(BaseRegressor):
     tikhonov_regularization : bool or NoneType, default=None
         Tikhonov parameter for the regularization.
         If `None`, no regularization is applied, if `float`, it is used as the
-        :math:`\lambda` tikhonov parameter.
+        :math:`\\lambda` tikhonov parameter.
 
     flag_xy : bool
         If `True`, the regressor is operating on multiple trajectories instead
@@ -64,7 +64,7 @@ class PyDMDRegressor(BaseRegressor):
         Number of samples
 
     n_input_features_ : int
-        Number of features, i.e., the dimension of :math:`\phi`
+        Number of features, i.e., the dimension of :math:`\\phi`
 
     _unnormalized_modes : numpy.ndarray, shape (n_input_features_, svd_rank)
         Raw DMD modes with each column as one DMD mode
@@ -260,7 +260,7 @@ class PyDMDRegressor(BaseRegressor):
         tikhonov_regularization : bool or NoneType
             Tikhonov parameter for the regularization.
             If `None`, no regularization is applied, if `float`, it is used as the
-            :math:`\lambda` tikhonov parameter.
+            :math:`\\lambda` tikhonov parameter.
 
         _norm_X : numpy.ndarray, shape (n_samples, n_features)
             Norm of `X` for Tikhonov regularization
