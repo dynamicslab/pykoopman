@@ -29,6 +29,9 @@ class Koopman(BaseEstimator):
     """
     Discrete-Time Koopman class.
 
+    The input-output data is all row-wise if stated elsewhere.
+    All of the matrix, are based on column-wise linear system.
+
     Parameters
     ----------
     observables: observables object, optional \
@@ -406,7 +409,7 @@ class Koopman(BaseEstimator):
     def koopman_matrix(self):
         """
         Autonomous case:
-            - the Koopman matrix K satisfying g(X') = g(X) * K
+            - the Koopman matrix K satisfying g(X') = K * g(X)
             where g denotes the observables map and X' denotes x advanced
             one timestep. Note that if there has some low rank, then K is
 
@@ -556,6 +559,10 @@ class Koopman(BaseEstimator):
         return self.model.steps[-1][1].kef_
 
     def compute_eigenfunction(self, x):
+        """
+        computes the eigenfunction with row-wise output
+
+        """
         z = self.observables.transform(x)
         phi = self.compute_eigen_phi_column(z)
         return phi.T
@@ -571,8 +578,8 @@ class Koopman(BaseEstimator):
 
     def validity_check(self, t, x):
         """
-        Validity check (i.e. linearity check ) of eigenfunctions
-        phi(x(t)) == phi(x(0))*exp(lambda*t)
+        Validity check (i.e. linearity check ) of
+        eigenfunctions phi(x(t)) == phi(x(0))*exp(lambda*t)
         """
 
         phi = self.compute_eigenfunction(x)

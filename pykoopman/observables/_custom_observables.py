@@ -62,8 +62,7 @@ class CustomObservables(BaseObservables):
         self.include_state = True
 
     def fit(self, x, y=None):
-        """
-        Fit to measurement data.
+        """Fit to measurement data.
 
         Determines the number of input and output features and creates
         default values for :code:`observable_names` if necessary.
@@ -115,8 +114,7 @@ class CustomObservables(BaseObservables):
         return self
 
     def transform(self, x):
-        """
-        Apply custom transformations to data, computing observables.
+        """Apply custom transformations to data, computing observables.
 
         Parameters
         ----------
@@ -149,8 +147,7 @@ class CustomObservables(BaseObservables):
         return x_transformed
 
     def get_feature_names(self, input_features=None):
-        """
-        Get the names of the output features.
+        """Get the names of the output features.
 
         Parameters
         ----------

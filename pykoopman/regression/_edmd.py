@@ -8,8 +8,7 @@ from ._base import BaseRegressor
 
 
 class EDMD(BaseRegressor):
-    """
-    Extended DMD (EDMD) regressor.
+    """Extended DMD (EDMD) regressor.
 
     Aims to determine the system matrices A,C
     that satisfy y' = Ay and x = Cy, where y' is the time-shifted
@@ -28,24 +27,32 @@ class EDMD(BaseRegressor):
         Journal of Nonlinear Science, Vol. 25, 1307-1346, 2015.
         <https://link.springer.com/article/10.1007/s00332-015-9258-5>`_
 
-    Parameters
+    Attributes
     ----------
-
-    Attributed
-    ----------
-    coef_ : array, shape (n_input_features_, n_input_features_) or
+    _coef_ : numpy.ndarray, shape (n_input_features_, n_input_features_) or
         (n_input_features_, n_input_features_ + n_control_features_)
         Weight vectors of the regression problem. Corresponds to either [A] or [A,B]
 
-    state_matrix_ : array, shape (n_input_features_, n_input_features_)
+    _state_matrix_ : numpy.ndarray, shape (n_input_features_, n_input_features_)
         Identified state transition matrix A of the underlying system.
 
-    projection_matrix_ : array, shape (n_input_features_+n_control_features_, svd_rank)
-        Projection matrix into low-dimensional subspace.
+    _eigenvalues_ : numpy.ndarray, shape (n_input_features_,)
+        Identified Koopman eigenvalues
 
-    projection_matrix_output_ : array, shape (n_input_features_+n_control_features_,
-                                              svd_output_rank)
-        Projection matrix into low-dimensional subspace.
+    eigenvectors_ : numpy.ndarray, shape (n_input_features_, n_input_features_)
+        Identified Koopman eigenvectors
+
+    _unnormalized_modes_ : numpy.ndarray, shape (n_input_features_, n_input_features_)
+        Identified Koopman eigenvectors
+
+    n_samples_ : int
+        Number of samples
+
+    n_input_features_ : int
+        Number of input features
+
+    C : numpy.ndarray, shape (n_input_features_, n_input_features_)
+        Matrix that maps eigenfunction to the input features
     """
 
     def __init__(self):
@@ -55,13 +62,13 @@ class EDMD(BaseRegressor):
         """
         Parameters
         ----------
-        x: numpy ndarray, shape (n_samples, n_features)
+        x : numpy.ndarray, shape (n_samples, n_features)
             Measurement data to be fit.
 
-        y: numpy.ndarray, shape (n_samples, n_features)
+        y : numpy.ndarray, shape (n_samples, n_features)
             Time-shifted measurement data to be fit
 
-        dt: scalar
+        dt : scalar
             Discrete time-step
 
         Returns
@@ -77,6 +84,7 @@ class EDMD(BaseRegressor):
             X1 = x
             X2 = y
 
+        # X1, X2 are row-wise data, so there is a transpose in the end.
         self._state_matrix_ = np.linalg.lstsq(X1, X2)[0].T  # [0:Nlift, 0:Nlift]
         self._coef_ = self._state_matrix_
         [self._eigenvalues_, self.eigenvectors_] = scipy.linalg.eig(self.state_matrix_)
@@ -90,12 +98,12 @@ class EDMD(BaseRegressor):
         """
         Parameters
         ----------
-        x: numpy ndarray, shape (n_samples, n_features)
+        x: numpy.ndarray, shape (n_samples, n_features)
             Measurement data upon which to base prediction.
 
         Returns
         -------
-        y: numpy ndarray, shape (n_samples, n_features)
+        y: numpy.ndarray, shape (n_samples, n_features)
             Prediction of x one timestep in the future.
 
         """
@@ -125,18 +133,28 @@ class EDMD(BaseRegressor):
 
     def compute_eigen_phi(self, x):
         """
-        input data x is a row-wise data
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n_samples, n_features)
+            Measurement data upon which to compute eigenfunction values.
+
+        Returns
+        -------
+        phi : numpy.ndarray, shape (n_samples, n_input_features_)
+            value of Koopman eigenfunction at x
         """
         # compute eigenfunction - one column if x is a row
-        return self.C @ x.T
+        phi = self.C @ x.T
+        return phi
 
     def _set_initial_time_dictionary(self, time_dict):
-        """
-        Set the initial values for the class fields `time_dict` and
+        """Set the initial values for the class fields `time_dict` and
         `original_time`. This is usually called in `fit()` and never again.
 
-        :param time_dict: Initial time dictionary for this DMD instance.
-        :type time_dict: dict
+        Parameters
+        ----------
+        time_dict : dict
+            Initial time dictionary for this DMD instance.
         """
         if not ("t0" in time_dict and "tend" in time_dict and "dt" in time_dict):
             raise ValueError('time_dict must contain the keys "t0", "tend" and "dt".')

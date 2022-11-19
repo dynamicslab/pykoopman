@@ -7,7 +7,12 @@ class BaseRegressor(BaseEstimator):
 
     Parameters
     ----------
-    regressor: regressor object
+    regressor : sklearn.base.BaseEstimator
+        A regressor object implementing ``fit`` and ``predict`` methods.
+
+    Attributes
+    ----------
+    regressor : sklearn.base.BaseEstimator
         A regressor object implementing ``fit`` and ``predict`` methods.
     """
 

@@ -13,19 +13,81 @@ from ._base import BaseRegressor
 
 class PyDMDRegressor(BaseRegressor):
     """
-    Wrapper for PyDMD regressors.
+    Wrapper for `pydmd` regressors.
 
-       x' = Ax
-       A = self.coef_
+    See the following reference for more details on `pydmd`
 
-    Note that
-       Ur^T A_tilde U_r = A
+        Demo, N., Tezzele, M., & Rozza, G. (2018). PyDMD: Python
+        dynamic mode decomposition. Journal of Open Source
+        Software, 3(22), 530.
+        <https://joss.theoj.org/papers/10.21105/joss.00530.pdf>`_
 
-    But we will not use A_tilde in any case
     Parameters
     ----------
-    DMDRegressor: DMDBase subclass
-        Regressor from PyDMD. Must extend the DMDBase class.
+    regressor: DMDBase
+        A regressor instance from DMDBase in `pydmd`
+
+    tikhonov_regularization: bool or NoneType
+        Whether or not to choose tikhonov regularization
+
+    Attributes
+    ----------
+    tlsq_rank : int
+        the rank for the truncation; If 0, the method
+        does not compute any noise reduction; if positive number, the
+        method uses the argument for the SVD truncation used in the TLSQ
+        method.
+
+    svd_rank : int
+        the rank for the truncation; If 0, the method computes
+        the optimal rank and uses it for truncation; if positive interger,
+        the method uses the argument for the truncation; if float between 0
+        and 1, the rank is the number of the biggest singular values that
+        are needed to reach the 'energy' specified by `svd_rank`; if -1,
+        the method does not compute truncation. Default is 0.
+
+    forward_backward : bool
+        If `True`, the low-rank operator is computed
+        like in fbDMD (reference: https://arxiv.org/abs/1507.02264). Default is
+        False.
+
+    tikhonov_regularization : bool or NoneType, default=None
+        Tikhonov parameter for the regularization.
+        If `None`, no regularization is applied, if `float`, it is used as the
+        :math:`\lambda` tikhonov parameter.
+
+    flag_xy : bool
+        If `True`, the regressor is operating on multiple trajectories instead
+        of just one.
+
+    n_samples_ : int
+        Number of samples
+
+    n_input_features_ : int
+        Number of features, i.e., the dimension of :math:`\phi`
+
+    _unnormalized_modes : numpy.ndarray, shape (n_input_features_, svd_rank)
+        Raw DMD modes with each column as one DMD mode
+
+    _state_matrix_ : numpy.ndarray, shape (n_input_features_, n_input_features_)
+        DMD state transition matrix
+
+    _reduced_state_matrix_ : numpy.ndarray, shape (svd_rank, svd_rank)
+        Reduced DMD state transition matrix
+
+    _eigenvalues_ : numpy.ndarray, shape (n_input_features_,)
+        Identified Koopman eigenvalues
+
+    _eigenvectors_ : numpy.ndarray, shape (n_input_features_, n_input_features_)
+        Identified Koopman eigenvectors
+
+    _coef_ : numpy.ndarray, shape (n_input_features_, n_input_features_) or
+        (n_input_features_, n_input_features_ + n_control_features_)
+        Weight vectors of the regression problem. Corresponds to either [A] or [A,B]
+
+    C : numpy.ndarray, shape (n_input_features_, n_input_features_)
+        Matrix that maps eigenfunction to the input features
+
     """
 
     def __init__(self, regressor, tikhonov_regularization=None):
@@ -36,20 +98,26 @@ class PyDMDRegressor(BaseRegressor):
         self.svd_rank = regressor.svd_rank
         self.forward_backward = regressor.forward_backward
         self.tikhonov_regularization = tikhonov_regularization
-
         self.flag_xy = False
 
     def fit(self, x, y=None, dt=1):
         """
         Parameters
         ----------
-        x: numpy ndarray, shape (n_examples, n_features)
-            Measurement data to be fit.
+        x: numpy ndarray, shape (n_samples, n_features)
+            Measurement data input
+
+        y: numpy ndarray, shape (n_samples, n_features), default=None
+            Measurement data output to be fitted
+
+        dt : float
+            Time interval between `x` and `y`
 
         Returns
         -------
-        self: returns a fit ``DMDRegressor`` instance
+        self : PyDMDRegressor
         """
+
         self.n_samples_, self.n_input_features_ = x.shape
 
         if y is None:
@@ -84,7 +152,7 @@ class PyDMDRegressor(BaseRegressor):
 
         # - modes, eigenvalues, eigenvectors
         self._coef_ = U @ atilde @ U.conj().T
-        self._state_matrix_ = U @ atilde @ U.conj().T
+        self._state_matrix_ = self._coef_
         self._reduced_state_matrix_ = atilde
         [self._eigenvalues_, self._eigenvectors_] = eig(self._reduced_state_matrix_)
         self._unnormalized_modes = U @ self._eigenvectors_
@@ -97,17 +165,19 @@ class PyDMDRegressor(BaseRegressor):
         """
         Parameters
         ----------
-        x: numpy ndarray, shape (n_examples, n_features)
+        x: numpy ndarray, shape (n_samples, n_features)
             Measurement data upon which to base prediction.
 
         Returns
         -------
-        y: numpy ndarray, shape (n_examples, n_features)
+        y: numpy ndarray, shape (n_samples, n_features)
             Prediction of x one timestep in the future.
 
         """
+
         check_is_fitted(self, "coef_")
-        return np.linalg.multi_dot([self._coef_, x.T]).T
+        y = np.linalg.multi_dot([self._coef_, x.T]).T
+        return y
 
     @property
     def coef_(self):
@@ -136,19 +206,31 @@ class PyDMDRegressor(BaseRegressor):
 
     def compute_eigen_phi(self, x):
         """
-        input data x is a row-wise data
+        Parameters
+        ----------
+        x: numpy.ndarray, shape (n_samples, n_features)
+            Measurement data upon which to compute eigenfunction values.
+
+        Returns
+        -------
+        phi : numpy.ndarray, shape (n_samples, n_input_features_)
+            value of Koopman eigenfunction at x
         """
-        # compute eigenfunction - one column if x is a row
-        return self.C @ x.T
+
+        phi = self.C @ x.T  # compute eigenfunction - one column if x is a row
+        return phi
 
     def _set_initial_time_dictionary(self, time_dict):
         """
         Set the initial values for the class fields `time_dict` and
         `original_time`. This is usually called in `fit()` and never again.
 
-        :param time_dict: Initial time dictionary for this DMD instance.
-        :type time_dict: dict
+        Parameters
+        ----------
+        time_dict : dict
+            Initial time dictionary for this DMD instance.
         """
+
         if not ("t0" in time_dict and "tend" in time_dict and "dt" in time_dict):
             raise ValueError('time_dict must contain the keys "t0", "tend" and "dt".')
         if len(time_dict) > 3:
@@ -160,6 +242,36 @@ class PyDMDRegressor(BaseRegressor):
         self._dmd_time = DMDTimeDict(dict(time_dict))
 
     def _least_square_operator(self, U, s, V, Y, tikhonov_regularization, _norm_X):
+        """
+        Parameters
+        ----------
+        U : numpy.ndarray, shape (n_features, svd_rank)
+            Left singular vectors
+
+        s : numpy.ndarray, shape (svd_rank, )
+            Singular values
+
+        V : numpy.ndarray, shape (n_features, svd_rank)
+            Right singular vectors
+
+        Y : numpy.ndarray, shape (n_samples, n_features)
+            Measurement data upon which to base prediction
+
+        tikhonov_regularization : bool or NoneType
+            Tikhonov parameter for the regularization.
+            If `None`, no regularization is applied, if `float`, it is used as the
+            :math:`\lambda` tikhonov parameter.
+
+        _norm_X : numpy.ndarray, shape (n_samples, n_features)
+            Norm of `X` for Tikhonov regularization
+
+        Returns
+        -------
+        A : numpy.ndarray, shape (svd_rank, svd_rank)
+            least square estimation
+        """
+
         if tikhonov_regularization is not None:
             s = (s**2 + tikhonov_regularization * _norm_X) * np.reciprocal(s)
-        return np.linalg.multi_dot([U.T.conj(), Y, V]) * np.reciprocal(s)
+        A = np.linalg.multi_dot([U.T.conj(), Y, V]) * np.reciprocal(s)
+        return A

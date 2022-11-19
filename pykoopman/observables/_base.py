@@ -10,8 +10,7 @@ from sklearn.utils.validation import check_is_fitted
 
 
 class BaseObservables(TransformerMixin, BaseEstimator):
-    """
-    Base class for observable classes.
+    """Base class for observable classes.
 
     Forces subclasses to implement 'fit', 'transform', and 'get_feature_names' functions
     """
@@ -21,8 +20,7 @@ class BaseObservables(TransformerMixin, BaseEstimator):
 
     @abc.abstractmethod
     def fit(self, X, y=None):
-        """
-        Does not do anything for now.
+        """Does not do anything for now.
 
         Parameters
         ----------
@@ -36,8 +34,7 @@ class BaseObservables(TransformerMixin, BaseEstimator):
 
     @abc.abstractmethod
     def transform(self, X):
-        """
-        Transforms data.
+        """Transforms data.
 
         Parameters
         ----------
@@ -54,8 +51,7 @@ class BaseObservables(TransformerMixin, BaseEstimator):
 
     @abc.abstractmethod
     def get_feature_names(self, input_features=None):
-        """
-        Return names of observables.
+        """Return names of observables.
 
         Parameters
         ----------
@@ -69,8 +65,7 @@ class BaseObservables(TransformerMixin, BaseEstimator):
         raise NotImplementedError
 
     def inverse(self, y):
-        """
-        Invert the transformation.
+        """Invert the transformation.
 
         This function satisfies
         :code:`self.inverse(self.transform(x)) == x`
@@ -116,12 +111,45 @@ class BaseObservables(TransformerMixin, BaseEstimator):
 
 
 class ConcatObservables(BaseObservables):
-    """
-    when two BaseObservables are concated, we will only keep the first one having
-    the identity mapping, while the identity mapping in rest will be removed.
+    """Concatnate two `BaseObservables` instances  into one instance of
+    `ConcatObservables`
 
-    note that if the second to last observables are polynomial with include_bias=True,
-    we need to remove bias feature as well.
+    When two BaseObservables are concated, we will only keep the first
+    one having the identity mapping, while the identity mapping in rest
+    will be removed. Note that if the second to last observables are
+    polynomial with `include_bias=True`, we need to remove bias feature
+    as well.
+
+    Parameters
+    ----------
+    observables_list_ : list, optional, default=None
+        a list of `BaseObservables`
+
+    Attributes
+    ----------
+    observables_list_ : list, optional, default=None
+        a list of `BaseObservables`
+
+    include_state : bool
+        True if linear feature (i.e., system state) is included. This
+        indicator can help to identify if redundant linear feature can
+        be removed.
+
+    n_input_features_ : int
+        Dimension of input features, e.g., system state
+
+    n_output_features_ : int
+        Dimension of transformed/output features, e.g., observables
+
+    n_consumed_samples : int
+        Number of effective samples, e.g., time-delay will cause loss
+        of the number of samples because those samples are stacked
+
+    measurement_matrix_ : numpy.ndarray, shape (n_input_features_,
+    n_output_features_)
+        A row feature vector right multiply with `measurement_matrix_`
+        will return the system state
+
     """
 
     def __init__(self, observables_list_=None):
@@ -133,6 +161,21 @@ class ConcatObservables(BaseObservables):
         self.include_state = self.observables_list_[0].include_state
 
     def fit(self, X, y=None):
+        """Set up observable
+
+        Parameters
+        ----------
+        X : numpy.ndarray, shape (n_samples, n_input_features_)
+            Measurement data to be fit.
+
+        y : numpy.ndarray, optional, default=None
+            Time-shifted measurement data to be fit
+
+        Returns
+        -------
+        self: returns a fitted ``ConcatObservables`` instance
+        """
+
         # first one must call fit of every observable in the observer list
         # so that n_input_features_ and n_output_features_ are defined
         for obs in self.observables_list_:
@@ -193,6 +236,19 @@ class ConcatObservables(BaseObservables):
         return self
 
     def transform(self, X):
+        """Evaluate observable at `X`
+
+        Parameters
+        ----------
+        X : numpy.ndarray, shape (n_samples, n_input_features_)
+            Measurement data to be fit.
+
+        Returns
+        -------
+        y: numpy.ndarray, shape (n_samples, n_output_features_)
+            Evaluation of observables at `X`
+        """
+
         # for obs in self.observables_list_:
         #     check_is_fitted(obs, "n_consumed_samples_")
         check_is_fitted(self, "n_input_features_")
@@ -222,6 +278,18 @@ class ConcatObservables(BaseObservables):
         return y
 
     def get_feature_names(self, input_features=None):
+        """Return names of observables
+
+        Parameters
+        ----------
+        input_features : list of string of length n_features, optional
+            Default list is "x0", "x1", ..., "xn", where n = n_features.
+
+        Returns
+        -------
+        output_feature_names : list of string of length n_output_features
+        """
+
         # for obs in self.observables_list_:
         #     check_is_fitted(obs, "n_input_features_")
         check_is_fitted(self, "n_input_features_")
@@ -237,8 +305,22 @@ class ConcatObservables(BaseObservables):
         return concat_feature_names
 
     def inverse(self, y):
-        """
-        Just get the first n_input_features_
+        """Invert the transformation to get system state `x`
+
+        This function approximately (due to some of them use least-square)
+        satisfies :code:`self.inverse(self.transform(x)) == x`
+
+        Parameters
+        ----------
+        y: array-like, shape (n_samples, n_output_features)
+            Data to which to apply the inverse.
+            Must have the same number of features as the transformed data
+
+        Returns
+        -------
+        x: array-like, shape (n_samples, n_input_features)
+            Output of inverse map applied to y.
+            In this case, x is identical to y.
         """
 
         # check_is_fitted(self, "n_consumed_samples")
@@ -259,5 +341,5 @@ class ConcatObservables(BaseObservables):
             )
 
         # dim_output_first_obs = self.observables_list_[0].n_output_features_
-
-        return y @ self.measurement_matrix_.T
+        x = y @ self.measurement_matrix_.T
+        return x

@@ -5,3 +5,5 @@ scipy
 pydmd @ git+https://github.com/mathLab/PyDMD@c98ede0#egg=pydmd
 optht
 scipy
+prettytable
+tensorflow-gpu

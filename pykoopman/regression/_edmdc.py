@@ -31,22 +31,22 @@ class EDMDc(BaseRegressor):
     Parameters
     ----------
 
-    Attributed
+    Attributes
     ----------
-    coef_ : array, shape (n_input_features_, n_input_features_) or
+    coef_ : numpy.ndarray, shape (n_input_features_, n_input_features_) or
         (n_input_features_, n_input_features_ + n_control_features_)
         Weight vectors of the regression problem. Corresponds to either [A] or [A,B]
 
-    state_matrix_ : array, shape (n_input_features_, n_input_features_)
+    state_matrix_ : numpy.ndarray, shape (n_input_features_, n_input_features_)
         Identified state transition matrix A of the underlying system.
 
-    control_matrix_ : array, shape (n_input_features_, n_control_features_)
+    control_matrix_ : numpy.ndarray, shape (n_input_features_, n_control_features_)
         Identified control matrix B of the underlying system.
 
-    projection_matrix_ : array, shape (n_input_features_+n_control_features_, svd_rank)
+    projection_matrix_ : numpy.ndarray, shape (n_input_features_+n_control_features_, svd_rank)
         Projection matrix into low-dimensional subspace.
 
-    projection_matrix_output_ : array, shape (n_input_features_+n_control_features_,
+    projection_matrix_output_ : numpy.ndarray, shape (n_input_features_+n_control_features_,
                                               svd_output_rank)
         Projection matrix into low-dimensional subspace.
     """
@@ -58,7 +58,7 @@ class EDMDc(BaseRegressor):
         """
         Parameters
         ----------
-        x: numpy ndarray, shape (n_samples, n_features)
+        x: numpy.ndarray, shape (n_samples, n_features)
             Measurement data to be fit.
 
         u: numpy.ndarray, shape (n_samples, n_control_features), \
@@ -97,6 +97,19 @@ class EDMDc(BaseRegressor):
         return self
 
     def _fit(self, X1, X2, U):
+        """
+        Parameters
+        ----------
+        X1: numpy.ndarray, shape (n_samples, n_features)
+            Measurement data given as input.
+
+        X2: numpy.ndarray, shape (n_samples, n_features)
+            Measurement data given as target.
+
+        U: numpy.ndarray, shape (n_samples, n_control_features)
+            Time series of external actuation/control.
+
+        """
         Nlift = X1.shape[1]
         W = X2.T
         V = np.vstack([X1.T, U.T])
@@ -114,7 +127,7 @@ class EDMDc(BaseRegressor):
         """
         Parameters
         ----------
-        x: numpy ndarray, shape (n_samples, n_features)
+        x: numpy.ndarray, shape (n_samples, n_features)
             Measurement data upon which to base prediction.
 
         u: numpy.ndarray, shape (n_samples, n_control_features), \
@@ -123,7 +136,7 @@ class EDMDc(BaseRegressor):
 
         Returns
         -------
-        y: numpy ndarray, shape (n_samples, n_features)
+        y: numpy.ndarray, shape (n_samples, n_features)
             Prediction of x one timestep in the future.
 
         """

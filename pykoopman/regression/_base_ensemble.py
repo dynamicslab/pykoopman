@@ -8,8 +8,20 @@ class EnsembleBaseRegressor(TransformedTargetRegressor):
 
     Parameters
     ----------
-    regressor: regressor object
+    regressor : sklearn.base.BaseEstimator
         A regressor object implementing ``fit`` and ``predict`` methods.
+
+    func : function
+        Function to apply to `y` before passing to :meth:`fit`. Cannot be set
+        at the same time as `transformer`. The function needs to return a
+        2-dimensional array. If `func is None`, the function used will be the
+        identity function.
+
+    inverse_func : function
+        Function to apply to the prediction of the regressor. Cannot be set at
+        the same time as `transformer`. The function needs to return a
+        2-dimensional array. The inverse function is used to return
+        predictions to the same space of the original training labels.
     """
 
     def __init__(self, regressor, func, inverse_func):
