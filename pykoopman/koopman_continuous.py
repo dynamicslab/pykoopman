@@ -34,7 +34,6 @@ class KoopmanContinuous(Koopman):
         class. In the latter case, the pydmd object must have both a ``fit``
         and a ``predict`` method.
 
-    TODO
     """
 
     def __init__(

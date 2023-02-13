@@ -34,7 +34,6 @@ class Identity(BaseObservables):
         -------
         self: a fit :class:`pykoopman.observables.Identity` instance
         """
-        # TODO: validate input
         self.n_input_features_ = self.n_output_features_ = x.shape[1]
         self.n_consumed_samples = 0
 
@@ -55,7 +54,6 @@ class Identity(BaseObservables):
         y: array-like, shape (n_samples, n_input_features)
             Transformed data (same as x in this case).
         """
-        # TODO validate input
         check_is_fitted(self, "n_input_features_")
         return x
 

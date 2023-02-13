@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .cqgle import cqgle
 from .examples import advance_linear_system
 from .examples import drss
 from .examples import Linear2Ddynamics
@@ -9,9 +10,11 @@ from .examples import rk4
 from .examples import slow_manifold
 from .examples import torus_dynamics
 from .examples import vdp_osc
+from .nlse import nlse
 from .validation import check_array
 from .validation import drop_nan_rows
 from .validation import validate_input
+from .vbe import vbe
 
 __all__ = [
     "check_array",
@@ -26,4 +29,7 @@ __all__ = [
     "rev_dvdp",
     "Linear2Ddynamics",
     "slow_manifold",
+    "nlse",
+    "vbe",
+    "cqgle",
 ]

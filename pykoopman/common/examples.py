@@ -5,8 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.linalg import orth
 
-# import scipy.linalg
-
 
 def drss(
     n=2, p=2, m=2, p_int_first=0.1, p_int_others=0.01, p_repeat=0.05, p_complex=0.5
@@ -123,6 +121,84 @@ def advance_linear_system(x0, u, n, A=None, B=None, C=None):
         x[i + 1, :] = A.dot(x[i, :]) + B.dot(u[:, i])
         y[i + 1, :] = C.dot(x[i + 1, :])
     return x, y
+
+
+def vdp_osc(t, x, u):  # Dynamics of Van der Pol oscillator
+    y = np.zeros(x.shape)
+    y[0, :] = 2 * x[1, :]
+    y[1, :] = -0.8 * x[0, :] + 2 * x[1, :] - 10 * (x[0, :] ** 2) * x[1, :] + u
+    return y
+
+
+def rk4(t, x, u, _dt=0.01, func=vdp_osc):
+    # 4th order Runge-Kutta
+    k1 = func(t, x, u)
+    k2 = func(t, x + k1 * _dt / 2, u)
+    k3 = func(t, x + k2 * _dt / 2, u)
+    k4 = func(t, x + k1 * _dt, u)
+    return x + (_dt / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
+
+
+def square_wave(step):
+    return (-1.0) ** (round(step / 30.0))
+
+
+def lorenz(x, t, sigma=10, beta=8 / 3, rho=28):
+    return [
+        sigma * (x[1] - x[0]),
+        x[0] * (rho - x[2]) - x[1],
+        x[0] * x[1] - beta * x[2],
+    ]
+
+
+def rev_dvdp(t, x, u=0, dt=0.1):
+    return np.array(
+        [
+            x[0, :] - x[1, :] * dt,
+            x[1, :] + (x[0, :] - x[1, :] + x[0, :] ** 2 * x[1, :]) * dt,
+        ]
+    )
+
+
+class Linear2Ddynamics:
+    def __init__(self):
+        self.n_states = 2  # Number of states
+
+    def linear_map(self, x):
+        return np.array([[0.8, -0.05], [0, 0.7]]) @ x
+
+    def collect_data(self, x, n_int, n_traj):
+        # Init
+        X = np.zeros((self.n_states, n_int * n_traj))
+        Y = np.zeros((self.n_states, n_int * n_traj))
+
+        # Integrate
+        for step in range(n_int):
+            y = self.linear_map(x)
+            X[:, (step) * n_traj : (step + 1) * n_traj] = x
+            Y[:, (step) * n_traj : (step + 1) * n_traj] = y
+            x = y
+
+        return X, Y
+
+    def visualize_modes(self, x, phi):
+        n_modes = min(10, phi.shape[1])
+        fig, axs = plt.subplots(2, n_modes, figsize=(3 * n_modes, 6))
+        for i in range(n_modes):
+            axs[0, i].scatter(
+                x[0, :],
+                x[1, :],
+                c=np.real(phi[:, i]),
+                marker="o",
+                cmap=plt.get_cmap("jet"),
+            )
+            axs[1, i].scatter(
+                x[0, :],
+                x[1, :],
+                c=np.imag(phi[:, i]),
+                marker="o",
+                cmap=plt.get_cmap("jet"),
+            )
 
 
 class torus_dynamics:
@@ -399,84 +475,6 @@ class torus_dynamics:
         B_effective = np.fft.ifft2(Bhat_effective)
 
         return B_effective
-
-
-def vdp_osc(t, x, u):  # Dynamics of Van der Pol oscillator
-    y = np.zeros(x.shape)
-    y[0, :] = 2 * x[1, :]
-    y[1, :] = -0.8 * x[0, :] + 2 * x[1, :] - 10 * (x[0, :] ** 2) * x[1, :] + u
-    return y
-
-
-def rk4(t, x, u, _dt=0.01, func=vdp_osc):
-    # 4th order Runge-Kutta
-    k1 = func(t, x, u)
-    k2 = func(t, x + k1 * _dt / 2, u)
-    k3 = func(t, x + k2 * _dt / 2, u)
-    k4 = func(t, x + k1 * _dt, u)
-    return x + (_dt / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
-
-
-def square_wave(step):
-    return (-1.0) ** (round(step / 30.0))
-
-
-def lorenz(x, t, sigma=10, beta=8 / 3, rho=28):
-    return [
-        sigma * (x[1] - x[0]),
-        x[0] * (rho - x[2]) - x[1],
-        x[0] * x[1] - beta * x[2],
-    ]
-
-
-def rev_dvdp(t, x, u=0, dt=0.1):
-    return np.array(
-        [
-            x[0, :] - x[1, :] * dt,
-            x[1, :] + (x[0, :] - x[1, :] + x[0, :] ** 2 * x[1, :]) * dt,
-        ]
-    )
-
-
-class Linear2Ddynamics:
-    def __init__(self):
-        self.n_states = 2  # Number of states
-
-    def linear_map(self, x):
-        return np.array([[0.8, -0.05], [0, 0.7]]) @ x
-
-    def collect_data(self, x, n_int, n_traj):
-        # Init
-        X = np.zeros((self.n_states, n_int * n_traj))
-        Y = np.zeros((self.n_states, n_int * n_traj))
-
-        # Integrate
-        for step in range(n_int):
-            y = self.linear_map(x)
-            X[:, (step) * n_traj : (step + 1) * n_traj] = x
-            Y[:, (step) * n_traj : (step + 1) * n_traj] = y
-            x = y
-
-        return X, Y
-
-    def visualize_modes(self, x, phi):
-        n_modes = min(10, phi.shape[1])
-        fig, axs = plt.subplots(2, n_modes, figsize=(3 * n_modes, 6))
-        for i in range(n_modes):
-            axs[0, i].scatter(
-                x[0, :],
-                x[1, :],
-                c=np.real(phi[:, i]),
-                marker="o",
-                cmap=plt.get_cmap("jet"),
-            )
-            axs[1, i].scatter(
-                x[0, :],
-                x[1, :],
-                c=np.imag(phi[:, i]),
-                marker="o",
-                cmap=plt.get_cmap("jet"),
-            )
 
 
 class slow_manifold:

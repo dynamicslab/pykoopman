@@ -370,7 +370,6 @@ class Koopman(BaseEstimator):
 
         if u is None or self.n_control_features_ == 0:
             if self.n_control_features_ > 0:
-                # TODO: replace with u = 0 as default
                 raise TypeError(
                     "Model was fit using control variables, so u is required"
                 )

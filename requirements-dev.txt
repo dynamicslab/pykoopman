@@ -16,4 +16,5 @@ sphinx_rtd_theme
 pre-commit
 sphinx-nbexamples
 jupyter_contrib_nbextensions
+PyQt5
 osqp
