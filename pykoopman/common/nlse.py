@@ -8,7 +8,7 @@ from scipy.fft import fft
 from scipy.fft import fftfreq
 from scipy.fft import ifft
 
-from pykoopman.common import rk4
+from .examples import rk4
 
 
 class nlse:
