@@ -143,6 +143,10 @@ def square_wave(step):
     return (-1.0) ** (round(step / 30.0))
 
 
+def sine_wave(step):
+    return np.sin(round(step / 30.0))
+
+
 def lorenz(x, t, sigma=10, beta=8 / 3, rho=28):
     return [
         sigma * (x[1] - x[0]),
@@ -528,6 +532,83 @@ class slow_manifold:
             x = X[:, traj_idx::n_traj]
             axs.plot(t[0:100], x[1, 0:100], "k")
         axs.set(ylabel=r"$x_2$", xlabel=r"$t$")
+
+    def visualize_state_space(self, X, Y, n_traj):
+        fig, axs = plt.subplots(1, 1, tight_layout=True, figsize=(4, 4))
+        for traj_idx in range(n_traj):
+            axs.plot(
+                [X[0, traj_idx::n_traj], Y[0, traj_idx::n_traj]],
+                [X[1, traj_idx::n_traj], Y[1, traj_idx::n_traj]],
+                "-k",
+            )
+        axs.set(ylabel=r"$x_2$", xlabel=r"$x_1$")
+
+
+class forced_duffing:
+    """
+    Forced Duffing Oscillator.
+
+    dx1/dt = x2
+    dx2/dt = -d*x2-alpha*x1-beta*x1^3 + u
+
+    [1] S. Peitz, S. E. Otto, and C. W. Rowley,
+    “Data-driven model predictive control using interpolated koopman generators,”
+    SIAM J. Appl. Dyn. Syst., vol. 19, no. 3, pp. 2162–2193, Mar. 2020.
+    """
+
+    def __init__(self, dt, d, alpha, beta):
+        self.dt = dt
+        self.d = d
+        self.alpha = alpha
+        self.beta = beta
+        self.n_states = 2
+
+    def sys(self, t, x, u):
+        y = np.array(
+            [
+                x[1, :],
+                -self.d * x[1, :] - self.alpha * x[0, :] - self.beta * x[0, :] ** 3 + u,
+            ]
+        )
+        return y
+
+    def simulate(self, x0, n_int, u):
+        n_traj = x0.shape[1]
+        x = x0
+        # assert u.shape == (n_int, 1)
+        X = np.zeros((self.n_states, n_int * n_traj))
+        for step in range(n_int):
+            y = rk4(0, x, u[step, :], self.dt, self.sys)
+            X[:, (step) * n_traj : (step + 1) * n_traj] = y
+            x = y
+        return X
+
+    def collect_data_continuous(self, x0, u):
+        X = x0
+        Y = self.sys(0, x0, u)
+        return X, Y
+
+    def collect_data_discrete(self, x0, n_int, u):
+        n_traj = x0.shape[1]
+        x = x0
+        # u = np.zeros((n_int, n_traj))
+        X = np.zeros((self.n_states, n_int * n_traj))
+        Y = np.zeros((self.n_states, n_int * n_traj))
+        for step in range(n_int):
+            y = rk4(0, x, u[step, :], self.dt, self.sys)
+            X[:, (step) * n_traj : (step + 1) * n_traj] = x
+            Y[:, (step) * n_traj : (step + 1) * n_traj] = y
+            x = y
+        return X, Y
+
+    def visualize_trajectories(self, t, X, n_traj):
+        fig, axs = plt.subplots(1, 2, tight_layout=True, figsize=(12, 4))
+        for traj_idx in range(n_traj):
+            x = X[:, traj_idx::n_traj]
+            axs[0].plot(t, x[0, :], "k")
+            axs[1].plot(t, x[1, :], "b")
+        axs[0].set(ylabel=r"$x_1$", xlabel=r"$t$")
+        axs[1].set(ylabel=r"$x_2$", xlabel=r"$t$")
 
     def visualize_state_space(self, X, Y, n_traj):
         fig, axs = plt.subplots(1, 1, tight_layout=True, figsize=(4, 4))
