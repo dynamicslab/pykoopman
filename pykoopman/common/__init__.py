@@ -10,6 +10,7 @@ from .examples import rk4
 from .examples import slow_manifold
 from .examples import torus_dynamics
 from .examples import vdp_osc
+from .ks import ks
 from .nlse import nlse
 from .validation import check_array
 from .validation import drop_nan_rows
@@ -32,4 +33,5 @@ __all__ = [
     "nlse",
     "vbe",
     "cqgle",
+    "ks",
 ]

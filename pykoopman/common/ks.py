@@ -1,4 +1,4 @@
-"""module for 1D viscous burgers"""
+"""module for 1D KS equation"""
 from __future__ import annotations
 
 import numpy as np
@@ -8,47 +8,78 @@ from scipy.fft import fft
 from scipy.fft import fftfreq
 from scipy.fft import ifft
 
-from pykoopman.common.examples import rk4
 
-
-class vbe:
+class ks:
     """
-    1D viscous Burgers equation
+    solving 1D KS equation
 
-    u_t = -u*u_x + \nu u_{xx}
+    u_t = -u*u_x + u_{xx} + nu*u_{xxxx}
 
-    periodic B.C. PDE is solved using spectral methods
+    periodic B.C. between 0 and 2*pi. This PDE is solved
+    using spectral methods.
     """
 
-    def __init__(self, n, x, dt, nu=0.1, L=2 * np.pi):
+    def __init__(self, n, x, nu, dt, M=16):
         self.n_states = n
-        self.x = x
-        self.nu = nu
-        dk = 2 * np.pi / L
-        self.k = fftfreq(self.n_states, 1.0 / self.n_states) * dk
         self.dt = dt
+        self.x = x
+        dk = 1
+        k = fftfreq(self.n_states, 1.0 / self.n_states) * dk
+        k[n // 2] = 0.0
+        L = k**2 - nu * k**4
+        self.E = np.exp(self.dt * L)
+        self.E2 = np.exp(self.dt * L / 2.0)
+        # self.M = M
+        r = np.exp(1j * np.pi * (np.arange(1, M + 1) - 0.5) / M)
+        r = r.reshape(1, -1)
+        r_on_circle = np.repeat(r, n, axis=0)
+        LR = self.dt * L
+        LR = LR.reshape(-1, 1)
+        LR = LR.astype("complex")
+        LR = np.repeat(LR, M, axis=1)
+        LR += r_on_circle
+        self.g = -0.5j * k
+
+        self.Q = self.dt * np.real(np.mean((np.exp(LR / 2.0) - 1) / LR, axis=1))
+        self.f1 = self.dt * np.real(
+            np.mean(
+                (-4.0 - LR + np.exp(LR) * (4.0 - 3.0 * LR + LR**2)) / LR**3, axis=1
+            )
+        )
+        self.f2 = self.dt * np.real(
+            np.mean((2.0 + LR + np.exp(LR) * (-2.0 + LR)) / LR**3, axis=1)
+        )
+        self.f3 = self.dt * np.real(
+            np.mean(
+                (-4.0 - 3.0 * LR - LR**2 + np.exp(LR) * (4.0 - LR)) / LR**3, axis=1
+            )
+        )
+
+    @staticmethod
+    def compute_u2k_zeropad_dealiased(uk_):
+        # three over two law
+        N = uk_.size
+        # map uk to uk_fine
+        uk_fine = (
+            np.hstack((uk_[0 : int(N / 2)], np.zeros((int(N / 2))), uk_[int(-N / 2) :]))
+            * 3.0
+            / 2.0
+        )
+        # convert uk_fine to physical space
+        u_fine = np.real(ifft(uk_fine))
+        # compute square
+        u2_fine = np.square(u_fine)
+        # compute fft on u2_fine
+        u2k_fine = fft(u2_fine)
+        # convert u2k_fine to u2k
+        u2k = np.hstack((u2k_fine[0 : int(N / 2)], u2k_fine[int(-N / 2) :])) / 3.0 * 2.0
+        return u2k
 
     def sys(self, t, x, u):
-        xk = fft(x)
-
-        # 3/2 truncation rule
-        xk[self.n_states // 3 : 2 * self.n_states // 3] = 0j
-        x = ifft(xk)
-
-        # nonlinear advection
-        tmp_nl_k = fft(-0.5 * x * x)
-        tmp_nl_x_k = 1j * self.k * tmp_nl_k
-
-        # linear viscous term
-        tmp_vis_k = -self.nu * self.k**2 * xk
-
-        # return back to physical space
-        y = np.real(ifft(tmp_nl_x_k + tmp_vis_k))
-        return y
+        raise NotImplementedError
 
     def simulate(self, x0, n_int, n_sample):
-        # n_traj = x0.shape[1]
-        x = x0
+        xk = fft(x0)
         u = np.zeros((n_int, 1))
         X = np.zeros((n_int // n_sample, self.n_states))
         t = 0
@@ -56,31 +87,26 @@ class vbe:
         t_list = []
         for step in range(n_int):
             t += self.dt
-            y = rk4(0, x, u[step, :], self.dt, self.sys)
+            Nv = self.g * self.compute_u2k_zeropad_dealiased(xk)
+            a = self.E2 * xk + self.Q * Nv
+            Na = self.g * self.compute_u2k_zeropad_dealiased(a)
+            b = self.E2 * xk + self.Q * Na
+            Nb = self.g * self.compute_u2k_zeropad_dealiased(b)
+            c = self.E2 * a + self.Q * (2.0 * Nb - Nv)
+            Nc = self.g * self.compute_u2k_zeropad_dealiased(c)
+            xk = self.E * xk + Nv * self.f1 + 2.0 * (Na + Nb) * self.f2 + Nc * self.f3
+
             if (step + 1) % n_sample == 0:
+                y = np.real(ifft(xk)) + self.dt * u[j]
                 X[j, :] = y
                 j += 1
                 t_list.append(t)
-            x = y
+                xk = fft(y)
+
         return X, np.array(t_list)
 
     def collect_data_continuous(self, x0):
-        """
-        collect training data pairs - continuous sense.
-
-        given x0, with shape (n_dim, n_traj), the function
-        returns dx/dt with shape (n_dim, n_traj)
-        """
-
-        n_traj = x0.shape[0]
-        u = np.zeros((n_traj, 1))
-        X = x0
-        Y = []
-        for i in range(n_traj):
-            y = self.sys(0, x0[i], u[i])
-            Y.append(y)
-        Y = np.vstack(Y)
-        return X, Y
+        raise NotImplementedError
 
     def collect_one_step_data_discrete(self, x0):
         """
@@ -90,7 +116,6 @@ class vbe:
         returns system state x1 after self.dt with shape
         (n_dim, n_traj)
         """
-
         n_traj = x0.shape[0]
         X = x0
         Y = []
@@ -110,10 +135,9 @@ class vbe:
         ax = plt.axes(projection=Axes3D.name)
         for i in range(X.shape[0]):
             ax.plot(x, X[i], zs=t[i], zdir="t", label="time = " + str(i * self.dt))
-        # plt.legend(loc='best')
         ax.view_init(elev=35.0, azim=-65, vertical_axis="y")
         ax.set(ylabel=r"$u(x,t)$", xlabel=r"$x$", zlabel=r"time $t$")
-        plt.title("1D Viscous Burgers equation (Kutz et al., Complexity, 2018)")
+        plt.title("1D K-S equation")
         plt.show()
 
     def visualize_state_space(self, X):
@@ -137,34 +161,21 @@ class vbe:
 
 if __name__ == "__main__":
     n = 256
-    x = np.linspace(-15, 15, n, endpoint=False)
-    u0 = np.exp(-((x + 2) ** 2))
-    # u0 = 2.0 / np.cosh(x)
-    # u0 = u0.reshape(-1,1)
-    n_int = 3000
-    n_snapshot = 30
-    dt = 30.0 / n_int
+    x = np.linspace(0, 2.0 * np.pi, n, endpoint=False)
+    u0 = np.sin(x)
+    nu = 0.01
+    n_int = 1000
+    n_snapshot = 500
+    dt = 4.0 / n_int
     n_sample = n_int // n_snapshot
 
-    model = vbe(n, x, dt=dt, L=30)
+    model = ks(n, x, nu=nu, dt=dt)
     X, t = model.simulate(u0, n_int, n_sample)
-
     print(X.shape)
-    # print(X[:,-1].max())
-
-    # usage: visualize the data in physical space
     model.visualize_data(x, t, X)
-    print(t)
 
     # usage: visualize the data in state space
     model.visualize_state_space(X)
-
-    # usage: collect continuous data pair: x and dx/dt
-    x0_array = np.vstack([u0, u0, u0])
-    X, Y = model.collect_data_continuous(x0_array)
-
-    print(X.shape)
-    print(Y.shape)
 
     # usage: collect discrete data pair
     x0_array = np.vstack([u0, u0, u0])

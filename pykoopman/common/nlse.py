@@ -8,7 +8,7 @@ from scipy.fft import fft
 from scipy.fft import fftfreq
 from scipy.fft import ifft
 
-from .examples import rk4
+from pykoopman.common.examples import rk4
 
 
 class nlse:
@@ -110,7 +110,7 @@ class nlse:
         plt.figure(figsize=(6, 6))
         ax = plt.axes(projection=Axes3D.name)
         for i in range(X.shape[0]):
-            ax.plot(x, abs(X[i]), zs=t[i], zdir="t", label="time = " + str(i * dt))
+            ax.plot(x, abs(X[i]), zs=t[i], zdir="t", label="time = " + str(i * self.dt))
         # plt.legend(loc='best')
         ax.view_init(elev=35.0, azim=-65, vertical_axis="y")
         ax.set(ylabel=r"$mag. of u(x,t)$", xlabel=r"$x$", zlabel=r"time $t$")

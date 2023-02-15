@@ -8,16 +8,15 @@ from scipy.fft import fft
 from scipy.fft import fftfreq
 from scipy.fft import ifft
 
-from .examples import rk4
-
-# import scipy
+from pykoopman.common.examples import rk4
 
 
 class cqgle:
     """
     cubic-quintic Ginzburg-Landau equation
 
-    u_t = -u*u_x + \nu u_{xx}
+    i*u_t + (0.5 - i * tau) u_{xx} - i * kappa u_{xxxx} + (1-i * beta)|u|^2 u +
+    (nu - i * sigma)|u|^4 u - i * gamma u = 0
 
     periodic B.C. PDE is solved using spectral methods
     """
@@ -131,7 +130,7 @@ class cqgle:
         plt.figure(figsize=(6, 6))
         ax = plt.axes(projection=Axes3D.name)
         for i in range(X.shape[0]):
-            ax.plot(x, abs(X[i]), zs=t[i], zdir="t", label="time = " + str(i * dt))
+            ax.plot(x, abs(X[i]), zs=t[i], zdir="t", label="time = " + str(i * self.dt))
         # plt.legend(loc='best')
         ax.view_init(elev=35.0, azim=-65, vertical_axis="y")
         ax.set(ylabel=r"$mag. of. u(x,t)$", xlabel=r"$x$", zlabel=r"time $t$")

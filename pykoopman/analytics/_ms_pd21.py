@@ -93,7 +93,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
 
         self.validate_data_traj = validate_data_traj
         self.truncation_threshold = truncation_threshold
-        self.dir = "./"
+        self.dir = "/"
 
         if type(validate_data_traj) != list:
             raise NotImplementedError
