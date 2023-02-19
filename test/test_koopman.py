@@ -75,6 +75,8 @@ def test_if_fitted(data_random):
     with pytest.raises(NotFittedError):
         model.koopman_matrix
     with pytest.raises(NotFittedError):
+        model.state_transition_matrix
+    with pytest.raises(NotFittedError):
         model._step(x)
     with pytest.raises(NotFittedError):
         model.score(x)
@@ -173,7 +175,7 @@ def test_if_dmdc_model_is_accurate_with_unknown_controlmatrix(
 
     DMDc = regression.DMDc(svd_rank=3)
     model = Koopman(regressor=DMDc)
-    model.fit(X, u=C)
+    model.fit(X, u=C)  # C is not the measurement matrix!
     Aest = model.state_transition_matrix
     Best = model.control_matrix
     assert_allclose(Aest, A, 1e-07, 1e-12)
@@ -243,11 +245,7 @@ def test_torus_unforced(data_torus_unforced):
 def test_torus_discrete_time(data_torus_ct, data_torus_dt):
     xhat_ct = data_torus_ct
     xhat_dt = data_torus_dt
-
     assert_allclose(xhat_ct, xhat_dt, 1e-12, 1e-12)
-
-
-# TODO: test torus mode id with dmdc
 
 
 def test_edmdc_vanderpol():

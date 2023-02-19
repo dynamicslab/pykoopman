@@ -3,7 +3,7 @@
 # import scipy
 # import tensorflow as tf
 # from sklearn.utils.validation import check_is_fitted
-# TODO: Shaowu [11/18/2022] write a wrapper for external NN based Koopman package
+# todo: write a lightweight Koopman package in pytorch
 from __future__ import annotations
 
 

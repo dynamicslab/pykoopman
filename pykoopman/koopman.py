@@ -1,3 +1,4 @@
+"""module for discrete time Koopman class"""
 from __future__ import annotations
 
 from warnings import catch_warnings
@@ -23,9 +24,6 @@ from .regression import EDMDc
 from .regression import EnsembleBaseRegressor
 from .regression import PyDMDRegressor
 
-# from .observables import RadialBasisFunction
-# from .regression import KDMD
-
 
 class Koopman(BaseEstimator):
     """
@@ -33,11 +31,12 @@ class Koopman(BaseEstimator):
 
     The input-output data is all row-wise if stated elsewhere.
     All of the matrix, are based on column-wise linear system.
+    This class is inherited from :class:`pykoopman.regression.BaseEstimator`
 
     Parameters
     ----------
-    observables: observables object, optional \
-            (default :class:`pykoopman.observables.Identity`)
+    observables: observables object, optional
+    (default :class:`pykoopman.observables.Identity`)
         Map(s) to apply to raw measurement data before estimating the
         Koopman operator.
         Must extend :class:`pykoopman.observables.BaseObservables`.
@@ -68,6 +67,7 @@ class Koopman(BaseEstimator):
 
     n_control_features_: int
         Number of control features used as input to the system.
+
     time: dictionary
         Time vector properties.
     """
@@ -76,12 +76,11 @@ class Koopman(BaseEstimator):
         if observables is None:
             observables = Identity()
         if regressor is None:
-            regressor = PyDMDRegressor(DMD(svd_rank=2))  # default svd rank 2
+            regressor = PyDMDRegressor(DMD(svd_rank=2))  # set default svd rank 2
         if isinstance(regressor, DMDBase):
             regressor = PyDMDRegressor(regressor)
         elif not isinstance(regressor, (BaseRegressor)):
             raise TypeError("Regressor must be from valid class")
-
         self.observables = observables
         self.regressor = regressor
         self.quiet = quiet
@@ -125,14 +124,14 @@ class Koopman(BaseEstimator):
             self.regressor, EDMDc
         ):
             raise ValueError(
-                "Control input u was passed, but self.regressor is not DMDc or EDMDc"
+                "Control input u was passed, " "but self.regressor is not DMDc or EDMDc"
             )
 
         if y is None:  # or isinstance(self.regressor, PyDMDRegressor):
             # if there is only 1 trajectory OR regressor is PyDMD
             regressor = self.regressor
         else:
-            # multiple traj
+            # multiple trajectories
             regressor = EnsembleBaseRegressor(
                 regressor=self.regressor,
                 func=self.observables.transform,
@@ -143,7 +142,7 @@ class Koopman(BaseEstimator):
             ("observables", self.observables),
             ("regressor", regressor),
         ]
-        self.model = Pipeline(steps)
+        self.model = Pipeline(steps)  # create `model` object using Pipeline
 
         action = "ignore" if self.quiet else "default"
         with catch_warnings():
@@ -158,6 +157,10 @@ class Koopman(BaseEstimator):
                     self.model.steps[1][1].regressor_,
                 )
 
+        # pykoopman's n_input/output_features are simply
+        # observables's input output features
+        # observable's input features are just the number
+        # of states. but the output features can be really high
         self.n_input_features_ = self.model.steps[0][1].n_input_features_
         self.n_output_features_ = self.model.steps[0][1].n_output_features_
         if hasattr(self.model.steps[1][1], "n_control_features_"):
@@ -174,13 +177,12 @@ class Koopman(BaseEstimator):
         else:
             self._amplitudes = None
 
-        self.time = dict(
-            [
-                ("tstart", 0),
-                ("tend", dt * (self.model.steps[1][1].n_samples_ - 1)),
-                ("dt", dt),
-            ]
-        )
+        self.time = {
+            "tstart": 0,
+            "tend": dt * (self.model.steps[1][1].n_samples_ - 1),
+            "dt": dt,
+        }
+
         return self
 
     def predict(self, x, u=None):
@@ -260,6 +262,7 @@ class Koopman(BaseEstimator):
 
         return y
 
+    # todo remove
     def score(self, x, y=None, cast_as_real=True, metric=r2_score, **metric_kws):
         """
         Score the model prediction for the next timestep.
@@ -389,22 +392,37 @@ class Koopman(BaseEstimator):
                 )
             return self.model.predict(X=x, u=u)
 
+    # todo: remove or embed my algorithm inside this command.
     def reduce(self, t, x, rank=None):
         """
-        Provides the option to obtain a reduced-order model from the Koopman model
+        Reduce the Koopman operator only if the `regressor`
+        has the method `reduce`.
         """
+
         if not hasattr(self.regressor, "reduce"):
             raise AttributeError("regressor type does not have this option.")
-
         z = self.model.steps[0][1].transform(x)
         self.model.steps[-1][1].reduce(t, x, z, self.eigenvalues_continuous, rank)
 
     def compute_eigen_phi_column(self, z):
         """
-        given z as row vector
-        outputs phi as a column vector
+        Compute Koopman eigenfunction phi(z) given `z`
+
+        `z` is a row vector while phi will be a column vector
+
+        Parameters
+        ----------
+        z: numpy.ndarray, shape (n_input_features, n_samples)
+            State vectors to be evaluated for eigenfunction
+
+        Returns
+        -------
+        eigen_phi: numpy.ndarray, shape (n_samples, self.n_output_features_)
+            Value of eigenfunction evaluated at input `z`
         """
-        return self.model.steps[-1][1].compute_eigen_phi(z)
+
+        eigen_phi = self.model.steps[-1][1].compute_eigen_phi(z)
+        return eigen_phi
 
     @property
     def koopman_matrix(self):
@@ -414,11 +432,11 @@ class Koopman(BaseEstimator):
             where g denotes the observables map and X' denotes x advanced
             one timestep. Note that if there has some low rank, then K is
 
-        Controlled case with known input
+        Controlled case with known input B
             - x' = Ax + Bu,
             - returns the A
 
-        Controlled case with unknown input:
+        Controlled case with unknown input B:
             - x' = K [x u]^T
         """
         check_is_fitted(self, "n_output_features_")
@@ -452,6 +470,7 @@ class Koopman(BaseEstimator):
             raise ValueError("this type of self.regressor has no control_matrix")
         return self.model.steps[-1][1].control_matrix_
 
+    # todo remove
     @property
     def reduced_state_transition_matrix(self):
         check_is_fitted(self, "model")
@@ -463,6 +482,7 @@ class Koopman(BaseEstimator):
         if hasattr(self.model.steps[-1][1], "reduced_state_matrix_"):
             return self.model.steps[-1][1].reduced_state_matrix_
 
+    # todo remove
     @property
     def reduced_control_matrix(self):
         """
@@ -484,6 +504,7 @@ class Koopman(BaseEstimator):
         #     raise ValueError("this type of self.observable has no measurement_matrix")
         return self.model.steps[0][1].measurement_matrix_
 
+    # todo remove
     @property
     def projection_matrix(self):
         """
@@ -495,6 +516,7 @@ class Koopman(BaseEstimator):
             raise ValueError("this type of self.regressor has no projection_matrix")
         return self.model.steps[-1][1].projection_matrix_
 
+    # todo remove
     @property
     def projection_matrix_output(self):
         """
@@ -551,6 +573,7 @@ class Koopman(BaseEstimator):
         dt = self.time["dt"]
         return np.log(self.eigenvalues) / dt
 
+    # todo remove
     @property
     def eigenfunctions(self):
         """
@@ -559,6 +582,7 @@ class Koopman(BaseEstimator):
         check_is_fitted(self, "model")
         return self.model.steps[-1][1].kef_
 
+    # todo replace the eigenfunction above
     def compute_eigenfunction(self, x):
         """
         computes the eigenfunction with row-wise output
@@ -577,6 +601,7 @@ class Koopman(BaseEstimator):
             phit.append(phit_i)
         return np.vstack(phit).T  # (n_samples, #_eigenmodes)
 
+    # todo remove
     def validity_check(self, t, x):
         """
         Validity check (i.e. linearity check ) of
@@ -588,11 +613,7 @@ class Koopman(BaseEstimator):
         linearity_error = []
         for i in range(len(self.eigenvalues)):
             linearity_error.append(
-                np.linalg.norm(
-                    # np.real(phi[i, :]) - np.real(np.exp(omega[i] * t) * (phi[i, 0:1]))
-                    phi[:, i]
-                    - np.exp(omega[i] * t) * phi[0:1, i]
-                )
+                np.linalg.norm(phi[:, i] - np.exp(omega[i] * t) * phi[0:1, i])
             )
 
         sort_idx = np.argsort(linearity_error)

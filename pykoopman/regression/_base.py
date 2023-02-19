@@ -7,6 +7,8 @@ class BaseRegressor(BaseEstimator):
     """
     Wrapper class for PyKoopman regressors.
 
+    This class is inherited from `sklearn.base.BaseEstimator`
+
     Parameters
     ----------
     regressor : sklearn.base.BaseEstimator
