@@ -39,7 +39,7 @@ class EDMD(BaseRegressor):
         Identified state transition matrix A of the underlying system.
 
     _eigenvalues_ : numpy.ndarray, shape (n_input_features_,)
-        Identified Koopman eigenvalues
+        Identified Koopman lamda
 
     eigenvectors_ : numpy.ndarray, shape (n_input_features_, n_input_features_)
         Identified Koopman eigenvectors
@@ -54,7 +54,7 @@ class EDMD(BaseRegressor):
         Number of input features
 
     C : numpy.ndarray, shape (n_input_features_, n_input_features_)
-        Matrix that maps eigenfunction to the input features
+        Matrix that maps psi to the input features
     """
 
     def __init__(self):
@@ -87,12 +87,12 @@ class EDMD(BaseRegressor):
             X2 = y
 
         # X1, X2 are row-wise data, so there is a transpose in the end.
-        self._state_matrix_ = np.linalg.lstsq(X1, X2)[0].T  # [0:Nlift, 0:Nlift]
-        self._coef_ = self._state_matrix_
-        [self._eigenvalues_, self.eigenvectors_] = scipy.linalg.eig(self.state_matrix_)
-
-        self._unnormalized_modes = self.eigenvectors_
-        self.C = np.linalg.inv(self.eigenvectors_)
+        self._coef_ = np.linalg.lstsq(X1, X2)[0].T  # [0:Nlift, 0:Nlift]
+        self._state_matrix_ = self._coef_
+        [self._eigenvalues_, self._eigenvectors_] = scipy.linalg.eig(self.state_matrix_)
+        self._unnormalized_modes = self._eigenvectors_
+        self._ur = np.eye(self.n_input_features_)
+        self._tmp_compute_psi = np.linalg.inv(self._eigenvectors_)
 
         return self
 
@@ -113,41 +113,31 @@ class EDMD(BaseRegressor):
         y = x @ self.state_matrix_.T
         return y
 
-    @property
-    def coef_(self):
-        check_is_fitted(self, "_coef_")
-        return self._coef_
+    def _compute_phi(self, x):
+        """Returns `phi(x)` given `x`"""
+        if x.ndim == 1:
+            x = x.reshape(1, -1)
+        phi = self._ur.T @ x.T
+        return phi
 
-    @property
-    def state_matrix_(self):
-        check_is_fitted(self, "_state_matrix_")
-        return self._state_matrix_
+    def _compute_psi(self, x):
+        """Returns `psi(x)` given `x`
 
-    @property
-    def eigenvalues_(self):
-        check_is_fitted(self, "_eigenvalues_")
-        return self._eigenvalues_
-
-    @property
-    def unnormalized_modes(self):
-        check_is_fitted(self, "_unnormalized_modes")
-        return self._unnormalized_modes
-
-    def compute_eigen_phi(self, x):
-        """
         Parameters
         ----------
         x : numpy.ndarray, shape (n_samples, n_features)
-            Measurement data upon which to compute eigenfunction values.
+            Measurement data upon which to compute psi values.
 
         Returns
         -------
         phi : numpy.ndarray, shape (n_samples, n_input_features_)
-            value of Koopman eigenfunction at x
+            value of Koopman psi at x
         """
-        # compute eigenfunction - one column if x is a row
-        phi = self.C @ x.T
-        return phi
+        # compute psi - one column if x is a row
+        if x.ndim == 1:
+            x = x.reshape(1, -1)
+        psi = self._tmp_compute_psi @ x.T
+        return psi
 
     def _set_initial_time_dictionary(self, time_dict):
         """Set the initial values for the class fields `time_dict` and
@@ -167,3 +157,33 @@ class EDMD(BaseRegressor):
 
         self._original_time = DMDTimeDict(dict(time_dict))
         self._dmd_time = DMDTimeDict(dict(time_dict))
+
+    @property
+    def coef_(self):
+        check_is_fitted(self, "_coef_")
+        return self._coef_
+
+    @property
+    def state_matrix_(self):
+        check_is_fitted(self, "_state_matrix_")
+        return self._state_matrix_
+
+    @property
+    def eigenvalues_(self):
+        check_is_fitted(self, "_eigenvalues_")
+        return self._eigenvalues_
+
+    @property
+    def eigenvectors_(self):
+        check_is_fitted(self, "_eigenvectors_")
+        return self._eigenvectors_
+
+    @property
+    def unnormalized_modes(self):
+        check_is_fitted(self, "_unnormalized_modes")
+        return self._unnormalized_modes
+
+    @property
+    def ur(self):
+        check_is_fitted(self, "_ur")
+        return self._ur

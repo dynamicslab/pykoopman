@@ -48,12 +48,12 @@ class KoopmanContinuous(Koopman):
 
     def predict(self, x, t=0, u=None):
         """Predict using continuous-time Koopman model"""
-        check_is_fitted(self, "model")
+        check_is_fitted(self, "_pipeline")
 
         if u is None:
-            ypred = self.model.predict(X=x, t=t)
+            ypred = self._pipeline.predict(X=x, t=t)
         else:
-            ypred = self.model.predict(X=x, u=u, t=t)
+            ypred = self._pipeline.predict(X=x, u=u, t=t)
 
         output = []
         for k in range(ypred.shape[0]):
@@ -63,7 +63,7 @@ class KoopmanContinuous(Koopman):
 
     def simulate(self, x, t=0, u=None):
         """Simulate continuous-time Koopman model"""
-        check_is_fitted(self, "model")
+        check_is_fitted(self, "_pipeline")
 
         # Note: the above method predict is doing simulation.
 

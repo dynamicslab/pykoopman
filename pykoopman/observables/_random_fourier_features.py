@@ -102,7 +102,7 @@ class RandomFourierFeatures(BaseObservables):
             0, 1, [self.n_input_features_, self.D]
         )
 
-        # 3. get the measurement_matrix to map back to state
+        # 3. get the C to map back to state
         if self.include_state:
             self.measurement_matrix_ = np.zeros(
                 (self.n_input_features_, self.n_output_features_)

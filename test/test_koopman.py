@@ -75,7 +75,7 @@ def test_if_fitted(data_random):
     with pytest.raises(NotFittedError):
         model.koopman_matrix
     with pytest.raises(NotFittedError):
-        model.state_transition_matrix
+        model.A
     with pytest.raises(NotFittedError):
         model._step(x)
     with pytest.raises(NotFittedError):
@@ -161,9 +161,9 @@ def test_if_dmdc_model_is_accurate_with_known_controlmatrix(
     X, C, A, B = data_2D_linear_control_system
     # model = Koopman()
 
-    DMDc = regression.DMDc(svd_rank=3, control_matrix=B)
+    DMDc = regression.DMDc(svd_rank=3, input_control_matrix=B)
     model = Koopman(regressor=DMDc).fit(X, u=C)
-    Aest = model.state_transition_matrix
+    Aest = model.A
     assert_allclose(Aest, A, 1e-07, 1e-12)
 
 
@@ -176,8 +176,8 @@ def test_if_dmdc_model_is_accurate_with_unknown_controlmatrix(
     DMDc = regression.DMDc(svd_rank=3)
     model = Koopman(regressor=DMDc)
     model.fit(X, u=C)  # C is not the measurement matrix!
-    Aest = model.state_transition_matrix
-    Best = model.control_matrix
+    Aest = model.A
+    Best = model.B
     assert_allclose(Aest, A, 1e-07, 1e-12)
     assert_allclose(Best, B, 1e-07, 1e-12)
 

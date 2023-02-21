@@ -22,7 +22,7 @@ class PrunedKoopman(object):
         selected indices in the original Koopman model
 
     Lambda_ : numpy.ndarray
-        The diagonal matrix that contains the selected eigenvalues
+        The diagonal matrix that contains the selected lamda
 
     original_model : Koopman
         An instance of `pykoopman.koopman.Koopman`
@@ -35,16 +35,16 @@ class PrunedKoopman(object):
     def __init__(self, model: Koopman, sweep_index: np.ndarray):
         # construct lambda
         self.sweep_index = sweep_index
-        self.Lambda_ = np.diag(model.eigenvalues[self.sweep_index])
+        self.Lambda_ = np.diag(model.lamda[self.sweep_index])
         self.original_model = model
 
     def refit_modes(self, x):
-        """Refit the Koopman modes given data matrix `x`
+        """Refit the Koopman V given data matrix `x`
 
         Parameters
         ----------
         x : numpy.ndarray
-            Training data for refitting the Koopman modes
+            Training data for refitting the Koopman V
 
         Returns
         -------
@@ -76,7 +76,7 @@ class PrunedKoopman(object):
         return xnext
 
     def compute_eigen_phi(self, x):
-        """Evaluate the selected eigenfunction at given state `x`
+        """Evaluate the selected psi at given state `x`
 
         Parameters
         ----------
@@ -96,7 +96,7 @@ class PrunedKoopman(object):
     def compute_state_from_observables(self, g):
         """Inverse selected observables from system state
 
-        We use the just refitted modes to achieve that.
+        We use the just refitted V to achieve that.
 
         Parameters
         ----------

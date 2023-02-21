@@ -26,7 +26,7 @@ class PyDMDRegressor(BaseRegressor):
 
     Parameters
     ----------
-    regressor: DMDBase
+    regressor:
         A regressor instance from DMDBase in `pydmd`
 
     tikhonov_regularization: bool or NoneType
@@ -69,7 +69,7 @@ class PyDMDRegressor(BaseRegressor):
         Number of features, i.e., the dimension of :math:`\\phi`
 
     _unnormalized_modes : numpy.ndarray, shape (n_input_features_, svd_rank)
-        Raw DMD modes with each column as one DMD mode
+        Raw DMD V with each column as one DMD mode
 
     _state_matrix_ : numpy.ndarray, shape (n_input_features_, n_input_features_)
         DMD state transition matrix
@@ -78,7 +78,7 @@ class PyDMDRegressor(BaseRegressor):
         Reduced DMD state transition matrix
 
     _eigenvalues_ : numpy.ndarray, shape (n_input_features_,)
-        Identified Koopman eigenvalues
+        Identified Koopman lamda
 
     _eigenvectors_ : numpy.ndarray, shape (n_input_features_, n_input_features_)
         Identified Koopman eigenvectors
@@ -88,19 +88,21 @@ class PyDMDRegressor(BaseRegressor):
         Weight vectors of the regression problem. Corresponds to either [A] or [A,B]
 
     C : numpy.ndarray, shape (n_input_features_, n_input_features_)
-        Matrix that maps eigenfunction to the input features
+        Matrix that maps psi to the input features
 
     """
 
     def __init__(self, regressor, tikhonov_regularization=None):
         if not isinstance(regressor, DMDBase):
             raise ValueError("regressor must be a subclass of DMDBase from pydmd.")
-        super(PyDMDRegressor, self).__init__(regressor)
+        self.regressor = regressor
+        # super(PyDMDRegressor, self).__init__(regressor)
         self.tlsq_rank = regressor.tlsq_rank
         self.svd_rank = regressor.svd_rank
         self.forward_backward = regressor.forward_backward
         self.tikhonov_regularization = tikhonov_regularization
         self.flag_xy = False
+        self._ur = None
 
     def fit(self, x, y=None, dt=1):
         """
@@ -152,13 +154,21 @@ class PyDMDRegressor(BaseRegressor):
             )
             atilde = sqrtm(atilde @ np.linalg.inv(atilde_back))
 
-        # - modes, eigenvalues, eigenvectors
-        self._coef_ = U @ atilde @ U.conj().T
-        self._state_matrix_ = self._coef_
-        self._reduced_state_matrix_ = atilde
-        [self._eigenvalues_, self._eigenvectors_] = eig(self._reduced_state_matrix_)
-        self._unnormalized_modes = U @ self._eigenvectors_
-        self.C = np.linalg.inv(self._eigenvectors_) @ U.conj().T
+        # - V, lamda, eigenvectors
+        self._coef_ = atilde
+        self._state_matrix_ = atilde
+        [self._eigenvalues_, self._eigenvectors_] = eig(self._state_matrix_)
+
+        # self._coef_ = U @ atilde @ U.conj().T
+        # self._state_matrix_ = self._coef_
+        # self._reduced_state_matrix_ = atilde
+        # [self._eigenvalues_, self._eigenvectors_] = eig(self._reduced_state_matrix_)
+        self._ur = U
+        self._unnormalized_modes = self._ur @ self._eigenvectors_
+
+        self._tmp_compute_psi = np.linalg.pinv(self.unnormalized_modes)
+
+        # self.C = np.linalg.inv(self._eigenvectors_) @ U.conj().T
         # self._modes_ = U.dot(self._eigenvectors_)
 
         return self
@@ -181,46 +191,32 @@ class PyDMDRegressor(BaseRegressor):
         y = np.linalg.multi_dot([self._coef_, x.T]).T
         return y
 
-    @property
-    def coef_(self):
-        check_is_fitted(self, "_coef_")
-        return self._coef_
+    def _compute_phi(self, x):
+        """Returns `pji(x)` given `x`"""
+        if x.ndim == 1:
+            x = x.reshape(1, -1)
+        phi = self.ur.T @ x.T
+        return phi
 
-    @property
-    def state_matrix_(self):
-        check_is_fitted(self, "_state_matrix_")
-        return self._state_matrix_
+    def _compute_psi(self, x):
+        """Returns `psi(x)` given `x`
 
-    @property
-    def reduced_state_matrix_(self):
-        check_is_fitted(self, "_reduced_state_matrix_")
-        return self._reduced_state_matrix_
-
-    @property
-    def eigenvalues_(self):
-        check_is_fitted(self, "_eigenvalues_")
-        return self._eigenvalues_
-
-    @property
-    def unnormalized_modes(self):
-        check_is_fitted(self, "_unnormalized_modes")
-        return self._unnormalized_modes
-
-    def compute_eigen_phi(self, x):
-        """
         Parameters
         ----------
         x: numpy.ndarray, shape (n_samples, n_features)
-            Measurement data upon which to compute eigenfunction values.
+            Measurement data upon which to compute psi values.
 
         Returns
         -------
-        phi : numpy.ndarray, shape (n_samples, n_input_features_)
-            value of Koopman eigenfunction at x
+        psi : numpy.ndarray, shape (n_samples, n_input_features_)
+            value of Koopman eigenfunction psi at x
         """
 
-        phi = self.C @ x.T  # compute eigenfunction - one column if x is a row
-        return phi
+        # compute psi - one column if x is a row
+        if x.ndim == 1:
+            x = x.reshape(1, -1)
+        psi = self._tmp_compute_psi @ x.T
+        return psi
 
     def _set_initial_time_dictionary(self, time_dict):
         """
@@ -234,10 +230,12 @@ class PyDMDRegressor(BaseRegressor):
         """
 
         if not ("t0" in time_dict and "tend" in time_dict and "dt" in time_dict):
-            raise ValueError('time_dict must contain the keys "t0", "tend" and "dt".')
+            raise ValueError(
+                'time_dict must contain the keys "t0", ' '"tend" and "dt".'
+            )
         if len(time_dict) > 3:
             raise ValueError(
-                'time_dict must contain only the keys "t0", "tend" and "dt".'
+                'time_dict must contain only the keys "t0", ' '"tend" and "dt".'
             )
 
         self._original_time = DMDTimeDict(dict(time_dict))
@@ -277,3 +275,38 @@ class PyDMDRegressor(BaseRegressor):
             s = (s**2 + tikhonov_regularization * _norm_X) * np.reciprocal(s)
         A = np.linalg.multi_dot([U.T.conj(), Y, V]) * np.reciprocal(s)
         return A
+
+    @property
+    def coef_(self):
+        check_is_fitted(self, "_coef_")
+        return self._coef_
+
+    @property
+    def state_matrix_(self):
+        check_is_fitted(self, "_state_matrix_")
+        return self._state_matrix_
+
+    # @property
+    # def reduced_state_matrix_(self):
+    #     check_is_fitted(self, "_reduced_state_matrix_")
+    #     return self._reduced_state_matrix_
+
+    @property
+    def eigenvalues_(self):
+        check_is_fitted(self, "_eigenvalues_")
+        return self._eigenvalues_
+
+    @property
+    def eigenvectors_(self):
+        check_is_fitted(self, "_eigenvectors_")
+        return self._eigenvectors_
+
+    @property
+    def unnormalized_modes(self):
+        check_is_fitted(self, "_unnormalized_modes")
+        return self._unnormalized_modes
+
+    @property
+    def ur(self):
+        check_is_fitted(self, "_ur")
+        return self._ur

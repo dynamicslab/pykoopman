@@ -96,10 +96,10 @@ class EDMDc(BaseRegressor):
             C = u
         self.n_control_features_ = C.shape[1]
 
-        self._fit(X1, X2, C)
+        self._fit_with_unknown_b(X1, X2, C)
         return self
 
-    def _fit(self, X1, X2, U):
+    def _fit_with_unknown_b(self, X1, X2, U):
         """
         Parameters
         ----------
@@ -119,12 +119,15 @@ class EDMDc(BaseRegressor):
         VVt = V @ V.T
         WVt = W @ V.T
         M = WVt @ np.linalg.pinv(VVt)  # Matrix [A B]
-        self.state_matrix_ = M[0:Nlift, 0:Nlift]
-        self.control_matrix_ = M[0:Nlift, Nlift:]
-        self.coef_ = M
+        self._state_matrix_ = M[0:Nlift, 0:Nlift]
+        self._control_matrix_ = M[0:Nlift, Nlift:]
+        self._coef_ = M
 
-        # Compute Koopman modes, eigenvectors, eigenvalues
-        [self.eigenvalues_, self.eigenvectors_] = np.linalg.eig(self.state_matrix_)
+        # Compute Koopman V, eigenvectors, lamda
+        [self._eigenvalues_, self._eigenvectors_] = np.linalg.eig(self.state_matrix_)
+        self._unnormalized_modes = self._eigenvectors_
+        self._ur = np.eye(self.n_input_features_)
+        self._tmp_compute_psi = np.linalg.inv(self._eigenvectors_)
 
     def predict(self, x, u):
         """
@@ -146,3 +149,62 @@ class EDMDc(BaseRegressor):
         check_is_fitted(self, "coef_")
         y = x @ self.state_matrix_.T + u @ self.control_matrix_.T
         return y
+
+    def _compute_phi(self, x):
+        """Returns `phi(x)` given `x`"""
+        if x.ndim == 1:
+            x = x.reshape(1, -1)
+        phi = self._ur.T @ x.T
+        return phi
+
+    def _compute_psi(self, x):
+        """Returns `psi(x)` given `x`
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n_samples, n_features)
+            Measurement data upon which to compute psi values.
+
+        Returns
+        -------
+        phi : numpy.ndarray, shape (n_samples, n_input_features_)
+            value of Koopman psi at x
+        """
+        # compute psi - one column if x is a row
+        psi = self._tmp_compute_psi @ x.T
+        return psi
+
+    @property
+    def coef_(self):
+        check_is_fitted(self, "_coef_")
+        return self._coef_
+
+    @property
+    def state_matrix_(self):
+        check_is_fitted(self, "_state_matrix_")
+        return self._state_matrix_
+
+    @property
+    def control_matrix_(self):
+        check_is_fitted(self, "_control_matrix_")
+        return self._control_matrix_
+
+    @property
+    def eigenvalues_(self):
+        check_is_fitted(self, "_eigenvalues_")
+        return self._eigenvalues_
+
+    @property
+    def eigenvectors_(self):
+        check_is_fitted(self, "_eigenvectors_")
+        return self._eigenvectors_
+
+    @property
+    def unnormalized_modes(self):
+        check_is_fitted(self, "_unnormalized_modes")
+        return self._unnormalized_modes
+
+    @property
+    def ur(self):
+        check_is_fitted(self, "_ur")
+        return self._ur

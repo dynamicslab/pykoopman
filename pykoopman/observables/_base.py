@@ -225,7 +225,7 @@ class ConcatObservables(BaseObservables):
                 )
         self.n_consumed_samples = max_n_consumed_samples
 
-        # measurement_matrix comes from the first observable
+        # C comes from the first observable
         self.measurement_matrix_ = np.zeros(
             [self.n_input_features_, self.n_output_features_]
         )

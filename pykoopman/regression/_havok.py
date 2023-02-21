@@ -101,47 +101,51 @@ class HAVOK(BaseRegressor):
         # calculate rank using optimal hard threshold by Gavish & Donoho
         if self.svd_rank is None:
             self.svd_rank = optht(x, sv=s, sigma=None)
+        Vrh = Vh[: self.svd_rank, :]
+        Vr = Vrh.T
+        Ur = U[:, : self.svd_rank]
+        sr = s[: self.svd_rank]
 
-        # calculate time derivative dxdt & normalize
-        dVh = self.differentiator(Vh[: self.svd_rank - 1, :].T, t)
-        dVh, t, Vh = drop_nan_rows(
-            dVh, t, Vh.T
-        )  # this line actually makes vh and dvh transposed
+        # Vrh[:-1, :].T
+
+        # calculate time derivative dxdt of only the first rank-1 & normalize
+        dVr = self.differentiator(Vr[:, :-1], t)
+        # this line actually makes vh and dvh transposed
+        dVr, t, V = drop_nan_rows(dVr, t, Vh.T)
 
         # regression on intrinsic variables v
-        xi = np.zeros((self.svd_rank - 1, self.svd_rank))
-        for i in range(self.svd_rank - 1):
-            xi[i, :] = np.linalg.lstsq(Vh[:, : self.svd_rank], dVh[:, i], rcond=None)[0]
+        # xi = np.zeros((self.svd_rank - 1, self.svd_rank))
+        # for i in range(self.svd_rank - 1):
+        #     # here, we use rank terms in V to fit the rank-1 terms dV/dt
+        #     # we perform column wise
+        #     xi[i, :] = np.linalg.lstsq(Vr, dVr[:, i], rcond=None)[0]
 
-        self.forcing_signal = Vh[:, self.svd_rank - 1]
-        self._reduced_state_matrix_ = xi[:, : self.svd_rank - 1]
-        self._reduced_control_matrix_ = xi[:, self.svd_rank - 1]
+        xi = np.linalg.lstsq(Vr, dVr, rcond=None)[0].T
+        assert xi.shape == (self.svd_rank - 1, self.svd_rank)
+
+        self.forcing_signal = Vr[:, -1]
+        self._state_matrix_ = xi[:, :-1]
+        self._control_matrix_ = xi[:, -1].reshape(-1, 1)
 
         self.svals = s
-        self.measurement_matrix_ = U[:, : self.svd_rank - 1] @ np.diag(
-            s[: self.svd_rank - 1]
-        )
+        self._ur = Ur[:, :-1] @ np.diag(sr[:-1])
+        self._coef_ = np.hstack([self.state_matrix_, self.control_matrix_])
 
-        self._coef_ = np.hstack(
-            [self.reduced_state_matrix_, self.reduced_control_matrix_.reshape(-1, 1)]
-        )
-        self._projection_matrix_ = self.measurement_matrix_
-        self._projection_matrix_output_ = self.measurement_matrix_
-
-        [eigenvalues_, self.eigenvectors_] = np.linalg.eig(self.reduced_state_matrix_)
+        eigenvalues_, self._eigenvectors_ = np.linalg.eig(self.state_matrix_)
         # because we fit the model in continuous time,
         # so we need to convert to discrete time
-        self.eigenvalues_ = np.exp(eigenvalues_ * dt)
+        self._eigenvalues_ = np.exp(eigenvalues_ * dt)
 
-        self._unnormalized_modes = self.measurement_matrix_ @ self.eigenvectors_
+        self._unnormalized_modes = self._ur @ self.eigenvectors_
+        self._tmp_compute_psi = np.linalg.inv(self.eigenvectors_) @ self._ur.T
 
-        self.C = np.linalg.multi_dot(
-            [
-                np.linalg.inv(self.eigenvectors_),
-                np.diag(np.reciprocal(s[: self.svd_rank - 1])),
-                U[:, : self.svd_rank - 1].T,
-            ]
-        )
+        # self.C = np.linalg.multi_dot(
+        #     [
+        #         np.linalg.inv(self.eigenvectors_),
+        #         np.diag(np.reciprocal(s[: self.svd_rank - 1])),
+        #         U[:, : self.svd_rank - 1].T,
+        #     ]
+        # )
 
     def predict(self, x, u, t):
         """
@@ -173,17 +177,43 @@ class HAVOK(BaseRegressor):
         y0 = (
             # np.linalg.inv(np.diag(self.svals[: self.svd_rank - 1]))
             # @
-            np.linalg.pinv(self.projection_matrix_)
+            np.linalg.pinv(self._ur)
             @ x.T
         )
         sys = lti(
-            self.reduced_state_matrix_,
-            self.reduced_control_matrix_[:, np.newaxis],
-            self.measurement_matrix_,
+            self.state_matrix_,
+            self.control_matrix_,
+            self._ur,
             np.zeros((self.n_input_features_, self.n_control_features_)),
         )
         tout, ypred, xpred = lsim(sys, U=u, T=t, X0=y0.T)
         return ypred
+
+    def _compute_phi(self, x):
+        """Returns `phi(x)` given `x`"""
+        if x.ndim == 1:
+            x = x.reshape(1, -1)
+        phi = self._ur.T @ x.T
+        return phi
+
+    def _compute_psi(self, x):
+        """Returns `psi(x)` given `x`
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n_samples, n_features)
+            Measurement data upon which to compute psi values.
+
+        Returns
+        -------
+        phi : numpy.ndarray, shape (n_samples, n_input_features_)
+            value of Koopman psi at x
+        """
+        # compute psi - one column if x is a row
+        if x.ndim == 1:
+            x = x.reshape(1, -1)
+        psi = self._tmp_compute_psi @ x.T
+        return psi
 
     @property
     def coef_(self):
@@ -191,33 +221,31 @@ class HAVOK(BaseRegressor):
         return self._coef_
 
     @property
-    def reduced_state_matrix_(self):
-        check_is_fitted(self, "_reduced_state_matrix_")
-        return self._reduced_state_matrix_
+    def state_matrix_(self):
+        check_is_fitted(self, "_state_matrix_")
+        return self._state_matrix_
 
     @property
-    def reduced_control_matrix_(self):
-        check_is_fitted(self, "_reduced_control_matrix_")
-        return self._reduced_control_matrix_
+    def control_matrix_(self):
+        check_is_fitted(self, "_control_matrix_")
+        return self._control_matrix_
 
     @property
-    def projection_matrix_(self):
-        check_is_fitted(self, "_projection_matrix_")
-        return self._projection_matrix_
+    def eigenvectors_(self):
+        check_is_fitted(self, "_eigenvectors_")
+        return self._eigenvectors_
 
     @property
-    def projection_matrix_output_(self):
-        check_is_fitted(self, "_projection_matrix_output_")
-        return self._projection_matrix_output_
+    def eigenvalues_(self):
+        check_is_fitted(self, "_eigenvalues_")
+        return self._eigenvalues_
 
     @property
     def unnormalized_modes(self):
         check_is_fitted(self, "_unnormalized_modes")
         return self._unnormalized_modes
 
-    def compute_eigen_phi(self, x):
-        """
-        input data x is a row-wise data
-        """
-        # compute eigenfunction - one column if x is a row
-        return self.C @ x.T
+    @property
+    def ur(self):
+        check_is_fitted(self, "_ur")
+        return self._ur

@@ -97,13 +97,13 @@ class KDMD(BaseRegressor):
         reduced Koopman state transition matrix
 
     _eigenvalues_ : numpy.ndarray, shape (svd_rank,)
-        Koopman eigenvalues
+        Koopman lamda
 
     _eigenvectors_ : numpy.ndarray, shape (svd_rank, svd_rank)
         Koopman eigenvectors
 
     _unnormalized_modes : numpy.ndarray, shape (svd_rank, n_input_features_)
-        Koopman modes
+        Koopman V
 
     _state_matrix_ : numpy.ndarray, shape (svd_rank, svd_rank)
         reduced Koopman state transition matrix
@@ -167,7 +167,7 @@ class KDMD(BaseRegressor):
         # tlsq on X and Y - features, samples
         self._X, self._Y = compute_tlsq(X, Y, self.tlsq_rank)
 
-        # compute KDMD operators, eigenvalues, and koopman modes
+        # compute KDMD operators, lamda, and koopman V
         # note that this method is built by considering row-wise collected data
         [
             self._coef_,
@@ -228,7 +228,7 @@ class KDMD(BaseRegressor):
         """
         input data x is a row-wise data
         """
-        # compute eigenfunction - one column if x is a row
+        # compute psi - one column if x is a row
         return self.C @ self.kernel(self._X.T, x)
 
     def _regressor_compute_kdmdoperator(self, X, Y):
@@ -250,13 +250,13 @@ class KDMD(BaseRegressor):
             reduced Koopman state transition matrix
 
         koopman_eigvals : numpy.ndarray, shape (svd_rank,)
-            reduced Koopman eigenvalues
+            reduced Koopman lamda
 
         koopman_eigenvectors : numpy.ndarray, shape (svd_rank, svd_rank)
             reduced Koopman eigenvectors
 
         unnormalized_modes : numpy.ndarray, shape (svd_rank, n_input_features_)
-            Koopman modes
+            Koopman V
         """
 
         # compute kernel K(X,X)
@@ -307,11 +307,11 @@ class KDMD(BaseRegressor):
         # compute eigenquantities
         koopman_eigvals, koopman_eigenvectors = np.linalg.eig(koopman_matrix)
 
-        # compute unnormalized modes
+        # compute unnormalized V
         BV = np.linalg.lstsq(U @ np.diag(s), X, rcond=None)[0].T
         unnormalized_modes = BV @ koopman_eigenvectors
 
-        # compute eigenfunction
+        # compute psi
         self.C = np.linalg.inv(koopman_eigenvectors) @ np.diag(np.reciprocal(s)) @ U.T
 
         return [

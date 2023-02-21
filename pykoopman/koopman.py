@@ -11,7 +11,6 @@ from numpy import vstack
 from pydmd import DMD
 from pydmd import DMDBase
 from sklearn.base import BaseEstimator
-from sklearn.metrics import r2_score
 from sklearn.pipeline import Pipeline
 from sklearn.utils.validation import check_is_fitted
 
@@ -142,44 +141,47 @@ class Koopman(BaseEstimator):
             ("observables", self.observables),
             ("regressor", regressor),
         ]
-        self.model = Pipeline(steps)  # create `model` object using Pipeline
+        self._pipeline = Pipeline(steps)  # create `model` object using Pipeline
 
         action = "ignore" if self.quiet else "default"
         with catch_warnings():
             filterwarnings(action, category=UserWarning)
             if u is None:
-                self.model.fit(x, y, regressor__dt=dt)
+                self._pipeline.fit(x, y, regressor__dt=dt)
             else:
-                self.model.fit(x, y, regressor__u=u, regressor__dt=dt)
-            if isinstance(self.model.steps[1][1], EnsembleBaseRegressor):
-                self.model.steps[1] = (
-                    self.model.steps[1][0],
-                    self.model.steps[1][1].regressor_,
+                self._pipeline.fit(x, y, regressor__u=u, regressor__dt=dt)
+            if isinstance(self._pipeline.steps[1][1], EnsembleBaseRegressor):
+                self._pipeline.steps[1] = (
+                    self._pipeline.steps[1][0],
+                    self._pipeline.steps[1][1].regressor_,
                 )
 
         # pykoopman's n_input/output_features are simply
         # observables's input output features
         # observable's input features are just the number
         # of states. but the output features can be really high
-        self.n_input_features_ = self.model.steps[0][1].n_input_features_
-        self.n_output_features_ = self.model.steps[0][1].n_output_features_
-        if hasattr(self.model.steps[1][1], "n_control_features_"):
-            self.n_control_features_ = self.model.steps[1][1].n_control_features_
+        self.n_input_features_ = self._pipeline.steps[0][1].n_input_features_
+        self.n_output_features_ = self._pipeline.steps[0][1].n_output_features_
+        if hasattr(self._pipeline.steps[1][1], "n_control_features_"):
+            self.n_control_features_ = self._pipeline.steps[1][1].n_control_features_
 
         if y is None:
             if hasattr(self.observables, "n_consumed_samples"):
-                g0 = self.observables.transform(
-                    x[0 : 1 + self.observables.n_consumed_samples]
+                # g0 = self.observables.transform(
+                #     x[0 : 1 + self.observables.n_consumed_samples]
+                # )
+                self._amplitudes = np.abs(
+                    self.psi(x[0 : 1 + self.observables.n_consumed_samples])
                 )
             else:
-                g0 = self.observables.transform(x[0:1])
-            self._amplitudes = np.abs(self.compute_eigen_phi_column(g0))
+                # g0 = self.observables.transform(x[0:1])
+                self._amplitudes = np.abs(self.psi(x[0:1]))
         else:
             self._amplitudes = None
 
         self.time = {
             "tstart": 0,
-            "tend": dt * (self.model.steps[1][1].n_samples_ - 1),
+            "tend": dt * (self._pipeline.steps[1][1].n_samples_ - 1),
             "dt": dt,
         }
 
@@ -237,7 +239,7 @@ class Koopman(BaseEstimator):
         # Could have an option to only return the end state and not all
         # intermediate states to save memory.
 
-        y = empty((n_steps, self.n_input_features_), dtype=self.koopman_matrix.dtype)
+        y = empty((n_steps, self.n_input_features_), dtype=self.A.dtype)
         if u is None:
             y[0] = self.predict(x0)
         else:
@@ -261,76 +263,6 @@ class Koopman(BaseEstimator):
                     )
 
         return y
-
-    # todo remove
-    def score(self, x, y=None, cast_as_real=True, metric=r2_score, **metric_kws):
-        """
-        Score the model prediction for the next timestep.
-
-        Parameters
-        ----------
-        x: numpy.ndarray, shape (n_samples, n_input_features)
-            State measurements.
-            Each row should correspond to the system state at some point
-            in time.
-            If ``y`` is not passed, then it is assumed that the examples are
-            equi-spaced in time and are given in sequential order.
-            If ``y`` is passed, then this assumption need not hold.
-
-        y: numpy.ndarray, shape (n_samples, n_input_features), optional \
-                (default None)
-            State measurements one timestep in the future.
-            Each row of this array should give the corresponding row in x advanced
-            forward in time by one timestep.
-            If None, the rows of ``x`` are used to construct ``y``.
-
-        cast_as_real: bool, optional (default True)
-            Whether to take the real part of predictions when computing the score.
-            Many Scikit-learn metrics do not support complex numbers.
-
-        metric: callable, optional (default ``r2_score``)
-            The metric function used to score the model predictions.
-
-        metric_kws: dict, optional
-            Optional parameters to pass to the metric function.
-
-        Returns
-        -------
-        score: float
-            Metric function value for the model predictions at the next timestep.
-        """
-        check_is_fitted(self, "n_output_features_")
-        x = validate_input(x)
-
-        if isinstance(self.observables, TimeDelay):
-            n_consumed_samples = self.observables.n_consumed_samples
-
-            # User may pass in too-large
-            if y is not None and len(y) == len(x):
-                warn(
-                    f"The first {n_consumed_samples} entries of y were ignored because "
-                    "TimeDelay obesrvables were used."
-                )
-                y = y[n_consumed_samples:]
-        else:
-            n_consumed_samples = 0
-
-        if y is None:
-            if cast_as_real:
-                return metric(
-                    x[n_consumed_samples + 1 :].real,
-                    self.predict(x[:-1]).real,
-                    **metric_kws,
-                )
-            else:
-                return metric(
-                    x[n_consumed_samples + 1 :], self.predict(x[:-1]), **metric_kws
-                )
-        else:
-            if cast_as_real:
-                return metric(y.real, self.predict(x).real, **metric_kws)
-            else:
-                return metric(y, self.predict(x), **metric_kws)
 
     def get_feature_names(self, input_features=None):
         """
@@ -381,7 +313,7 @@ class Koopman(BaseEstimator):
                     "Control variables u were ignored because control variables were"
                     " not used when the model was fit"
                 )
-            return self.model.predict(X=x)
+            return self._pipeline.predict(X=x)
         else:
             if not isinstance(self.regressor, DMDc) and not isinstance(
                 self.regressor, EDMDc
@@ -390,233 +322,263 @@ class Koopman(BaseEstimator):
                     "Control input u was passed, but self.regressor is not DMDc "
                     "or EDMDc"
                 )
-            return self.model.predict(X=x, u=u)
+            return self._pipeline.predict(X=x, u=u)
 
     # todo: remove or embed my algorithm inside this command.
-    def reduce(self, t, x, rank=None):
-        """
-        Reduce the Koopman operator only if the `regressor`
-        has the method `reduce`.
-        """
+    # def reduce(self, t, x, rank=None):
+    #     """
+    #     Reduce the Koopman operator only if the `regressor`
+    #     has the method `reduce`.
+    #     """
+    #     if not hasattr(self.regressor, "reduce"):
+    #         raise AttributeError("regressor type does not have this option.")
+    #     z = self._pipeline.steps[0][1].transform(x)
+    #     self._pipeline.steps[-1][1].reduce(t, x, z, self.eigenvalues_continuous, rank)
 
-        if not hasattr(self.regressor, "reduce"):
-            raise AttributeError("regressor type does not have this option.")
-        z = self.model.steps[0][1].transform(x)
-        self.model.steps[-1][1].reduce(t, x, z, self.eigenvalues_continuous, rank)
+    def phi(self, x):
+        y = self.observables.transform(x)
+        phi = self._pipeline.steps[-1][1]._compute_phi(y)
+        return phi
 
-    def compute_eigen_phi_column(self, z):
+    def psi(self, x):
         """
-        Compute Koopman eigenfunction phi(z) given `z`
+        Compute Koopman psi(x) given `x`
 
-        `z` is a row vector while phi will be a column vector
+        `x` is a row vector while phi will be a column vector
 
         Parameters
         ----------
         z: numpy.ndarray, shape (n_input_features, n_samples)
-            State vectors to be evaluated for eigenfunction
+            State vectors to be evaluated for psi
 
         Returns
         -------
         eigen_phi: numpy.ndarray, shape (n_samples, self.n_output_features_)
-            Value of eigenfunction evaluated at input `z`
+            Value of psi evaluated at input `z`
         """
 
-        eigen_phi = self.model.steps[-1][1].compute_eigen_phi(z)
-        return eigen_phi
+        y = self.observables.transform(x)
+        ephi = self._pipeline.steps[-1][1]._compute_psi(y)
+        return ephi
+
+    # def compute_eigen_phi_column(self, z):
+    #     """
+    #     Compute Koopman psi phi(z) given `z`
+    #
+    #     `z` is a row vector while phi will be a column vector
+    #
+    #     Parameters
+    #     ----------
+    #     z: numpy.ndarray, shape (n_input_features, n_samples)
+    #         State vectors to be evaluated for psi
+    #
+    #     Returns
+    #     -------
+    #     eigen_phi: numpy.ndarray, shape (n_samples, self.n_output_features_)
+    #         Value of psi evaluated at input `z`
+    #     """
+    #
+    #     eigen_phi = self._pipeline.steps[-1][1]._compute_psi(z)
+    #     return eigen_phi
+
+    # todo: remove
+    # @property
+    # def koopman_matrix(self):
+    #     """
+    #     Autonomous case:
+    #         - the Koopman matrix K satisfying g(X') = K * g(X)
+    #         where g denotes the observables map and X' denotes x advanced
+    #         one timestep. Note that if there has some low rank, then K is
+    #
+    #     Controlled case with known input B
+    #         - x' = Ax + Bu,
+    #         - returns the A
+    #
+    #     Controlled case with unknown input B:
+    #         - x' = K [x u]^T
+    #     """
+    #     check_is_fitted(self, "n_output_features_")
+    #     return self._pipeline.steps[-1][1].coef_
 
     @property
-    def koopman_matrix(self):
-        """
-        Autonomous case:
-            - the Koopman matrix K satisfying g(X') = K * g(X)
-            where g denotes the observables map and X' denotes x advanced
-            one timestep. Note that if there has some low rank, then K is
+    def A(self):
+        """Returns the state transition matrix `A`
 
-        Controlled case with known input B
-            - x' = Ax + Bu,
-            - returns the A
-
-        Controlled case with unknown input B:
-            - x' = K [x u]^T
-        """
-        check_is_fitted(self, "n_output_features_")
-        return self.model.steps[-1][1].coef_
-
-    @property
-    def state_transition_matrix(self):
-        """
         The state transition matrix A satisfies y' = Ay or y' = Ay + Bu, respectively,
         where y = g(x) and y is a low-rank representation.
         """
-        check_is_fitted(self, "model")
+        check_is_fitted(self, "_pipeline")
         if isinstance(self.regressor, DMDBase):
-            raise ValueError(
-                "this type of self.regressor has no state_transition_matrix"
-            )
-
-        if hasattr(self.model.steps[-1][1], "state_matrix_"):
-            return self.model.steps[-1][1].state_matrix_
+            raise ValueError("self.regressor " "has no A!")
+        if hasattr(self._pipeline.steps[-1][1], "state_matrix_"):
+            return self._pipeline.steps[-1][1].state_matrix_
         else:
-            return self.koopman_matrix
+            raise ValueError("self.regressor" "has no state_matrix")
 
     @property
-    def control_matrix(self):
-        """
+    def B(self):
+        """Returns the control matrix `B`
+
         The control matrix (or vector) B satisfies y' = Ay + Bu.
         y is the reduced system state
         """
-        check_is_fitted(self, "model")
+        check_is_fitted(self, "_pipeline")
         if isinstance(self.regressor, DMDBase):
-            raise ValueError("this type of self.regressor has no control_matrix")
-        return self.model.steps[-1][1].control_matrix_
+            raise ValueError("this type of self.regressor has no B")
+        return self._pipeline.steps[-1][1].control_matrix_
 
-    # todo remove
+    # # todo remove
+    # @property
+    # def reduced_state_transition_matrix(self):
+    #     check_is_fitted(self, "model")
+    #     if isinstance(self.regressor, DMDBase):
+    #         raise ValueError(
+    #             "this type of self.regressor has no A"
+    #         )
+    #
+    #     if hasattr(self._pipeline.steps[-1][1], "reduced_state_matrix_"):
+    #         return self._pipeline.steps[-1][1].reduced_state_matrix_
+
+    # # todo remove
+    # @property
+    # def reduced_control_matrix(self):
+    #     """
+    #     The control matrix (or vector) B satisfies y' = Ay + Bu.
+    #     y is the reduced system state
+    #     """
+    #     check_is_fitted(self, "model")
+    #     if isinstance(self.regressor, DMDBase):
+    #         raise ValueError("this type of self.regressor has no B")
+    #     return self._pipeline.steps[-1][1].reduced_control_matrix_
+
     @property
-    def reduced_state_transition_matrix(self):
-        check_is_fitted(self, "model")
-        if isinstance(self.regressor, DMDBase):
-            raise ValueError(
-                "this type of self.regressor has no state_transition_matrix"
-            )
-
-        if hasattr(self.model.steps[-1][1], "reduced_state_matrix_"):
-            return self.model.steps[-1][1].reduced_state_matrix_
-
-    # todo remove
-    @property
-    def reduced_control_matrix(self):
-        """
-        The control matrix (or vector) B satisfies y' = Ay + Bu.
-        y is the reduced system state
-        """
-        check_is_fitted(self, "model")
-        if isinstance(self.regressor, DMDBase):
-            raise ValueError("this type of self.regressor has no control_matrix")
-        return self.model.steps[-1][1].reduced_control_matrix_
-
-    @property
-    def measurement_matrix(self):
-        """
-        The measurement matrix (or vector) C satisfies x = Cy
-        """
-        check_is_fitted(self, "model")
+    def C(self):
+        """Return the measurement matrix (or vector) C satisfies x = C*phi_r"""
+        check_is_fitted(self, "_pipeline")
         # if not isinstance(self.observables, RadialBasisFunction):
-        #     raise ValueError("this type of self.observable has no measurement_matrix")
-        return self.model.steps[0][1].measurement_matrix_
+        #     raise ValueError("this type of self.observable has no C")
+        # return self._pipeline.steps[0][1].measurement_matrix_
 
-    # todo remove
-    @property
-    def projection_matrix(self):
-        """
-        Projection matrix
-            - "encoder" left-mul maps to the low-dimensional space
-        """
-        check_is_fitted(self, "model")
-        if isinstance(self.regressor, DMDBase):
-            raise ValueError("this type of self.regressor has no projection_matrix")
-        return self.model.steps[-1][1].projection_matrix_
+        measure_mat = self._pipeline.steps[0][1].measurement_matrix_
+        ur = self._pipeline.steps[-1][1].ur
+        C = measure_mat @ ur
+        return C
 
-    # todo remove
-    @property
-    def projection_matrix_output(self):
-        """
-        Output projection matrix
-            - "decoder": left mul maps to the original state space
-        """
-        check_is_fitted(self, "model")
-        if isinstance(self.regressor, DMDBase):
-            raise ValueError(
-                "this type of self.regressor has no projection_matrix_output"
-            )
-        return self.model.steps[-1][1].projection_matrix_output_
+    # # todo remove
+    # @property
+    # def projection_matrix(self):
+    #     """
+    #     Projection matrix
+    #         - "encoder" left-mul maps to the low-dimensional space
+    #     """
+    #     check_is_fitted(self, "model")
+    #     if isinstance(self.regressor, DMDBase):
+    #         raise ValueError("this type of self.regressor has no projection_matrix")
+    #     return self._pipeline.steps[-1][1].projection_matrix_
 
-    @property
-    def modes(self):
-        """
-        Koopman modes
-        """
-        check_is_fitted(self, "model")
-        return self.measurement_matrix @ self.model.steps[-1][1].unnormalized_modes
+    # # todo remove
+    # @property
+    # def projection_matrix_output(self):
+    #     """
+    #     Output projection matrix
+    #         - "decoder": left mul maps to the original state space
+    #     """
+    #     check_is_fitted(self, "model")
+    #     if isinstance(self.regressor, DMDBase):
+    #         raise ValueError(
+    #             "this type of self.regressor has no projection_matrix_output"
+    #         )
+    #     return self._pipeline.steps[-1][1].projection_matrix_output_
 
     @property
-    def amplitudes(self):
-        check_is_fitted(self, "model")
-        return self._amplitudes
-        # return self.model.steps[-1][1].amplitudes_
+    def V(self):
+        """Returns Koopman modes"""
+
+        check_is_fitted(self, "_pipeline")
+        return self.C @ self._pipeline.steps[-1][1].unnormalized_modes
+
+    # todo: remove
+    # @property
+    # def amplitudes(self):
+    #     check_is_fitted(self, "model")
+    #     return self._amplitudes
+    #     # return self._pipeline.steps[-1][1].amplitudes_
 
     @property
-    def eigenvalues(self):
+    def lamda(self):
         """
-        Discrete-time Koopman eigenvalues obtained from spectral decomposition
+        Discrete-time Koopman lamda obtained from spectral decomposition
         of the Koopman matrix
         """
-        check_is_fitted(self, "model")
-        return self.model.steps[-1][1].eigenvalues_
+        check_is_fitted(self, "_pipeline")
+        return self._pipeline.steps[-1][1].eigenvalues_
 
-    @property
-    def frequencies(self):
-        """
-        Oscillation frequencies of Koopman modes/eigenvectors
-        """
-        check_is_fitted(self, "model")
-        dt = self.time["dt"]
-        return np.imag(np.log(self.eigenvalues) / dt) / (2 * np.pi)
-        # return self.model.steps[-1][1].frequencies_
+    # todo: remove
+    # @property
+    # def frequencies(self):
+    #     """
+    #     Oscillation frequencies of Koopman V/eigenvectors
+    #     """
+    #     check_is_fitted(self, "model")
+    #     dt = self.time["dt"]
+    #     return np.imag(np.log(self.lamda) / dt) / (2 * np.pi)
+    #     # return self._pipeline.steps[-1][1].frequencies_
 
-    @property
-    def eigenvalues_continuous(self):
-        """
-        Continuous-time Koopman eigenvalues obtained from spectral decomposition
-        of the Koopman matrix
-        """
-        check_is_fitted(self, "model")
-        dt = self.time["dt"]
-        return np.log(self.eigenvalues) / dt
+    # todo: remove
+    # @property
+    # def eigenvalues_continuous(self):
+    #     """
+    #     Continuous-time Koopman lamda obtained from spectral decomposition
+    #     of the Koopman matrix
+    #     """
+    #     check_is_fitted(self, "model")
+    #     dt = self.time["dt"]
+    #     return np.log(self.lamda) / dt
 
-    # todo remove
-    @property
-    def eigenfunctions(self):
-        """
-        Approximate Koopman eigenfunctions
-        """
-        check_is_fitted(self, "model")
-        return self.model.steps[-1][1].kef_
+    # # todo remove
+    # @property
+    # def eigenfunctions(self):
+    #     """
+    #     Approximate Koopman eigenfunctions
+    #     """
+    #     check_is_fitted(self, "model")
+    #     return self._pipeline.steps[-1][1].kef_
 
-    # todo replace the eigenfunction above
-    def compute_eigenfunction(self, x):
-        """
-        computes the eigenfunction with row-wise output
+    # # todo replace the psi above
+    # def compute_eigenfunction(self, x):
+    #     """
+    #     computes the psi with row-wise output
+    #
+    #     """
+    #     z = self.observables.transform(x)
+    #     phi = self.compute_eigen_phi_column(z)
+    #     return phi.T
 
-        """
-        z = self.observables.transform(x)
-        phi = self.compute_eigen_phi_column(z)
-        return phi.T
+    # def integrate_eigenfunction(self, t, x0):
+    #     omega = self.eigenvalues_continuous
+    #     phi0 = self.compute_eigenfunction(x0).T
+    #     phit = []
+    #     for i in range(len(omega)):
+    #         phit_i = np.exp(omega[i] * t) * phi0[i]
+    #         phit.append(phit_i)
+    #     return np.vstack(phit).T  # (n_samples, #_eigenmodes)
 
-    def integrate_eigenfunction(self, t, x0):
-        omega = self.eigenvalues_continuous
-        phi0 = self.compute_eigenfunction(x0).T
-        phit = []
-        for i in range(len(omega)):
-            phit_i = np.exp(omega[i] * t) * phi0[i]
-            phit.append(phit_i)
-        return np.vstack(phit).T  # (n_samples, #_eigenmodes)
-
-    # todo remove
-    def validity_check(self, t, x):
-        """
-        Validity check (i.e. linearity check ) of
-        eigenfunctions phi(x(t)) == phi(x(0))*exp(lambda*t)
-        """
-
-        phi = self.compute_eigenfunction(x)
-        omega = self.eigenvalues_continuous
-        linearity_error = []
-        for i in range(len(self.eigenvalues)):
-            linearity_error.append(
-                np.linalg.norm(phi[:, i] - np.exp(omega[i] * t) * phi[0:1, i])
-            )
-
-        sort_idx = np.argsort(linearity_error)
-        efun_index = np.arange(len(linearity_error))[sort_idx]
-        linearity_error = [linearity_error[i] for i in sort_idx]
-        return efun_index, linearity_error
+    # # todo remove
+    # def validity_check(self, t, x):
+    #     """
+    #     Validity check (i.e. linearity check ) of
+    #     eigenfunctions phi(x(t)) == phi(x(0))*exp(lambda*t)
+    #     """
+    #
+    #     phi = self.compute_eigenfunction(x)
+    #     omega = self.eigenvalues_continuous
+    #     linearity_error = []
+    #     for i in range(len(self.lamda)):
+    #         linearity_error.append(
+    #             np.linalg.norm(phi[:, i] - np.exp(omega[i] * t) * phi[0:1, i])
+    #         )
+    #
+    #     sort_idx = np.argsort(linearity_error)
+    #     efun_index = np.arange(len(linearity_error))[sort_idx]
+    #     linearity_error = [linearity_error[i] for i in sort_idx]
+    #     return efun_index, linearity_error
