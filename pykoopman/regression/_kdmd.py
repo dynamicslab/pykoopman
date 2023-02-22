@@ -164,7 +164,7 @@ class KDMD(BaseRegressor):
             X = x.T
             Y = y.T
 
-        # tlsq on X and Y - features, samples
+        # total least square preprocessing on X and Y - features, samples
         self._X, self._Y = compute_tlsq(X, Y, self.tlsq_rank)
 
         # compute KDMD operators, lamda, and koopman V
@@ -199,10 +199,25 @@ class KDMD(BaseRegressor):
 
         check_is_fitted(self, "coef_")
 
-        phi = self.compute_eigen_phi(x)
+        phi = self._compute_psi(x)
         phi_next = np.diag(self.eigenvalues_) @ phi
         x_next_T = self._unnormalized_modes @ phi_next
         return np.real(x_next_T).T
+
+    def _compute_phi(self, x):
+        """Returns `pji(x)` given `x`"""
+        psi = self._compute_psi(x)
+        phi = np.real(self.eigenvectors_ @ psi)
+        return phi
+
+    def _compute_psi(self, x):
+        """
+        input data x is a row-wise data
+        """
+        # compute psi - one column if x is a row
+        if x.ndim == 1:
+            x = x.reshape(1, -1)
+        return self._tmp_compute_psi_kdmd @ self.kernel(self._X.T, x)
 
     @property
     def coef_(self):
@@ -220,16 +235,19 @@ class KDMD(BaseRegressor):
         return self._eigenvalues_
 
     @property
+    def eigenvectors_(self):
+        check_is_fitted(self, "_eigenvectors_")
+        return self._eigenvectors_
+
+    @property
     def unnormalized_modes(self):
         check_is_fitted(self, "_unnormalized_modes")
         return self._unnormalized_modes
 
-    def compute_eigen_phi(self, x):
-        """
-        input data x is a row-wise data
-        """
-        # compute psi - one column if x is a row
-        return self.C @ self.kernel(self._X.T, x)
+    @property
+    def ur(self):
+        check_is_fitted(self, "_ur")
+        return self._ur
 
     def _regressor_compute_kdmdoperator(self, X, Y):
         """Compute KDMD operator given row-wise data
@@ -275,8 +293,12 @@ class KDMD(BaseRegressor):
                 s**2 + self.tikhonov_regularization * np.linalg.norm(X)
             ) * np.reciprocal(s)
 
-        koopman_matrix = np.linalg.multi_dot(
-            [np.diag(np.reciprocal(s)), U.T.conj(), KYX.T, U, np.diag(np.reciprocal(s))]
+        koopman_matrix = (
+            np.diag(np.reciprocal(s))
+            @ U.T.conj()
+            @ KYX.T
+            @ U
+            @ np.diag(np.reciprocal(s))
         )
 
         # optional compute fb
@@ -290,14 +312,12 @@ class KDMD(BaseRegressor):
                     bs**2 + self.tikhonov_regularization * np.linalg.norm(Y)
                 ) * np.reciprocal(bs)
 
-            atilde_back = np.linalg.multi_dot(
-                [
-                    np.diag(np.reciprocal(bs)),
-                    bU.T.conj(),
-                    KXY.T,
-                    bU,
-                    np.diag(np.reciprocal(bs)),
-                ]
+            atilde_back = (
+                np.diag(np.reciprocal(bs))
+                @ bU.T.conj()
+                @ KXY.T
+                @ bU
+                @ np.diag(np.reciprocal(bs))
             )
             koopman_matrix = sqrtm(koopman_matrix @ np.linalg.inv(atilde_back))
 
@@ -312,7 +332,10 @@ class KDMD(BaseRegressor):
         unnormalized_modes = BV @ koopman_eigenvectors
 
         # compute psi
-        self.C = np.linalg.inv(koopman_eigenvectors) @ np.diag(np.reciprocal(s)) @ U.T
+        self._ur = BV  # U @ np.diag(s)
+        self._tmp_compute_psi_kdmd = (
+            np.linalg.inv(koopman_eigenvectors) @ np.diag(np.reciprocal(s)) @ U.T
+        )
 
         return [
             koopman_matrix,

@@ -186,7 +186,7 @@ class DMDc(BaseRegressor):
             self.svd_output_rank = self.n_input_features_
         rout = self.svd_output_rank
 
-        if self._control_matrix_ is None:
+        if self._input_control_matrix_ is None:
             self._fit_unknown_B(X1, X2, C, r, rout)
         else:
             self._fit_known_B(X1, X2, C, r)
@@ -335,9 +335,17 @@ class DMDc(BaseRegressor):
 
         """
         check_is_fitted(self, "coef_")
-        y = self.coef_ @ np.vstack([x.reshape(1, -1).T, u.reshape(1, -1).T])
+        if x.ndim == 1:
+            x = x.reshape(1, -1)
+        if u.ndim == 1:
+            u = u.reshape(1, -1)
+        # y = self.coef_ @ np.vstack([x.reshape(1, -1).T, u.reshape(1, -1).T])
+        y = (
+            x @ self.ur @ self.state_matrix_.T @ self.ur.T
+            + u @ self.control_matrix_.T @ self.ur.T
+        )
         # y = x @ self.state_matrix_.T + u @ self.control_matrix_.T
-        y = y.T
+        # y = y.T
         return y
 
     def _compute_phi(self, x):

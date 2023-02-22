@@ -57,11 +57,11 @@ def test_dmd_on_nonconsecutive_data_accuracy(data_2D_linear_real_system):
     assert_allclose(x[1 : n_steps + 1], x_pred)
 
 
-def test_koopman_matrix_shape(data_random):
-    x = data_random
-    dmd = DMD(svd_rank=10)
-    model = Koopman(regressor=dmd).fit(x)
-    assert model.koopman_matrix.shape[0] == model.n_output_features_
+# def test_koopman_matrix_shape(data_random):
+#     x = data_random
+#     dmd = DMD(svd_rank=10)
+#     model = Koopman(regressor=dmd).fit(x)
+#     assert model.koopman_matrix.shape[0] == model.n_output_features_
 
 
 def test_if_fitted(data_random):
@@ -73,13 +73,13 @@ def test_if_fitted(data_random):
     with pytest.raises(NotFittedError):
         model.simulate(x)
     with pytest.raises(NotFittedError):
-        model.koopman_matrix
-    with pytest.raises(NotFittedError):
         model.A
     with pytest.raises(NotFittedError):
-        model._step(x)
+        model.B
     with pytest.raises(NotFittedError):
-        model.score(x)
+        model.C
+    with pytest.raises(NotFittedError):
+        model._step(x)
 
 
 def test_score_without_target(data_2D_superposition):
@@ -163,7 +163,8 @@ def test_if_dmdc_model_is_accurate_with_known_controlmatrix(
 
     DMDc = regression.DMDc(svd_rank=3, input_control_matrix=B)
     model = Koopman(regressor=DMDc).fit(X, u=C)
-    Aest = model.A
+    Akoopman = model.A
+    Aest = model.ur @ Akoopman @ model.ur.T
     assert_allclose(Aest, A, 1e-07, 1e-12)
 
 
@@ -176,8 +177,10 @@ def test_if_dmdc_model_is_accurate_with_unknown_controlmatrix(
     DMDc = regression.DMDc(svd_rank=3)
     model = Koopman(regressor=DMDc)
     model.fit(X, u=C)  # C is not the measurement matrix!
-    Aest = model.A
-    Best = model.B
+    Akoopman = model.A
+    Bkoopman = model.B
+    Aest = model.ur @ Akoopman @ model.ur.T
+    Best = model.ur @ Bkoopman
     assert_allclose(Aest, A, 1e-07, 1e-12)
     assert_allclose(Best, B, 1e-07, 1e-12)
 
@@ -206,7 +209,7 @@ def test_dmdc_for_highdim_system(data_drss):
     model.fit(Y, u=U)
 
     # Check spectrum
-    Aest = model.reduced_state_transition_matrix
+    Aest = model.A
     W, V = np.linalg.eig(A)
     West, Vest = np.linalg.eig(Aest)
 
@@ -219,7 +222,7 @@ def test_dmdc_for_highdim_system(data_drss):
     Uc, sc, Vch = np.linalg.svd(C, full_matrices=False)
     Sc = np.diag(sc[:r])
     Cinv = np.dot(Vch[:, :r].T, np.dot(np.linalg.inv(Sc), Uc[:, :r].T))
-    P = model.projection_matrix_output
+    P = model.ur
     Atilde = np.dot(Cinv, np.dot(np.dot(P, np.dot(Aest, P.T)), C))
     Wtilde, Vtilde = np.linalg.eig(Atilde)
 

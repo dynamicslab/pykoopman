@@ -11,6 +11,7 @@ from numpy import vstack
 from pydmd import DMD
 from pydmd import DMDBase
 from sklearn.base import BaseEstimator
+from sklearn.metrics import r2_score
 from sklearn.pipeline import Pipeline
 from sklearn.utils.validation import check_is_fitted
 
@@ -511,7 +512,15 @@ class Koopman(BaseEstimator):
         of the Koopman matrix
         """
         check_is_fitted(self, "_pipeline")
-        return self._pipeline.steps[-1][1].eigenvalues_
+        return np.diag(self._pipeline.steps[-1][1].eigenvalues_)
+
+    @property
+    def ur(self):
+        """
+        Returns the projection matrix Ur
+        """
+        check_is_fitted(self, "_pipeline")
+        return self._pipeline.steps[-1][1].ur
 
     # todo: remove
     # @property
@@ -524,16 +533,16 @@ class Koopman(BaseEstimator):
     #     return np.imag(np.log(self.lamda) / dt) / (2 * np.pi)
     #     # return self._pipeline.steps[-1][1].frequencies_
 
-    # todo: remove
+    # # todo: remove
     # @property
     # def eigenvalues_continuous(self):
     #     """
     #     Continuous-time Koopman lamda obtained from spectral decomposition
     #     of the Koopman matrix
     #     """
-    #     check_is_fitted(self, "model")
+    #     check_is_fitted(self, "_pipeline")
     #     dt = self.time["dt"]
-    #     return np.log(self.lamda) / dt
+    #     return np.log(np.diag(self.lamda)) / dt
 
     # # todo remove
     # @property
@@ -563,22 +572,86 @@ class Koopman(BaseEstimator):
     #         phit.append(phit_i)
     #     return np.vstack(phit).T  # (n_samples, #_eigenmodes)
 
-    # # todo remove
-    # def validity_check(self, t, x):
-    #     """
-    #     Validity check (i.e. linearity check ) of
-    #     eigenfunctions phi(x(t)) == phi(x(0))*exp(lambda*t)
-    #     """
-    #
-    #     phi = self.compute_eigenfunction(x)
-    #     omega = self.eigenvalues_continuous
-    #     linearity_error = []
-    #     for i in range(len(self.lamda)):
-    #         linearity_error.append(
-    #             np.linalg.norm(phi[:, i] - np.exp(omega[i] * t) * phi[0:1, i])
-    #         )
-    #
-    #     sort_idx = np.argsort(linearity_error)
-    #     efun_index = np.arange(len(linearity_error))[sort_idx]
-    #     linearity_error = [linearity_error[i] for i in sort_idx]
-    #     return efun_index, linearity_error
+    # todo remove
+    def validity_check(self, t, x):
+        """
+        Validity check (i.e. linearity check ) of
+        eigenfunctions phi(x(t)) == phi(x(0))*exp(lambda*t)
+        """
+
+        psi = self.psi(x)
+        omega = np.log(np.diag(self.lamda)) / self.time["dt"]
+
+        # omega = self.eigenvalues_continuous
+        linearity_error = []
+        for i in range(self.lamda.shape[0]):
+            linearity_error.append(
+                np.linalg.norm(psi[i, :] - np.exp(omega[i] * t) * psi[i, 0:1])
+            )
+        sort_idx = np.argsort(linearity_error)
+        efun_index = np.arange(len(linearity_error))[sort_idx]
+        linearity_error = [linearity_error[i] for i in sort_idx]
+        return efun_index, linearity_error
+
+    def score(self, x, y=None, cast_as_real=True, metric=r2_score, **metric_kws):
+        """
+        Score the model prediction for the next timestep.
+        Parameters
+        ----------
+        x: numpy.ndarray, shape (n_samples, n_input_features)
+            State measurements.
+            Each row should correspond to the system state at some point
+            in time.
+            If ``y`` is not passed, then it is assumed that the examples are
+            equi-spaced in time and are given in sequential order.
+            If ``y`` is passed, then this assumption need not hold.
+        y: numpy.ndarray, shape (n_samples, n_input_features), optional \
+                (default None)
+            State measurements one timestep in the future.
+            Each row of this array should give the corresponding row in x advanced
+            forward in time by one timestep.
+            If None, the rows of ``x`` are used to construct ``y``.
+        cast_as_real: bool, optional (default True)
+            Whether to take the real part of predictions when computing the score.
+            Many Scikit-learn metrics do not support complex numbers.
+        metric: callable, optional (default ``r2_score``)
+            The metric function used to score the model predictions.
+        metric_kws: dict, optional
+            Optional parameters to pass to the metric function.
+        Returns
+        -------
+        score: float
+            Metric function value for the model predictions at the next timestep.
+        """
+        check_is_fitted(self, "n_output_features_")
+        x = validate_input(x)
+
+        if isinstance(self.observables, TimeDelay):
+            n_consumed_samples = self.observables.n_consumed_samples
+
+            # User may pass in too-large
+            if y is not None and len(y) == len(x):
+                warn(
+                    f"The first {n_consumed_samples} entries of y were ignored because "
+                    "TimeDelay obesrvables were used."
+                )
+                y = y[n_consumed_samples:]
+        else:
+            n_consumed_samples = 0
+
+        if y is None:
+            if cast_as_real:
+                return metric(
+                    x[n_consumed_samples + 1 :].real,
+                    self.predict(x[:-1]).real,
+                    **metric_kws,
+                )
+            else:
+                return metric(
+                    x[n_consumed_samples + 1 :], self.predict(x[:-1]), **metric_kws
+                )
+        else:
+            if cast_as_real:
+                return metric(y.real, self.predict(x).real, **metric_kws)
+            else:
+                return metric(y, self.predict(x), **metric_kws)

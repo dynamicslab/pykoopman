@@ -110,7 +110,7 @@ class EDMD(BaseRegressor):
 
         """
         check_is_fitted(self, "coef_")
-        y = x @ self.state_matrix_.T
+        y = x @ self.ur @ self.state_matrix_.T @ self.ur.conj().T
         return y
 
     def _compute_phi(self, x):

@@ -186,9 +186,10 @@ class PyDMDRegressor(BaseRegressor):
             Prediction of x one timestep in the future.
 
         """
-
+        if x.ndim == 1:
+            x = x.reshape(1, -1)
         check_is_fitted(self, "coef_")
-        y = np.linalg.multi_dot([self._coef_, x.T]).T
+        y = np.linalg.multi_dot([self.ur, self._coef_, self.ur.conj().T, x.T]).T
         return y
 
     def _compute_phi(self, x):
