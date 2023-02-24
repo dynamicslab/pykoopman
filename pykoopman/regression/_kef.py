@@ -11,7 +11,7 @@ from ._base import BaseRegressor
 
 class KEF(BaseRegressor):
     """
-    Regressor for Koopman eigenfunction form. Requires further strategy to optimize
+    Regressor for Koopman psi form. Requires further strategy to optimize
     the regressor based on identified, good eigenfunctions that behave sufficiently
     linear in time.
 
@@ -137,14 +137,14 @@ class KEF(BaseRegressor):
         z: numpy ndarray, shape (n_samples, n_features)
             Transformed measurement data upon which to base prediction.
         omega: numpy ndarray, shape (n_features, )
-            Continuous-time eigenvalues of the Koopman operator.
+            Continuous-time lamda of the Koopman operator.
 
         Returns
         -------
         efun_index: list, shape (n_features)
-            Ranked list of eigenfunction indices, ranked by increasing linearity error
+            Ranked list of psi indices, ranked by increasing linearity error
         linearity_error: list, shape (n_features)
-            Linearity error corresponding to the eigenfunction index in efun_index
+            Linearity error corresponding to the psi index in efun_index
         """
         linearity_error = []
         for i in range(len(self.eigenvalues_)):

@@ -44,7 +44,7 @@ class Polynomial(PolynomialFeatures, BaseObservables):
     def __init__(self, degree=2, interaction_only=False, include_bias=True, order="C"):
         if degree == 0:
             raise ValueError(
-                "degree must be at least 1, otherwise inverse cannot be computed"
+                "degree must be at least 1, otherwise inverse cannot be " "computed"
             )
         super(Polynomial, self).__init__(
             degree=degree,

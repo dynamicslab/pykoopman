@@ -68,7 +68,7 @@ class RadialBasisFunction(BaseObservables):
     polyharmonic_coeff: float, optional (default 1.0)
         The polyharmonic coefficient for polyharmonic rbfs.
 
-    include_states: bool, optional (default True)
+    include_state: bool, optional (default True)
         Includes the input coordinates as additional coordinates in the observable.
 
     Attributes
@@ -88,7 +88,7 @@ class RadialBasisFunction(BaseObservables):
         centers=None,
         kernel_width=1.0,
         polyharmonic_coeff=1.0,
-        include_states=True,
+        include_state=True,
     ):
         super().__init__()
         if type(rbf_type) != str:
@@ -109,7 +109,7 @@ class RadialBasisFunction(BaseObservables):
             "polyharmonic",
         ]:
             raise ValueError("rbf_type not of available type")
-        if type(include_states) != bool:
+        if type(include_state) != bool:
             raise TypeError("include_states must be a boolean")
         if centers is not None:
             if int(n_centers) not in centers.shape():
@@ -123,7 +123,7 @@ class RadialBasisFunction(BaseObservables):
         self.centers = centers
         self.kernel_width = kernel_width
         self.polyharmonic_coeff = polyharmonic_coeff
-        self.include_states = include_states
+        self.include_state = include_state
 
     def fit(self, x, y=None):
         """
@@ -142,12 +142,13 @@ class RadialBasisFunction(BaseObservables):
         self: returns a fit :class:`pykoopman.observables.RadialBasisFunction` instance
         """
         n_samples, n_features = validate_input(x).shape
+        self.n_consumed_samples = 0
 
         self.n_samples_ = n_samples
         self.n_input_features_ = n_features
-        if self.include_states is True:
+        if self.include_state is True:
             self.n_output_features_ = n_features * 1 + self.n_centers
-        elif self.include_states is False:
+        elif self.include_state is False:
             self.n_output_features_ = self.n_centers
 
         x = validate_input(x)
@@ -237,7 +238,7 @@ class RadialBasisFunction(BaseObservables):
                 )
 
         output_features = []
-        if self.include_states is True:
+        if self.include_state is True:
             output_features.extend([f"{xi}(t)" for xi in input_features])
         output_features.extend([f"phi(x(t)-c{i})" for i in range(self.n_centers)])
         return output_features
@@ -250,7 +251,7 @@ class RadialBasisFunction(BaseObservables):
         )
 
         y_index = 0
-        if self.include_states is True:
+        if self.include_state is True:
             y[:, : self.n_input_features_] = x
             y_index = self.n_input_features_
 

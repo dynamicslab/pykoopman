@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from abc import ABC
+from abc import abstractmethod
+
 from sklearn.base import BaseEstimator
 
 
-class BaseRegressor(BaseEstimator):
+class BaseRegressor(BaseEstimator, ABC):
     """
     Wrapper class for PyKoopman regressors.
 
@@ -36,3 +39,35 @@ class BaseRegressor(BaseEstimator):
 
     def predict(self, x):
         raise NotImplementedError
+
+    @abstractmethod
+    def coef_(self):
+        pass
+
+    @abstractmethod
+    def state_matrix_(self):
+        pass
+
+    @abstractmethod
+    def eigenvectors_(self):
+        pass
+
+    @abstractmethod
+    def eigenvalues_(self):
+        pass
+
+    @abstractmethod
+    def _compute_phi(self, x):
+        pass
+
+    @abstractmethod
+    def _compute_psi(self, x):
+        pass
+
+    @abstractmethod
+    def ur(self):
+        pass
+
+    @abstractmethod
+    def unnormalized_modes(self):
+        pass

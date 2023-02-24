@@ -65,11 +65,11 @@ class RandomFourierFeatures(BaseObservables):
     """
 
     def __init__(self, include_state=True, gamma=1.0, D=100, random_state=None):
+        super(RandomFourierFeatures, self).__init__()
         self.include_state = include_state
         self.gamma = gamma
         self.D = D
         self.random_state = random_state
-        super(RandomFourierFeatures, self).__init__()
 
     def fit(self, x, y=None):
         """Set up observable
@@ -88,13 +88,14 @@ class RandomFourierFeatures(BaseObservables):
         """
 
         np.random.seed(self.random_state)
+        self.n_consumed_samples = 0
 
         self.n_input_features_ = x.shape[1]
         # although we have double the output dim, the convergence
         # rate is described in only self.n_components
         self.n_output_features_ = 2 * self.D
 
-        if self.include_state:
+        if self.include_state is True:
             self.n_output_features_ += self.n_input_features_
 
         # 1. generate (n_feature, n_component) random w
@@ -102,7 +103,7 @@ class RandomFourierFeatures(BaseObservables):
             0, 1, [self.n_input_features_, self.D]
         )
 
-        # 3. get the measurement_matrix to map back to state
+        # 3. get the C to map back to state
         if self.include_state:
             self.measurement_matrix_ = np.zeros(
                 (self.n_input_features_, self.n_output_features_)

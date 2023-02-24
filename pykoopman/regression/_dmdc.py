@@ -57,10 +57,10 @@ class DMDc(BaseRegressor):
         Reduced control matrix
 
     eigenvalues_ : numpy.ndarray, shape (svd_rank, )
-        DMD eigenvalues
+        DMD lamda
 
     unnormalized_modes : numpy.ndarray, shape (svd_rank, svd_rank)
-        DMD modes
+        DMD V
 
     projection_matrix_ : numpy.ndarray, shape (n_input_features_+
     n_control_features_, svd_rank)
@@ -106,11 +106,11 @@ class DMDc(BaseRegressor):
     >>> X1 = x[:-1,:]
     >>> X2 = x[1:,:]
     >>> C = u[:,np.newaxis]
-    >>> DMDc = pk.regression.DMDc(svd_rank=3, control_matrix=B)
+    >>> DMDc = pk.regression.DMDc(svd_rank=3, input_control_matrix=B)
     >>> model = pk.Koopman(regressor=DMDc)
     >>> model.fit(x,C)
-    >>> Aest = model.state_transition_matrix
-    >>> Best = model.control_matrix
+    >>> Aest = model.A
+    >>> Best = model.B
     >>> print(Aest)
     >>> np.allclose(A,Aest)
     [[ 1.50000000e+00 -1.36609474e-17]
@@ -121,8 +121,8 @@ class DMDc(BaseRegressor):
     >>> DMDc = pk.regression.DMDc(svd_rank=3)
     >>> model = pk.Koopman(regressor=DMDc)
     >>> model.fit(x,C)
-    >>> Aest = model.state_transition_matrix
-    >>> Best = model.control_matrix
+    >>> Aest = model.A
+    >>> Best = model.B
     >>> print(Aest)
     >>> print(Best)
     >>> np.allclose(np.concatenate((A,B),axis=1),np.concatenate((Aest,Best),axis=1))
@@ -133,10 +133,10 @@ class DMDc(BaseRegressor):
     True
     """
 
-    def __init__(self, svd_rank=None, svd_output_rank=None, control_matrix=None):
+    def __init__(self, svd_rank=None, svd_output_rank=None, input_control_matrix=None):
         self.svd_rank = svd_rank
         self.svd_output_rank = svd_output_rank
-        self._control_matrix_ = control_matrix
+        self._input_control_matrix_ = input_control_matrix
 
     def fit(self, x, y=None, u=None, dt=None):
         """
@@ -186,53 +186,14 @@ class DMDc(BaseRegressor):
             self.svd_output_rank = self.n_input_features_
         rout = self.svd_output_rank
 
-        if self._control_matrix_ is None:
-            self.fit_unknown_B(X1, X2, C, r, rout)
+        if self._input_control_matrix_ is None:
+            self._fit_unknown_B(X1, X2, C, r, rout)
         else:
-            self.fit_known_B(X1, X2, C, r)
+            self._fit_known_B(X1, X2, C, r)
 
         return self
 
-    def predict(self, x, u):
-        """
-        Parameters
-        ----------
-        x : numpy ndarray, shape (n_samples, n_features)
-            Measurement data upon which to base prediction.
-
-        u : numpy.ndarray, shape (n_samples, n_control_features), \
-                optional (default None)
-            Time series of external actuation/control.
-
-        Returns
-        -------
-        y: numpy ndarray, shape (n_samples, n_features)
-            Prediction of x one timestep in the future.
-
-        """
-        check_is_fitted(self, "coef_")
-        y = self.coef_ @ np.vstack([x.reshape(1, -1).T, u.reshape(1, -1).T])
-        # y = x @ self.state_matrix_.T + u @ self.control_matrix_.T
-        y = y.T
-        return y
-
-    def compute_eigen_phi(self, x):
-        """
-        Parameters
-        ----------
-        x: numpy.ndarray, shape (n_samples, n_features)
-            Measurement data upon which to compute eigenfunction values.
-
-        Returns
-        -------
-        phi : numpy.ndarray, shape (n_samples, n_input_features_)
-            value of Koopman eigenfunction at x
-        """
-
-        phi = self.C @ x.T  # compute eigenfunction - one column if x is a row
-        return phi
-
-    def fit_unknown_B(self, X1, X2, C, r, rout):
+    def _fit_unknown_B(self, X1, X2, C, r, rout):
         """
         Parameters
         ----------
@@ -269,33 +230,32 @@ class DMDc(BaseRegressor):
         U1 = Ur[: self.n_input_features_, :]
         U2 = Ur[self.n_input_features_ :, :]
 
-        self._reduced_state_matrix_ = (
-            Uhatr.T @ X2.T @ Vr @ np.linalg.inv(Sr) @ U1.T @ Uhatr
-        )  # this is reduced A_r
-        self._reduced_control_matrix_ = Uhatr.T @ X2.T @ Vr @ np.linalg.inv(Sr) @ U2.T
+        # this is reduced A_r
+        self._state_matrix_ = Uhatr.T @ X2.T @ Vr @ np.linalg.inv(Sr) @ U1.T @ Uhatr
+        self._control_matrix_ = Uhatr.T @ X2.T @ Vr @ np.linalg.inv(Sr) @ U2.T
 
-        self._state_matrix_ = Uhatr @ self._reduced_state_matrix_ @ Uhatr.T
-        self._control_matrix_ = Uhatr @ self._reduced_control_matrix_
+        # self._state_matrix_ = self._reduced_state_matrix_
+        # self._control_matrix_ = self._reduced_control_matrix_
+        # self._state_matrix_ = Uhatr @ self._reduced_state_matrix_ @ Uhatr.T
+        # self._control_matrix_ = Uhatr @ self._reduced_control_matrix_
 
         # pack [A full, B full] as self.coef_
         self._coef_ = np.concatenate(
             (self._state_matrix_, self._control_matrix_), axis=1
         )
-        self._projection_matrix_ = Ur
-        self._projection_matrix_output_ = Uhatr
 
-        # eigenvectors, eigenvalues
-        [self._eigenvalues_, self.eigenvectors_] = np.linalg.eig(
-            self._reduced_state_matrix_
-        )
+        # self._projection_matrix_ = Ur
+        # self._projection_matrix_output_ = Uhatr
 
-        # Koopman modes
-        self._unnormalized_modes = Uhatr @ self.eigenvectors_
+        # eigenvectors, lamda
+        [self._eigenvalues_, self._eigenvectors_] = np.linalg.eig(self._state_matrix_)
 
-        # compute eigenfunction
-        self.C = np.linalg.inv(self.eigenvectors_) @ Uhatr.T
+        # Koopman modes V
+        self._unnormalized_modes = Uhatr @ self._eigenvectors_
+        self._ur = Uhatr
+        self._tmp_compute_psi = np.linalg.inv(self._eigenvectors_) @ Uhatr.T
 
-    def fit_known_B(self, X1, X2, C, r):
+    def _fit_known_B(self, X1, X2, C, r):
         """
         Parameters
         ----------
@@ -313,14 +273,14 @@ class DMDc(BaseRegressor):
             `X` and input `U`
         """
 
-        if self.n_input_features_ in self._control_matrix_.shape is False:
+        if self.n_input_features_ in self._input_control_matrix_.shape is False:
             raise TypeError("Control vector/matrix B has wrong shape.")
-        if self._control_matrix_.shape[1] == self.n_input_features_:
-            self._control_matrix_ = self._control_matrix_.T
-        if self._control_matrix_.shape[1] != self.n_control_features_:
+        if self._input_control_matrix_.shape[1] == self.n_input_features_:
+            self._input_control_matrix_ = self._input_control_matrix_.T
+        if self._input_control_matrix_.shape[1] != self.n_control_features_:
             raise TypeError(
-                "The control matrix B must have the same number of inputs as the "
-                "control variable u."
+                "The control matrix B must have the same "
+                "number of inputs as the control variable u."
             )
 
         U, s, Vh = np.linalg.svd(X1.T, full_matrices=False)
@@ -328,35 +288,92 @@ class DMDc(BaseRegressor):
         sr = s[:r]
         Vhr = Vh[:r, :]
 
-        self._reduced_state_matrix_ = np.linalg.multi_dot(
+        self._state_matrix_ = np.linalg.multi_dot(
             [
                 Ur.T,
-                X2.T - self._control_matrix_ @ C.T,
+                X2.T - self._input_control_matrix_ @ C.T,
                 Vhr.T,
                 np.diag(np.reciprocal(sr)),
             ]
         )
-
-        self._reduced_control_matrix_ = Ur.T @ self.control_matrix_
-        self._state_matrix_ = Ur @ self._reduced_state_matrix_ @ Ur.T
+        self._control_matrix_ = Ur.T @ self._input_control_matrix_
+        # self._state_matrix_ = Ur @ self._reduced_state_matrix_ @ Ur.T
 
         self._coef_ = np.concatenate(
             (self._state_matrix_, self.control_matrix_), axis=1
         )
         # self._coef_ = Ur @ self._state_matrix_ @ Ur.T
-        self._projection_matrix_ = Ur
-        self._projection_matrix_output_ = Ur
+        # self._projection_matrix_ = Ur
+        # self._projection_matrix_output_ = Ur
 
-        # Compute , eigenvectors, eigenvalues
-        [self._eigenvalues_, self.eigenvectors_] = np.linalg.eig(
-            self._reduced_state_matrix_
+        # Compute , eigenvectors, lamda
+        [self._eigenvalues_, self._eigenvectors_] = np.linalg.eig(self._state_matrix_)
+
+        # Koopman V
+        self._unnormalized_modes = Ur @ self._eigenvectors_
+        self._ur = Ur
+        self._tmp_compute_psi = np.linalg.inv(self._eigenvectors_) @ Ur.T
+
+        # compute psi
+        # self.C = np.linalg.inv(self._eigenvectors_) @ Ur.T
+
+    def predict(self, x, u):
+        """
+        Parameters
+        ----------
+        x : numpy ndarray, shape (n_samples, n_features)
+            Measurement data upon which to base prediction.
+
+        u : numpy.ndarray, shape (n_samples, n_control_features), \
+                optional (default None)
+            Time series of external actuation/control.
+
+        Returns
+        -------
+        y: numpy ndarray, shape (n_samples, n_features)
+            Prediction of x one timestep in the future.
+
+        """
+        check_is_fitted(self, "coef_")
+        if x.ndim == 1:
+            x = x.reshape(1, -1)
+        if u.ndim == 1:
+            u = u.reshape(1, -1)
+        # y = self.coef_ @ np.vstack([x.reshape(1, -1).T, u.reshape(1, -1).T])
+        y = (
+            x @ self.ur @ self.state_matrix_.T @ self.ur.T
+            + u @ self.control_matrix_.T @ self.ur.T
         )
+        # y = x @ self.state_matrix_.T + u @ self.control_matrix_.T
+        # y = y.T
+        return y
 
-        # Koopman modes
-        self._unnormalized_modes = Ur @ self.eigenvectors_
+    def _compute_phi(self, x):
+        """Returns `phi(x)` given `x`"""
+        if x.ndim == 1:
+            x = x.reshape(1, -1)
+        phi = self._ur.T @ x.T
+        return phi
 
-        # compute eigenfunction
-        self.C = np.linalg.inv(self.eigenvectors_) @ Ur.T
+    def _compute_psi(self, x):
+        """Returns `psi(x)` given `x`
+
+        Parameters
+        ----------
+        x: numpy.ndarray, shape (n_samples, n_features)
+            Measurement data upon which to compute psi values.
+
+        Returns
+        -------
+        phi : numpy.ndarray, shape (n_samples, n_input_features_)
+            value of Koopman psi at x
+        """
+
+        # compute psi - one column if x is a row
+        if x.ndim == 1:
+            x = x.reshape(1, -1)
+        psi = self._tmp_compute_psi @ x.T
+        return psi
 
     @property
     def coef_(self):
@@ -373,15 +390,20 @@ class DMDc(BaseRegressor):
         check_is_fitted(self, "_control_matrix_")
         return self._control_matrix_
 
-    @property
-    def reduced_state_matrix_(self):
-        check_is_fitted(self, "_reduced_state_matrix_")
-        return self._reduced_state_matrix_
+    # @property
+    # def reduced_state_matrix_(self):
+    #     check_is_fitted(self, "_reduced_state_matrix_")
+    #     return self._reduced_state_matrix_
+    #
+    # @property
+    # def reduced_control_matrix_(self):
+    #     check_is_fitted(self, "_reduced_control_matrix_")
+    #     return self._reduced_control_matrix_
 
     @property
-    def reduced_control_matrix_(self):
-        check_is_fitted(self, "_reduced_control_matrix_")
-        return self._reduced_control_matrix_
+    def eigenvectors_(self):
+        check_is_fitted(self, "_eigenvectors_")
+        return self._eigenvectors_
 
     @property
     def eigenvalues_(self):
@@ -394,11 +416,17 @@ class DMDc(BaseRegressor):
         return self._unnormalized_modes
 
     @property
-    def projection_matrix_(self):
-        check_is_fitted(self, "_projection_matrix_")
-        return self._projection_matrix_
+    def ur(self):
+        check_is_fitted(self, "_ur")
+        return self._ur
 
-    @property
-    def projection_matrix_output_(self):
-        check_is_fitted(self, "_projection_matrix_output_")
-        return self._projection_matrix_output_
+    #
+    # @property
+    # def projection_matrix_(self):
+    #     check_is_fitted(self, "_projection_matrix_")
+    #     return self._projection_matrix_
+    #
+    # @property
+    # def projection_matrix_output_(self):
+    #     check_is_fitted(self, "_projection_matrix_output_")
+    #     return self._projection_matrix_output_

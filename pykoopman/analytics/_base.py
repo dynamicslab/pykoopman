@@ -10,7 +10,7 @@ from pykoopman.koopman import Koopman
 class BaseAnalyzer(object):
     """Base class for Koopman model analyzer.
 
-    Aims to perform modes selection.
+    Aims to perform V selection.
 
     Attributes
     ----------
@@ -18,24 +18,24 @@ class BaseAnalyzer(object):
         An instance of `pykoopman.koopman.Koopman`
 
     eigenfunction : Koopman.compute_eigenfunction
-        A function that evaluates Koopman eigenfunction
+        A function that evaluates Koopman psi
 
     eigenvalues_cont : numpy.ndarray
-        Koopman eigenvalues in continuous-time
+        Koopman lamda in continuous-time
 
     eigenvalues_discrete : numpy.ndarray
-        Koopman eigenvalues in discrete-time
+        Koopman lamda in discrete-time
     """
 
     def __init__(self, model: Koopman):
         self.model = model
         self.eigenfunction = self.model.compute_eigenfunction
         self.eigenvalues_cont = self.model.eigenvalues_continuous
-        self.eigenvalues_discrete = self.model.eigenvalues
+        self.eigenvalues_discrete = self.model.lamda
 
     def _compute_phi_minus_phi_evolved(self, t, validate_data_one_traj):
-        """Compute the difference between eigenfunction evolved and
-        eigenfunction observed
+        """Compute the difference between psi evolved and
+        psi observed
 
         Parameters
         ----------
@@ -60,10 +60,10 @@ class BaseAnalyzer(object):
         return linear_residual_list
 
     def validate(self, t, validate_data_one_traj):
-        """validate Koopman eigenfunction
+        """validate Koopman psi
 
         Given a single trajectory, compute the norm of the difference
-        between observed eigenfunction and evolved eigenfunction for
+        between observed psi and evolved psi for
         each mode.
 
               :math:`$\\| \\phi(x(t+q)) - \\lambda * e^{q * \\lambda} \\phi(x(t)) \\|$`

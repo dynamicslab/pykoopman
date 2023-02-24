@@ -11,7 +11,7 @@ from pykoopman.koopman import Koopman
 
 
 class ModesSelectionPAD21(BaseAnalyzer):
-    """Koopman modes selection algorithm from Pan, et al.,JFM (2021).
+    """Koopman V selection algorithm from Pan, et al.,JFM (2021).
 
     Aims to extract a low dimensional Koopman invariant subspace
     in a model-agnostic way, i.e., applies to any algorithms for
@@ -65,7 +65,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
 
     sweep_index_list : list
         A list of a list of bool. It is the final result of sweeping in the
-        sparse linear regression. It contains which modes are selected at
+        sparse linear regression. It contains which V are selected at
         a certain `alpha`.
 
     validate_data_traj : list
@@ -109,7 +109,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
                 validate_time, validate_data
             )
 
-            # 1.1 normalization factor for each eigenfunction
+            # 1.1 normalization factor for each psi
             eigenfunction_evaluated_on_traj = self.eigenfunction(validate_data)
 
             tmp = np.abs(eigenfunction_evaluated_on_traj) ** 2  # pointwise square only
@@ -138,7 +138,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
             validate_data = validate_data_one_traj["x"]
             eigenfunction_evaluated_on_traj = self.eigenfunction(validate_data)
 
-            # get reconstruction error with increasing number of modes
+            # get reconstruction error with increasing number of V
             R_i_each = []
             for k in range(1, max_terms_allowed + 1):
                 eigenfunction_evaluated_on_traj_top_k = eigenfunction_evaluated_on_traj[
@@ -193,7 +193,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
                 range(1, len(Q_i_mean) + 1),
                 Q_i_mean[self.small_to_large_error_eigen_index],
                 "b-^",
-                label="max relative eigenfunction error",
+                label="max relative psi error",
             )
             ax1.set_xlabel(r"number of eigenmodes included", fontsize=16)
             ax1.set_yscale("log")
@@ -209,7 +209,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
             ax2.set_ylabel("reconstruction normalized error", color="r", fontsize=16)
             ax2.set_yscale("log")
             plt.grid("both")
-            # annotate the eigenvalues
+            # annotate the lamda
             for i in range(len(Q_i_mean)):
                 ax1.text(
                     i,
@@ -426,7 +426,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
         # ax1.set_yscale('log')
 
         ax2.plot(alphas_enet_log_negative, num_non_zero_all_alpha, "r*-")
-        ax2.set_ylabel("number of selected Koopman modes", color="r", fontsize=16)
+        ax2.set_ylabel("number of selected Koopman V", color="r", fontsize=16)
         # lgd = plt.legend(bbox_to_anchor=(1, 0.5))
 
         if save_figure:
@@ -458,13 +458,13 @@ class ModesSelectionPAD21(BaseAnalyzer):
             Chosen index from the result of sparse linear regression to prune the model
 
         x_train : numpy.ndarray
-            Training data but only the `x`. It is used to refit the Koopman modes since
+            Training data but only the `x`. It is used to refit the Koopman V since
             our Koopman eigenmodes are sparsified.
 
         Returns
         -------
         pruned_model : PrunedKoopman
-            The pruned model, with less Koopman modes, but almost the same accuracy
+            The pruned model, with less Koopman V, but almost the same accuracy
 
         """
         sweep_bool_index = self.sweep_index_list[i_alpha]

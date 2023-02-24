@@ -26,5 +26,5 @@ class RegressorWithoutPredict:
     "regressor", [RegressorWithoutFit(), RegressorWithoutPredict()]
 )
 def test_bad_regressor_input(regressor):
-    with pytest.raises(AttributeError):
+    with pytest.raises(TypeError):
         BaseRegressor(regressor)

@@ -282,7 +282,7 @@ def data_rev_dvdp():
 
 
 @pytest.fixture
-def data_for_vality_check():
+def data_for_validty_check():
     A = np.array([[-0.9, -0.3], [0.2, -0.7]])
     B = np.zeros((2, 1))
     C = np.eye(2)

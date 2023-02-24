@@ -18,7 +18,10 @@ class BaseObservables(TransformerMixin, BaseEstimator):
     """
 
     def __init__(self):
-        pass
+        super(BaseObservables, self).__init__()
+        # self.measurement_matrix_ = None
+        # self.n_output_features_ = None
+        # self.n_input_features_ = None
 
     @abc.abstractmethod
     def fit(self, X, y=None):
@@ -178,7 +181,7 @@ class ConcatObservables(BaseObservables):
         self: returns a fitted ``ConcatObservables`` instance
         """
 
-        # first one must call fit of every observable in the observer list
+        # first, one must call fit of every observable in the observer list
         # so that n_input_features_ and n_output_features_ are defined
         for obs in self.observables_list_:
             obs.fit(X, y)
@@ -188,32 +191,30 @@ class ConcatObservables(BaseObservables):
         # total number of output features takes care of redundant identity features
         # for polynomial feature, we will remove the 1 as well if include_bias is true
 
-        first_obs_output_features = self.observables_list_[0].n_output_features_
+        first_obs = self.observables_list_[0]
         s = 0
+        obs_list_contain_state_counter = 1 if first_obs.include_state else 0
+        obs_list_contain_bias_counter = (
+            1 if getattr(first_obs, "include_bias", False) else 0
+        )
         for obs in self.observables_list_[1:]:
-            assert hasattr(
-                obs, "include_state"
-            ), "observable Must have `include_state' attribute"
-            if obs.include_state:
+            assert hasattr(obs, "include_state"), (
+                "observable Must have `include_state' " "attribute"
+            )
+            if obs_list_contain_state_counter > 1 and obs.include_state:
                 s += obs.n_output_features_ - obs.n_input_features_
             else:
                 s += obs.n_output_features_
-            if getattr(obs, "include_bias", False) and hasattr(
-                self.observables_list_[0], "include_bias"
+            if obs_list_contain_bias_counter > 1 and getattr(
+                obs, "include_bias", False
             ):
                 s -= 1
+            obs_list_contain_state_counter += 1 if obs.include_state is True else 0
+            obs_list_contain_bias_counter += (
+                1 if getattr(obs, "include_bias", False) else 0
+            )
 
-        self.n_output_features_ = first_obs_output_features + s
-        #         # self.include_state=True
-
-        # self.n_output_features_ = self.observables_list_[0].n_output_features_ + sum(
-        #     [
-        #         obs.n_output_features_ - obs.n_input_features_ - 1
-        #         if getattr(obs, "include_bias", False)
-        #         else obs.n_output_features_ - obs.n_input_features_
-        #         for obs in self.observables_list_[1:]
-        #     ]
-        # )
+        self.n_output_features_ = first_obs.n_output_features_ + s
 
         # take care of consuming samples in time delay observables: \
         # we will look for the largest delay
@@ -225,15 +226,37 @@ class ConcatObservables(BaseObservables):
                 )
         self.n_consumed_samples = max_n_consumed_samples
 
-        # measurement_matrix comes from the first observable
+        # choosing measurement_matrix
         self.measurement_matrix_ = np.zeros(
             [self.n_input_features_, self.n_output_features_]
         )
-        first_obs_measurement_matrix = self.observables_list_[0].measurement_matrix_
-        self.measurement_matrix_[
-            : first_obs_measurement_matrix.shape[0],
-            : first_obs_measurement_matrix.shape[1],
-        ] = first_obs_measurement_matrix
+        # 1. if any observable has `include_state` == True
+        if any([obs.include_state for obs in self.observables_list_]) is True:
+            jj = 0
+            for i in range(len(self.observables_list_)):
+                jcol = self.observables_list_[i].measurement_matrix_.shape[1]
+                if self.observables_list_[i].include_state is True:
+                    break
+                jj += jcol
+            self.measurement_matrix_[:, jj : jj + jcol] = self.observables_list_[
+                i
+            ].measurement_matrix_
+        else:
+            g = self.transform(X)
+            tmp = np.linalg.lstsq(g, X)[0].T
+            assert tmp.shape == self.measurement_matrix_.shape
+            self.measurement_matrix_ = tmp
+
+        # 1. if first observable does not contain include state but others do
+        # then we will use the nearest one's measurement matrix
+
+        # otherwise,
+
+        # C comes from the first observable
+
+        # first_obs_measurement_matrix = self.observables_list_[0].measurement_matrix_
+        # self.measurement_matrix_[:first_obs_measurement_matrix.shape[0],
+        # :first_obs_measurement_matrix.shape[1],] = first_obs_measurement_matrix
 
         return self
 
@@ -253,21 +276,30 @@ class ConcatObservables(BaseObservables):
 
         # for obs in self.observables_list_:
         #     check_is_fitted(obs, "n_consumed_samples_")
-        check_is_fitted(self, "n_input_features_")
+        check_is_fitted(self, "n_consumed_samples")
         num_samples_updated = X.shape[0] - self.n_consumed_samples
-        y_list = [self.observables_list_[0].transform(X)[-num_samples_updated:, :]]
+        first_obs = self.observables_list_[0]
+        obs_list_contain_state_counter = 1 if first_obs.include_state else 0
+        obs_list_contain_bias_counter = (
+            1 if getattr(first_obs, "include_bias", False) else 0
+        )
+        y_list = [first_obs.transform(X)[-num_samples_updated:, :]]
 
         # only include those features that are not state
         y_rest_list = []
         for obs in self.observables_list_[1:]:
-            if obs.include_state:
+            if obs_list_contain_state_counter > 1 and obs.include_state:
                 y_new = obs.transform(X)[-num_samples_updated:, obs.n_input_features_ :]
             else:
                 y_new = obs.transform(X)[-num_samples_updated:, :]
-            if getattr(obs, "include_bias", False) and hasattr(
-                self.observables_list_[0], "include_bias"
+            if obs_list_contain_bias_counter > 1 and getattr(
+                obs, "include_bias", False
             ):
                 y_new = y_new[:, 1:]
+            obs_list_contain_state_counter += 1 if obs.include_state else 0
+            obs_list_contain_bias_counter += (
+                1 if getattr(obs, "include_bias", False) else 0
+            )
 
             y_rest_list.append(y_new)
         y_list += y_rest_list
