@@ -4,6 +4,8 @@ from __future__ import annotations
 import numpy as np
 import scipy
 from pydmd.dmdbase import DMDTimeDict
+from pydmd.utils import compute_svd
+from pydmd.utils import compute_tlsq
 from sklearn.utils.validation import check_is_fitted
 
 from ._base import BaseRegressor
@@ -57,8 +59,9 @@ class EDMD(BaseRegressor):
         Matrix that maps psi to the input features
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, svd_rank=1.0, tlsq_rank=0):
+        self.svd_rank = svd_rank
+        self.tlsq_rank = tlsq_rank
 
     def fit(self, x, y=None, dt=None):
         """
@@ -86,13 +89,20 @@ class EDMD(BaseRegressor):
             X1 = x
             X2 = y
 
+        # perform SVD
+        X1T, X2T = compute_tlsq(X1.T, X2.T, self.tlsq_rank)
+        U, s, V = compute_svd(X1T, self.svd_rank)
+
         # X1, X2 are row-wise data, so there is a transpose in the end.
-        self._coef_ = np.linalg.lstsq(X1, X2)[0].T  # [0:Nlift, 0:Nlift]
+        self._coef_ = U.conj().T @ X2T @ V @ np.diag(np.reciprocal(s))
+        # self._coef_ = np.linalg.lstsq(X1, X2)[0].T  # [0:Nlift, 0:Nlift]
         self._state_matrix_ = self._coef_
         [self._eigenvalues_, self._eigenvectors_] = scipy.linalg.eig(self.state_matrix_)
-        self._unnormalized_modes = self._eigenvectors_
-        self._ur = np.eye(self.n_input_features_)
-        self._tmp_compute_psi = np.linalg.inv(self._eigenvectors_)
+        # self._ur = np.eye(self.n_input_features_)
+        self._ur = U
+        # self._unnormalized_modes = self._eigenvectors_
+        self._unnormalized_modes = self._ur @ self._eigenvectors_
+        self._tmp_compute_psi = np.linalg.pinv(self._unnormalized_modes)
 
         return self
 
@@ -110,7 +120,7 @@ class EDMD(BaseRegressor):
 
         """
         check_is_fitted(self, "coef_")
-        y = x @ self.ur @ self.state_matrix_.T @ self.ur.conj().T
+        y = x @ self.ur.conj() @ self.state_matrix_.T @ self.ur.T
         return y
 
     def _compute_phi(self, x):

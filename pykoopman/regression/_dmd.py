@@ -269,7 +269,7 @@ class PyDMDRegressor(BaseRegressor):
         Returns
         -------
         A : numpy.ndarray, shape (svd_rank, svd_rank)
-            least square estimation
+            the least square estimation
         """
 
         if tikhonov_regularization is not None:
