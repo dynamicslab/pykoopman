@@ -185,24 +185,31 @@ class Linear2Ddynamics:
 
         return X, Y
 
-    def visualize_modes(self, x, phi):
+    def visualize_modes(self, x, phi, eigvals, order=None):
         n_modes = min(10, phi.shape[1])
         fig, axs = plt.subplots(2, n_modes, figsize=(3 * n_modes, 6))
-        for i in range(n_modes):
-            axs[0, i].scatter(
+        if order is None:
+            index_list = range(n_modes)
+        else:
+            index_list = order
+        j = 0
+        for i in index_list:
+            axs[0, j].scatter(
                 x[0, :],
                 x[1, :],
                 c=np.real(phi[:, i]),
                 marker="o",
                 cmap=plt.get_cmap("jet"),
             )
-            axs[1, i].scatter(
+            axs[1, j].scatter(
                 x[0, :],
                 x[1, :],
                 c=np.imag(phi[:, i]),
                 marker="o",
                 cmap=plt.get_cmap("jet"),
             )
+            axs[0, j].set_title(r"$\lambda$=" + "{:2.3f}".format(eigvals[i]))
+            j += 1
 
 
 class torus_dynamics:

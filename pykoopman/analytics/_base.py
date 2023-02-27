@@ -29,9 +29,9 @@ class BaseAnalyzer(object):
 
     def __init__(self, model: Koopman):
         self.model = model
-        self.eigenfunction = self.model.compute_eigenfunction
-        self.eigenvalues_cont = self.model.eigenvalues_continuous
-        self.eigenvalues_discrete = self.model.lamda
+        self.eigenfunction = self.model.psi
+        self.eigenvalues_cont = self.model.continuous_lamda_array
+        self.eigenvalues_discrete = self.model.lamda_array
 
     def _compute_phi_minus_phi_evolved(self, t, validate_data_one_traj):
         """Compute the difference between psi evolved and
@@ -51,11 +51,13 @@ class BaseAnalyzer(object):
             returns the residual for each mode
         """
 
-        phi = self.eigenfunction(validate_data_one_traj)
+        # shape of phi = (num_samples, num_modes)
+        psi = self.eigenfunction(validate_data_one_traj).T
+
         linear_residual_list = []
         for i in range(len(self.eigenvalues_cont)):
             linear_residual_list.append(
-                phi[:, i] - np.exp(self.eigenvalues_cont[i] * t) * phi[0:1, i]
+                psi[:, i] - np.exp(self.eigenvalues_cont[i] * t) * psi[0:1, i]
             )
         return linear_residual_list
 

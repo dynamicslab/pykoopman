@@ -136,7 +136,7 @@ class DMDc(BaseRegressor):
     def __init__(self, svd_rank=None, svd_output_rank=None, input_control_matrix=None):
         self.svd_rank = svd_rank
         self.svd_output_rank = svd_output_rank
-        self._input_control_matrix_ = input_control_matrix
+        self._input_control_matrix = input_control_matrix
 
     def fit(self, x, y=None, u=None, dt=None):
         """
@@ -186,7 +186,7 @@ class DMDc(BaseRegressor):
             self.svd_output_rank = self.n_input_features_
         rout = self.svd_output_rank
 
-        if self._input_control_matrix_ is None:
+        if self._input_control_matrix is None:
             self._fit_unknown_B(X1, X2, C, r, rout)
         else:
             self._fit_known_B(X1, X2, C, r)
@@ -273,11 +273,11 @@ class DMDc(BaseRegressor):
             `X` and input `U`
         """
 
-        if self.n_input_features_ in self._input_control_matrix_.shape is False:
+        if self.n_input_features_ in self._input_control_matrix.shape is False:
             raise TypeError("Control vector/matrix B has wrong shape.")
-        if self._input_control_matrix_.shape[1] == self.n_input_features_:
-            self._input_control_matrix_ = self._input_control_matrix_.T
-        if self._input_control_matrix_.shape[1] != self.n_control_features_:
+        if self._input_control_matrix.shape[1] == self.n_input_features_:
+            self._input_control_matrix = self._input_control_matrix.T
+        if self._input_control_matrix.shape[1] != self.n_control_features_:
             raise TypeError(
                 "The control matrix B must have the same "
                 "number of inputs as the control variable u."
@@ -291,12 +291,12 @@ class DMDc(BaseRegressor):
         self._state_matrix_ = np.linalg.multi_dot(
             [
                 Ur.T,
-                X2.T - self._input_control_matrix_ @ C.T,
+                X2.T - self._input_control_matrix @ C.T,
                 Vhr.T,
                 np.diag(np.reciprocal(sr)),
             ]
         )
-        self._control_matrix_ = Ur.T @ self._input_control_matrix_
+        self._control_matrix_ = Ur.T @ self._input_control_matrix
         # self._state_matrix_ = Ur @ self._reduced_state_matrix_ @ Ur.T
 
         self._coef_ = np.concatenate(
@@ -419,6 +419,10 @@ class DMDc(BaseRegressor):
     def ur(self):
         check_is_fitted(self, "_ur")
         return self._ur
+
+    @property
+    def input_control_matrix(self):
+        return self._input_control_matrix
 
     #
     # @property

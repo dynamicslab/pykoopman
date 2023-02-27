@@ -102,7 +102,9 @@ class EDMD(BaseRegressor):
         self._ur = U
         # self._unnormalized_modes = self._eigenvectors_
         self._unnormalized_modes = self._ur @ self._eigenvectors_
-        self._tmp_compute_psi = np.linalg.pinv(self._unnormalized_modes)
+
+        # np.linalg.pinv(self._unnormalized_modes)
+        self._tmp_compute_psi = np.linalg.inv(self._eigenvectors_) @ self._ur.conj().T
 
         return self
 

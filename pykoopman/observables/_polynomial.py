@@ -75,11 +75,9 @@ class Polynomial(PolynomialFeatures, BaseObservables):
 
         self.measurement_matrix_ = np.zeros([x.shape[1], y_poly_out.n_output_features_])
         if self.include_bias:
-            self.measurement_matrix_[: x.shape[1], 1 : 1 + x.shape[1]] = np.eye(
-                x.shape[1]
-            )
+            self.measurement_matrix_[:, 1 : 1 + x.shape[1]] = np.eye(x.shape[1])
         else:
-            self.measurement_matrix_[: x.shape[1], : x.shape[1]] = np.eye(x.shape[1])
+            self.measurement_matrix_[:, : x.shape[1]] = np.eye(x.shape[1])
 
         return y_poly_out
 

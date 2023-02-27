@@ -21,7 +21,7 @@ class PrunedKoopman(object):
     sweep_index : numpy.ndarray
         selected indices in the original Koopman model
 
-    Lambda_ : numpy.ndarray
+    lamda_ : numpy.ndarray
         The diagonal matrix that contains the selected lamda
 
     original_model : Koopman
@@ -35,7 +35,7 @@ class PrunedKoopman(object):
     def __init__(self, model: Koopman, sweep_index: np.ndarray):
         # construct lambda
         self.sweep_index = sweep_index
-        self.Lambda_ = np.diag(model.lamda[self.sweep_index])
+        self.lamda_ = np.diag(np.diag(model.lamda)[self.sweep_index])
         self.original_model = model
 
     def refit_modes(self, x):
@@ -51,8 +51,8 @@ class PrunedKoopman(object):
         self : PrunedKoopman
         """
 
-        eigenphi = self.compute_eigen_phi(x)
-        result = np.linalg.lstsq(eigenphi, x)
+        selected_eigenphi = self.selected_psi(x)
+        result = np.linalg.lstsq(selected_eigenphi, x)
         # print('refit residual = {}'.format(result[1]))
         self.C_ = result[0].T
         return self
@@ -71,11 +71,11 @@ class PrunedKoopman(object):
             System state at the next time stamp
         """
 
-        gnext = self.compute_eigen_phi(x) @ self.Lambda_
-        xnext = self.compute_state_from_observables(gnext)
+        gnext = self.selected_psi(x) @ self.lamda_
+        xnext = self.compute_state_from_psi(gnext)
         return xnext
 
-    def compute_eigen_phi(self, x):
+    def selected_psi(self, x):
         """Evaluate the selected psi at given state `x`
 
         Parameters
@@ -89,11 +89,11 @@ class PrunedKoopman(object):
             Selected eigenfunctions' value at given state `x`
         """
 
-        eigenphi_ori = self.original_model.compute_eigenfunction(x)
+        eigenphi_ori = self.original_model.psi(x).T
         eigenphi = eigenphi_ori[:, self.sweep_index]
         return eigenphi
 
-    def compute_state_from_observables(self, g):
+    def compute_state_from_psi(self, g):
         """Inverse selected observables from system state
 
         We use the just refitted V to achieve that.
@@ -113,8 +113,8 @@ class PrunedKoopman(object):
         return x
 
     @property
-    def Lambda(self):
-        return self.Lambda_
+    def lamda(self):
+        return self.lamda_
 
     @property
     def C(self):

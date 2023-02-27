@@ -110,7 +110,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
             )
 
             # 1.1 normalization factor for each psi
-            eigenfunction_evaluated_on_traj = self.eigenfunction(validate_data)
+            eigenfunction_evaluated_on_traj = self.eigenfunction(validate_data).T
 
             tmp = np.abs(eigenfunction_evaluated_on_traj) ** 2  # pointwise square only
             dt_arr = np.diff(validate_time, prepend=validate_time[0] - validate_time[1])
@@ -123,9 +123,9 @@ class ModesSelectionPAD21(BaseAnalyzer):
                 for i, tmp in enumerate(linear_residual_list)
             ]
             Q_i.append(tmp)
-        Q_i_mean = np.array(Q_i).mean(
-            axis=0
-        )  # compute the mean Q_i for all of the trajectories
+
+        # compute the mean Q_i for all of the trajectories
+        Q_i_mean = np.array(Q_i).mean(axis=0)
 
         # sort Q to get i_1 to i_L
         self.small_to_large_error_eigen_index = np.argsort(Q_i_mean)[
@@ -136,7 +136,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
         R_i = []
         for validate_data_one_traj in validate_data_traj:
             validate_data = validate_data_one_traj["x"]
-            eigenfunction_evaluated_on_traj = self.eigenfunction(validate_data)
+            eigenfunction_evaluated_on_traj = self.eigenfunction(validate_data).T
 
             # get reconstruction error with increasing number of V
             R_i_each = []
@@ -179,7 +179,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
 
         # prepare top max k selected eigentraj
         eigenfunction_evaluated_on_traj_total = np.vstack(
-            [self.eigenfunction(tmp1["x"]) for tmp1 in validate_data_traj]
+            [self.eigenfunction(tmp1["x"]).T for tmp1 in validate_data_traj]
         )
         self.eigenfunction_on_traj_total_top_k = eigenfunction_evaluated_on_traj_total[
             :, self.small_to_large_error_eigen_index[: max_terms_allowed + 1]
@@ -397,7 +397,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
             mean = (max_val + min_val) / 2
             plt.xlabel(r"-$\log_{10}(\alpha)$", fontsize=16)
             plt.ylabel("absolute value of coefficients", fontsize=16)
-            plt.ylim([mean - diss * 1.05, mean + diss * 3])
+            plt.ylim([mean - diss * 3, mean + diss * 3])
             plt.title(r"$x_{}$".format(i_component + 1))
             plt.legend(loc="best")
             # lgd = plt.legend(bbox_to_anchor=(1.15, 0.95))

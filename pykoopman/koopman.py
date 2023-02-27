@@ -496,7 +496,8 @@ class Koopman(BaseEstimator):
         """Returns Koopman modes"""
 
         check_is_fitted(self, "_pipeline")
-        return self.C @ self._pipeline.steps[-1][1].unnormalized_modes
+        # return self.C @ self._pipeline.steps[-1][1].unnormalized_modes
+        return self.C @ self._pipeline.steps[-1][1].eigenvectors_
 
     # todo: remove
     # @property
@@ -513,6 +514,16 @@ class Koopman(BaseEstimator):
         """
         check_is_fitted(self, "_pipeline")
         return np.diag(self._pipeline.steps[-1][1].eigenvalues_)
+
+    @property
+    def lamda_array(self):
+        check_is_fitted(self, "_pipeline")
+        return np.diag(self.lamda)
+
+    @property
+    def continuous_lamda_array(self):
+        check_is_fitted(self, "_pipeline")
+        return np.log(self.lamda_array) / self.time["dt"]
 
     @property
     def ur(self):
