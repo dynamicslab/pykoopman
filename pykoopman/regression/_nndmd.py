@@ -8,30 +8,37 @@ from __future__ import annotations
 
 import torch
 from torch import nn
-import torch.nn.functional as F
 
-device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+device = (
+    "cuda"
+    if torch.cuda.is_available()
+    else "mps"
+    if torch.backends.mps.is_available()
+    else "cpu"
+)
 print(f"Using {device} device")
 
 activations_dict = {
-    'relu': nn.ReLU(),
-    'sigmoid': nn.Sigmoid(),
-    'tanh': nn.Tanh(),
-    'swish': nn.SiLU(),
-    'elu': nn.ELU(),
-    'mish': nn.Mish(),
-    'linear': nn.Identity()
+    "relu": nn.ReLU(),
+    "sigmoid": nn.Sigmoid(),
+    "tanh": nn.Tanh(),
+    "swish": nn.SiLU(),
+    "elu": nn.ELU(),
+    "mish": nn.Mish(),
+    "linear": nn.Identity(),
 }
 
 
 class FFNN(nn.Module):
-    """A feedforward neural network with customizable architecture and activation functions.
+    """A feedforward neural network with customizable architecture and
+    activation functions.
 
     Args:
         input_size (int): The size of the input layer.
         hidden_sizes (list): A list of the sizes of the hidden layers.
         output_size (int): The size of the output layer.
-        activations (str): A string for activation functions for every layer.
+        activations (str): A string for activation functions for every
+        layer.
 
     Attributes:
         layers (nn.ModuleList): A list of the neural network layers.
@@ -75,15 +82,20 @@ class FFNN(nn.Module):
 
 class StableKMatrix(torch.nn.Module):
     """
-    A PyTorch module for creating trainable skew-symmetric matrices with negative diagonal elements.
+    A PyTorch module for creating trainable skew-symmetric matrices
+    with negative diagonal elements.
 
     Args:
         dim (int): The dimension of the matrix.
-        init_std (float): The standard deviation for initializing the trainable parameters with truncated normal distribution.
+        init_std (float): The standard deviation for initializing
+        the trainable parameters
+        # with truncated normal distribution.
 
     Attributes:
-        diagonal (torch.nn.Parameter): The diagonal elements of the skew-symmetric matrix.
-        off_diagonal (torch.nn.Parameter): The off-diagonal elements of the skew-symmetric matrix.
+        diagonal (torch.nn.Parameter): The diagonal elements of the
+        skew-symmetric matrix.
+        off_diagonal (torch.nn.Parameter): The off-diagonal elements
+        of the skew-symmetric matrix.
     """
 
     def __init__(self, dim: int, init_std: float = 0.1):
@@ -91,8 +103,12 @@ class StableKMatrix(torch.nn.Module):
         self.dim = dim
 
         # diagonal part = - some ^ 2
-        self.diagonal = torch.nn.Parameter(-torch.pow(torch.nn.init.trunc_normal_(torch.empty(dim), std=init_std), 2))
-        self.off_diagonal = torch.nn.Parameter(torch.nn.init.trunc_normal_(torch.empty(dim, dim), std=init_std))
+        self.diagonal = torch.nn.Parameter(
+            -torch.pow(torch.nn.init.trunc_normal_(torch.empty(dim), std=init_std), 2)
+        )
+        self.off_diagonal = torch.nn.Parameter(
+            torch.nn.init.trunc_normal_(torch.empty(dim, dim), std=init_std)
+        )
 
     def forward(self):
         # Construct skew-symmetric matrix
@@ -133,11 +149,13 @@ class DLKoopmanRegressor(nn.Module):
 
 
 class NNDMD(object):
-    """ Implementation of Neural Network DMD """
+    """Implementation of Neural Network DMD"""
 
     def __init__(self, config_encoder, config_decoder, config_koopman):
         # build self.regressor, following `.dmd`
-        self.DLKoopmanRegressor = DLKoopmanRegressor(config_encoder, config_decoder, config_koopman)
+        self.DLKoopmanRegressor = DLKoopmanRegressor(
+            config_encoder, config_decoder, config_koopman
+        )
         self.config_encoder = config_encoder
         self.config_decoder = config_decoder
         self.config_koopman = config_koopman
