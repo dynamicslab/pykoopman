@@ -18,3 +18,5 @@ sphinx-nbexamples
 jupyter_contrib_nbextensions
 PyQt5
 osqp
+torchsummary
+torch

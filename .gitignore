@@ -11,6 +11,8 @@ venv
 # eggs
 .eggs
 
+dev
+
 **/*cache*
 
 .coverage
