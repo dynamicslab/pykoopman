@@ -10,7 +10,6 @@ from scipy.fft import ifft
 
 from pykoopman.common.examples import rk4
 
-
 class cqgle:
     """
     cubic-quintic Ginzburg-Landau equation
