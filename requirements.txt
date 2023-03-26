@@ -1,3 +1,5 @@
+--extra-index-url https://download.pytorch.org/whl/cu118
+
 matplotlib == 3.5.0
 derivative
 scikit-learn>=0.23
@@ -7,8 +9,6 @@ pydmd @ git+https://github.com/mathLab/PyDMD@c98ede0#egg=pydmd
 optht
 scipy
 prettytable
-
---extra-index-url https://download.pytorch.org/whl/cu118
 torch
 torchvision
 lightning
