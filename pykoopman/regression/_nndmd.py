@@ -769,7 +769,6 @@ if __name__ == "__main__":
     #
     #     model = NNDMD(config_encoder, config_decoder, config_koopman)
     #
-    #     from torchsummary import summary
     #
     #     summary(model._encoder, input_size=(2,), batch_size=-1)
     #     summary(model._decoder, input_size=(4,), batch_size=-1)
