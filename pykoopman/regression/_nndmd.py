@@ -856,26 +856,6 @@ class NNDMD(BaseRegressor):
             return self.regressor(x, n)
 
     def _compute_phi(self, x):
-=======
-class NNDMD(object):
-    """Implementation of Neural Network DMD"""
-
-    def __init__(self, config_encoder, config_decoder, config_koopman):
-        # build self.regressor, following `.dmd`
-        self.DLKoopmanRegressor = DLKoopmanRegressor(
-            config_encoder, config_decoder, config_koopman
-        )
-        self.config_encoder = config_encoder
-        self.config_decoder = config_decoder
-        self.config_koopman = config_koopman
-
-    def fit(self, x, y=None, dt=None):
-        # compute forward
-
-        # compile the loss function
-
-        # run optimization
->>>>>>> 7f92f4fe607166b37414e3640444f63b04bfc74d
         pass
 
     def _compute_psi(self, x):
