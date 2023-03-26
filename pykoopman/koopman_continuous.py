@@ -1,3 +1,4 @@
+"""module for continuous time Koopman class"""
 from __future__ import annotations
 
 import numpy as np

@@ -1,3 +1,4 @@
+"""module for dmd with control"""
 from __future__ import annotations
 
 import numpy as np

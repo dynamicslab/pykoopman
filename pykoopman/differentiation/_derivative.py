@@ -1,5 +1,4 @@
-"""
-Wrapper classes for differentiation methods from the :doc:`derivative:index` package.
+"""Wrapper classes for differentiation methods from the :doc:`derivative:index` package.
 
 Some default values used here may differ from those used in :doc:`derivative:index`.
 """

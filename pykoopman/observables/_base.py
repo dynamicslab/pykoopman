@@ -1,6 +1,4 @@
-"""
-Base class for specific observable classes
-"""
+"""moduel for Base class for specific observable classes"""
 from __future__ import annotations
 
 import abc

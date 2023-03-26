@@ -1,6 +1,4 @@
-"""
-Linear observables
-"""
+"""module for Linear observables"""
 from __future__ import annotations
 
 import numpy as np

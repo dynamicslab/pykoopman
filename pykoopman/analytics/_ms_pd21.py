@@ -1,3 +1,4 @@
+"""module for implementing Pan-Duraisamy modes selection algorithm"""
 from __future__ import annotations
 
 import numpy as np
@@ -52,7 +53,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
     L : int
         Total number of terms considered in sparse linear regression
 
-    dir : string
+    dir : str
         The path where we save figures
 
     eigenfunction_on_traj_total_top_k : numpy.ndarray

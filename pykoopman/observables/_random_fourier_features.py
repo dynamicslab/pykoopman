@@ -1,3 +1,4 @@
+"""module for random fourier features observables"""
 from __future__ import annotations
 
 import numpy as np

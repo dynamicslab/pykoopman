@@ -1,3 +1,4 @@
+"""module for base class of regressor"""
 from __future__ import annotations
 
 from abc import ABC

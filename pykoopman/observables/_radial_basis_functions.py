@@ -1,6 +1,4 @@
-"""
-Radial basis function observables
-"""
+"""module for Radial basis function observables"""
 from __future__ import annotations
 
 import numpy as np

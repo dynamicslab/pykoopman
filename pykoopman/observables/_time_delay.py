@@ -1,6 +1,4 @@
-"""
-Time-delay observables
-"""
+"""moduel for time-delay observables"""
 from __future__ import annotations
 
 import numpy as np
@@ -10,7 +8,6 @@ from sklearn.utils.validation import check_is_fitted
 
 from ..common import validate_input
 from ._base import BaseObservables
-
 
 class TimeDelay(BaseObservables):
     r"""

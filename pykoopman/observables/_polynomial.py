@@ -1,6 +1,4 @@
-"""
-Polynomial observables
-"""
+"""moduel for Polynomial observables"""
 from __future__ import annotations
 
 from itertools import chain
