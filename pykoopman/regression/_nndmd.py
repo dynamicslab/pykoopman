@@ -67,6 +67,7 @@ class StableKMatrix(torch.nn.Module):
 
         return skew_symmetric
 
+
 class MaskedMSELoss(nn.Module):
     """
     Calculates the mean squared error (MSE) loss between `output` and `target`, with
