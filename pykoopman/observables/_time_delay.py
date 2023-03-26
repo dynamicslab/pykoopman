@@ -9,6 +9,7 @@ from sklearn.utils.validation import check_is_fitted
 from ..common import validate_input
 from ._base import BaseObservables
 
+
 class TimeDelay(BaseObservables):
     r"""
     Time-delay observables. Observables formed by taking time-lagged
