@@ -27,7 +27,7 @@ class PrunedKoopman(object):
     original_model : Koopman
         An instance of `pykoopman.koopman.Koopman`
 
-    C_ : numpy.ndarray
+    V_ : numpy.ndarray
         The matrix that maps selected Koopman eigenfunctions
         back to the system state :math:`x = C \\phi`.
     """
@@ -54,7 +54,7 @@ class PrunedKoopman(object):
         selected_eigenphi = self.selected_psi(x)
         result = np.linalg.lstsq(selected_eigenphi, x)
         # print('refit residual = {}'.format(result[1]))
-        self.C_ = result[0].T
+        self.V_ = result[0].T
         return self
 
     def predict(self, x):
@@ -109,7 +109,7 @@ class PrunedKoopman(object):
             System state recovered
         """
 
-        x = g @ self.C.T
+        x = g @ self.V.T
         return x
 
     @property
@@ -117,5 +117,5 @@ class PrunedKoopman(object):
         return self.lamda_
 
     @property
-    def C(self):
-        return self.C_
+    def V(self):
+        return self.V_

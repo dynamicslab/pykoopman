@@ -151,6 +151,8 @@ class Koopman(BaseEstimator):
                 self._pipeline.fit(x, y, regressor__dt=dt)
             else:
                 self._pipeline.fit(x, y, regressor__u=u, regressor__dt=dt)
+            # update the second step with just the regressor, not the
+            # EnsembleBaseRegressor
             if isinstance(self._pipeline.steps[1][1], EnsembleBaseRegressor):
                 self._pipeline.steps[1] = (
                     self._pipeline.steps[1][0],
@@ -362,45 +364,6 @@ class Koopman(BaseEstimator):
         ephi = self._pipeline.steps[-1][1]._compute_psi(y)
         return ephi
 
-    # def compute_eigen_phi_column(self, z):
-    #     """
-    #     Compute Koopman psi phi(z) given `z`
-    #
-    #     `z` is a row vector while phi will be a column vector
-    #
-    #     Parameters
-    #     ----------
-    #     z: numpy.ndarray, shape (n_input_features, n_samples)
-    #         State vectors to be evaluated for psi
-    #
-    #     Returns
-    #     -------
-    #     eigen_phi: numpy.ndarray, shape (n_samples, self.n_output_features_)
-    #         Value of psi evaluated at input `z`
-    #     """
-    #
-    #     eigen_phi = self._pipeline.steps[-1][1]._compute_psi(z)
-    #     return eigen_phi
-
-    # todo: remove
-    # @property
-    # def koopman_matrix(self):
-    #     """
-    #     Autonomous case:
-    #         - the Koopman matrix K satisfying g(X') = K * g(X)
-    #         where g denotes the observables map and X' denotes x advanced
-    #         one timestep. Note that if there has some low rank, then K is
-    #
-    #     Controlled case with known input B
-    #         - x' = Ax + Bu,
-    #         - returns the A
-    #
-    #     Controlled case with unknown input B:
-    #         - x' = K [x u]^T
-    #     """
-    #     check_is_fitted(self, "n_output_features_")
-    #     return self._pipeline.steps[-1][1].coef_
-
     @property
     def A(self):
         """Returns the state transition matrix `A`
@@ -428,30 +391,6 @@ class Koopman(BaseEstimator):
             raise ValueError("this type of self.regressor has no B")
         return self._pipeline.steps[-1][1].control_matrix_
 
-    # # todo remove
-    # @property
-    # def reduced_state_transition_matrix(self):
-    #     check_is_fitted(self, "model")
-    #     if isinstance(self.regressor, DMDBase):
-    #         raise ValueError(
-    #             "this type of self.regressor has no A"
-    #         )
-    #
-    #     if hasattr(self._pipeline.steps[-1][1], "reduced_state_matrix_"):
-    #         return self._pipeline.steps[-1][1].reduced_state_matrix_
-
-    # # todo remove
-    # @property
-    # def reduced_control_matrix(self):
-    #     """
-    #     The control matrix (or vector) B satisfies y' = Ay + Bu.
-    #     y is the reduced system state
-    #     """
-    #     check_is_fitted(self, "model")
-    #     if isinstance(self.regressor, DMDBase):
-    #         raise ValueError("this type of self.regressor has no B")
-    #     return self._pipeline.steps[-1][1].reduced_control_matrix_
-
     @property
     def C(self):
         """Return the measurement matrix (or vector) C satisfies x = C*phi_r"""
@@ -465,32 +404,6 @@ class Koopman(BaseEstimator):
         C = measure_mat @ ur
         return C
 
-    # # todo remove
-    # @property
-    # def projection_matrix(self):
-    #     """
-    #     Projection matrix
-    #         - "encoder" left-mul maps to the low-dimensional space
-    #     """
-    #     check_is_fitted(self, "model")
-    #     if isinstance(self.regressor, DMDBase):
-    #         raise ValueError("this type of self.regressor has no projection_matrix")
-    #     return self._pipeline.steps[-1][1].projection_matrix_
-
-    # # todo remove
-    # @property
-    # def projection_matrix_output(self):
-    #     """
-    #     Output projection matrix
-    #         - "decoder": left mul maps to the original state space
-    #     """
-    #     check_is_fitted(self, "model")
-    #     if isinstance(self.regressor, DMDBase):
-    #         raise ValueError(
-    #             "this type of self.regressor has no projection_matrix_output"
-    #         )
-    #     return self._pipeline.steps[-1][1].projection_matrix_output_
-
     @property
     def V(self):
         """Returns Koopman modes"""
@@ -498,13 +411,6 @@ class Koopman(BaseEstimator):
         check_is_fitted(self, "_pipeline")
         # return self.C @ self._pipeline.steps[-1][1].unnormalized_modes
         return self.C @ self._pipeline.steps[-1][1].eigenvectors_
-
-    # todo: remove
-    # @property
-    # def amplitudes(self):
-    #     check_is_fitted(self, "model")
-    #     return self._amplitudes
-    #     # return self._pipeline.steps[-1][1].amplitudes_
 
     @property
     def lamda(self):
@@ -533,57 +439,6 @@ class Koopman(BaseEstimator):
         check_is_fitted(self, "_pipeline")
         return self._pipeline.steps[-1][1].ur
 
-    # todo: remove
-    # @property
-    # def frequencies(self):
-    #     """
-    #     Oscillation frequencies of Koopman V/eigenvectors
-    #     """
-    #     check_is_fitted(self, "model")
-    #     dt = self.time["dt"]
-    #     return np.imag(np.log(self.lamda) / dt) / (2 * np.pi)
-    #     # return self._pipeline.steps[-1][1].frequencies_
-
-    # # todo: remove
-    # @property
-    # def eigenvalues_continuous(self):
-    #     """
-    #     Continuous-time Koopman lamda obtained from spectral decomposition
-    #     of the Koopman matrix
-    #     """
-    #     check_is_fitted(self, "_pipeline")
-    #     dt = self.time["dt"]
-    #     return np.log(np.diag(self.lamda)) / dt
-
-    # # todo remove
-    # @property
-    # def eigenfunctions(self):
-    #     """
-    #     Approximate Koopman eigenfunctions
-    #     """
-    #     check_is_fitted(self, "model")
-    #     return self._pipeline.steps[-1][1].kef_
-
-    # # todo replace the psi above
-    # def compute_eigenfunction(self, x):
-    #     """
-    #     computes the psi with row-wise output
-    #
-    #     """
-    #     z = self.observables.transform(x)
-    #     phi = self.compute_eigen_phi_column(z)
-    #     return phi.T
-
-    # def integrate_eigenfunction(self, t, x0):
-    #     omega = self.eigenvalues_continuous
-    #     phi0 = self.compute_eigenfunction(x0).T
-    #     phit = []
-    #     for i in range(len(omega)):
-    #         phit_i = np.exp(omega[i] * t) * phi0[i]
-    #         phit.append(phit_i)
-    #     return np.vstack(phit).T  # (n_samples, #_eigenmodes)
-
-    # todo remove
     def validity_check(self, t, x):
         """
         Validity check (i.e. linearity check ) of
@@ -666,3 +521,14 @@ class Koopman(BaseEstimator):
                 return metric(y.real, self.predict(x).real, **metric_kws)
             else:
                 return metric(y, self.predict(x), **metric_kws)
+
+    def _observable(self):
+        return self._pipeline.steps[0][1]
+
+    def _regressor(self):
+        # this can access the fitted regressor
+        # todo: we need to figure out a way to do time delay multiple trajectories DMD
+        # my idea is to manually call xN observables then concate the data to let
+        # the _regressor.fit to update the model coefficients.
+        # call this function with _regressor()
+        return self._pipeline.steps[1][1]

@@ -248,6 +248,39 @@ def test_simulate_with_time_delay(data_2D_superposition, regressor, observables)
     )
 
 
+@pytest.mark.parametrize(
+    "regressor",
+    [
+        DMD(svd_rank=10),
+        EDMD(svd_rank=10),
+        PyDMDRegressor(DMD(svd_rank=10)),
+    ],
+)
+@pytest.mark.parametrize(
+    "observables",
+    [
+        Identity(),
+        Polynomial(degree=2),
+        TimeDelay(delay=2),
+        TimeDelay(delay=4),
+    ],
+)
+def test_simulate_with_time_delay_ensemble(
+    data_2D_superposition, regressor, observables
+):
+    x = data_2D_superposition[:-1]
+    y = data_2D_superposition[1:]
+    # observables = TimeDelay(delay=3)
+    model = Koopman(observables=observables, regressor=regressor)
+    model.fit(x, y)
+    n_steps = 10
+    n_consumed_samples = observables.n_consumed_samples
+    x_pred = model.simulate(x[: n_consumed_samples + 1], n_steps=n_steps)
+    assert_allclose(
+        x[n_consumed_samples + 1 : n_consumed_samples + n_steps + 1], x_pred
+    )
+
+
 def test_if_dmdc_model_is_accurate_with_known_controlmatrix(
     data_2D_linear_control_system,
 ):

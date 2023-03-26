@@ -1,6 +1,5 @@
 -e .
 -r requirements.txt
-matplotlib == 3.5.0
 pytest
 pytest-cov
 pytest-lazy-fixture
