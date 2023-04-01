@@ -173,8 +173,9 @@ class Koopman(BaseEstimator):
                 # g0 = self.observables.transform(
                 #     x[0 : 1 + self.observables.n_consumed_samples]
                 # )
-                self._amplitudes = np.abs(self.psi(x[0 : 1 +
-                                   self.observables.n_consumed_samples]))
+                self._amplitudes = np.abs(
+                    self.psi(x[0 : 1 + self.observables.n_consumed_samples])
+                )
             else:
                 # g0 = self.observables.transform(x[0:1])
                 self._amplitudes = np.abs(self.psi(x[0:1]))

@@ -20,5 +20,5 @@ __all__ = [
     "EnsembleBaseRegressor",
     "HAVOK",
     "KEF",
-    "NNDMD"
+    "NNDMD",
 ]

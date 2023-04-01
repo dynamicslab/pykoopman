@@ -8,16 +8,17 @@ from warnings import warn
 import lightning as L
 import numpy as np
 import torch
+from sklearn.utils.validation import check_is_fitted
 from torch import nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
-from sklearn.utils.validation import check_is_fitted
 
 from pykoopman.regression._base import BaseRegressor
 
 
 # todo: add the control version
+
 
 class MaskedMSELoss(nn.Module):
     """
@@ -63,8 +64,9 @@ class MaskedMSELoss(nn.Module):
 
         # Compute squared differences and apply mask
         squared_diff = torch.pow(output - target, 2)
-        squared_diff_masked = torch.where(mask, squared_diff,
-                                          torch.zeros_like(squared_diff))
+        squared_diff_masked = torch.where(
+            mask, squared_diff, torch.zeros_like(squared_diff)
+        )
 
         # Compute the MSE loss
         mse_loss = squared_diff_masked.sum() / mask.sum()
@@ -121,12 +123,13 @@ class FFNN(nn.Module):
             # Define the hidden layers
             for i in range(1, len(hidden_sizes)):
                 self.layers.append(
-                    nn.Linear(hidden_sizes[i - 1], hidden_sizes[i], bias))
+                    nn.Linear(hidden_sizes[i - 1], hidden_sizes[i], bias)
+                )
                 if activations != "linear":
                     self.layers.append(act)
 
             # Define the last output layer
-            bias_last = False # True  # last layer with bias
+            bias_last = False  # True  # last layer with bias
             self.layers.append(nn.Linear(hidden_sizes[-1], output_size, bias_last))
 
     def forward(self, x):
@@ -145,10 +148,10 @@ class FFNN(nn.Module):
 
 class BaseKoopmanOperator(nn.Module):
     def __init__(
-            self,
-            dim: int,
-            dt: float = 1.0,
-            init_std: float = 0.1,
+        self,
+        dim: int,
+        dt: float = 1.0,
+        init_std: float = 0.1,
     ):
         super().__init__()
         self.dim = dim
@@ -250,13 +253,13 @@ class DLKoopmanRegressor(L.LightningModule):
     """
 
     def __init__(
-            self,
-            mode=None,
-            dt=1.0,
-            look_forward=1,
-            config_encoder={},
-            config_decoder={},
-            lbfgs=False,
+        self,
+        mode=None,
+        dt=1.0,
+        look_forward=1,
+        config_encoder={},
+        config_decoder={},
+        lbfgs=False,
     ):
         super(DLKoopmanRegressor, self).__init__()
 
@@ -530,8 +533,16 @@ class InverseTensorNormalize(nn.Module):
 
 
 class SeqDataModule(L.LightningDataModule):
-    def __init__(self, data_tr, data_val, look_forward=10, batch_size=32,
-                 normalize=True, normalize_mode='equal', normalize_std_factor=2.0):
+    def __init__(
+        self,
+        data_tr,
+        data_val,
+        look_forward=10,
+        batch_size=32,
+        normalize=True,
+        normalize_mode="equal",
+        normalize_std_factor=2.0,
+    ):
         super().__init__()
         # input data_tr or data_val is a list of 2D np.ndarray. each 2d
         # np.ndarray is a trajectory, and the axis 0 is number of samples, axis 1 is
@@ -573,7 +584,7 @@ class SeqDataModule(L.LightningDataModule):
             # default = 2.0, more stable
             self.std = torch.FloatTensor(std) * self.normalize_std_factor
 
-            if self.normalize_mode == 'max':
+            if self.normalize_mode == "max":
                 self.std = torch.ones_like(self.std) * self.std.max()
 
             # prevent divide by zero error
@@ -621,24 +632,24 @@ class SeqDataModule(L.LightningDataModule):
         # Load data and split into train and validation sets here
         # Assign train/val datasets for use in dataloaders
         if stage == "fit":
-            self.tr_dataset = SeqDataDataset(self._tr_x, self._tr_yseq, self._tr_ys,
-                                             self.normalization)
+            self.tr_dataset = SeqDataDataset(
+                self._tr_x, self._tr_yseq, self._tr_ys, self.normalization
+            )
             if self.data_val is not None:
-                self.val_dataset = SeqDataDataset(self._val_x, self._val_yseq,
-                                                  self._val_ys, self.normalization)
+                self.val_dataset = SeqDataDataset(
+                    self._val_x, self._val_yseq, self._val_ys, self.normalization
+                )
         else:
             raise NotImplementedError("We didn't implement for stage not `fit`")
 
     def train_dataloader(self):
         return DataLoader(
-            self.tr_dataset, self.batch_size, shuffle=True,
-            collate_fn=self.collate_fn
+            self.tr_dataset, self.batch_size, shuffle=True, collate_fn=self.collate_fn
         )
 
     def val_dataloader(self):
         return DataLoader(
-            self.val_dataset, self.batch_size, shuffle=True,
-            collate_fn=self.collate_fn
+            self.val_dataset, self.batch_size, shuffle=True, collate_fn=self.collate_fn
         )
 
     def convert_seq_list_to_delayed_data(self, data_list, look_back, look_forward):
@@ -650,9 +661,9 @@ class SeqDataModule(L.LightningDataModule):
             n_sub_traj = len(seq) - look_back - look_forward + 1
             if n_sub_traj >= 1:
                 for i in range(len(seq) - look_back - look_forward + 1):
-                    time_delayed_x_list.append(seq[i: i + look_back])
+                    time_delayed_x_list.append(seq[i : i + look_back])
                     time_delayed_yseq_list.append(
-                        seq[i + look_back: i + look_back + look_forward]
+                        seq[i + look_back : i + look_back + look_forward]
                     )
             else:
                 # only 1 traj, just to predict to its end
@@ -697,15 +708,22 @@ class SeqDataModule(L.LightningDataModule):
 
 class NNDMD(BaseRegressor):
     def __init__(
-            self,
-            mode=None, dt=1.0, look_forward=1,
-            config_encoder=dict(input_size=2, hidden_sizes=[32] * 2, output_size=6,
-                                activations="tanh"),
-            config_decoder=dict(input_size=6, hidden_sizes=[32] * 2, output_size=2,
-                                activations="linear"),
-            batch_size=16, lbfgs=False, normalize=True, normalize_mode='equal',
-            normalize_std_factor=2.0,
-            trainer_kwargs={}
+        self,
+        mode=None,
+        dt=1.0,
+        look_forward=1,
+        config_encoder=dict(
+            input_size=2, hidden_sizes=[32] * 2, output_size=6, activations="tanh"
+        ),
+        config_decoder=dict(
+            input_size=6, hidden_sizes=[32] * 2, output_size=2, activations="linear"
+        ),
+        batch_size=16,
+        lbfgs=False,
+        normalize=True,
+        normalize_mode="equal",
+        normalize_std_factor=2.0,
+        trainer_kwargs={},
     ):
         self.mode = mode
         self.look_forward = look_forward
@@ -733,44 +751,68 @@ class NNDMD(BaseRegressor):
         # build trainer
         self.trainer = L.Trainer(**self.trainer_kwargs)
 
-        self.n_input_features_ = self.config_encoder['input_size']
+        self.n_input_features_ = self.config_encoder["input_size"]
 
         # create the data module
         # case: a single traj, x is 2D np.ndarray, no validation
         if y is None and isinstance(x, np.ndarray) and x.ndim == 2:
             t0, t1 = x[:-1], x[1:]
             list_of_traj = [np.stack((t0[i], t1[i]), 0) for i in range(len(x) - 1)]
-            self.dm = SeqDataModule(list_of_traj, None, self.look_forward,
-                                    self.batch_size, self.normalize,
-                                    self.normalize_mode, self.normalize_std_factor)
+            self.dm = SeqDataModule(
+                list_of_traj,
+                None,
+                self.look_forward,
+                self.batch_size,
+                self.normalize,
+                self.normalize_mode,
+                self.normalize_std_factor,
+            )
             self.n_samples_ = len(list_of_traj)
 
             # case: x, y are 2D np.ndarray, no validation
         elif (
-                isinstance(x, np.ndarray)
-                and isinstance(y, np.ndarray)
-                and x.ndim == 2
-                and y.ndim == 2
+            isinstance(x, np.ndarray)
+            and isinstance(y, np.ndarray)
+            and x.ndim == 2
+            and y.ndim == 2
         ):
             t0, t1 = x, y
             list_of_traj = [np.stack((t0[i], t1[i]), 0) for i in range(len(x) - 1)]
-            self.dm = SeqDataModule(list_of_traj, None, self.look_forward,
-                                    self.batch_size, self.normalize,
-                                    self.normalize_mode, self.normalize_std_factor)
+            self.dm = SeqDataModule(
+                list_of_traj,
+                None,
+                self.look_forward,
+                self.batch_size,
+                self.normalize,
+                self.normalize_mode,
+                self.normalize_std_factor,
+            )
             self.n_samples_ = len(list_of_traj)
 
         # case: only training data, x is a list of trajectories, y is None
         elif isinstance(x, list) and y is None:
-            self.dm = SeqDataModule(x, None, self.look_forward, self.batch_size,
-                                    self.normalize, self.normalize_mode,
-                                    self.normalize_std_factor)
+            self.dm = SeqDataModule(
+                x,
+                None,
+                self.look_forward,
+                self.batch_size,
+                self.normalize,
+                self.normalize_mode,
+                self.normalize_std_factor,
+            )
             self.n_samples_ = len(x)
 
         # case: x, y are two lists of trajectories, we have validation data
         elif isinstance(x, list) and isinstance(y, list):
-            self.dm = SeqDataModule(x, y, self.look_forward, self.batch_size,
-                                    self.normalize, self.normalize_mode,
-                                    self.normalize_std_factor)
+            self.dm = SeqDataModule(
+                x,
+                y,
+                self.look_forward,
+                self.batch_size,
+                self.normalize,
+                self.normalize_mode,
+                self.normalize_std_factor,
+            )
             self.n_samples_ = len(x)
         else:
             raise ValueError("check `x` and `y` for `self.fit`")
@@ -779,8 +821,11 @@ class NNDMD(BaseRegressor):
         self.trainer.fit(self._regressor, self.dm)
 
         # compute Koopman operator information
-        self._state_matrix_ = self._regressor._koopman_propagator. \
-            get_discrete_time_Koopman_Operator().detach().numpy()
+        self._state_matrix_ = (
+            self._regressor._koopman_propagator.get_discrete_time_Koopman_Operator()
+            .detach()
+            .numpy()
+        )
         [self._eigenvalues_, self._eigenvectors_] = np.linalg.eig(self._state_matrix_)
 
         self._coef_ = self._state_matrix_
@@ -788,8 +833,9 @@ class NNDMD(BaseRegressor):
         # obtain effective linear transformation
         decoder_weight_list = []
         for i in range(len(self._regressor._decoder.layers)):
-            decoder_weight_list.append(self._regressor._decoder.layers[i].weight.
-                                       detach().numpy())
+            decoder_weight_list.append(
+                self._regressor._decoder.layers[i].weight.detach().numpy()
+            )
         if len(decoder_weight_list) > 1:
             self._ur = np.linalg.multi_dot(decoder_weight_list[::-1])
         else:

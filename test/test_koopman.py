@@ -59,7 +59,7 @@ def test_simulate_accuracy(data_2D_superposition, regressor):
     model = Koopman(regressor=regressor).fit(x)
     n_steps = 50
     x_pred = model.simulate(x[0], n_steps=n_steps)
-    assert_allclose(x[1: n_steps + 1], x_pred)
+    assert_allclose(x[1 : n_steps + 1], x_pred)
 
 
 @pytest.mark.parametrize(
@@ -85,7 +85,7 @@ def test_dmd_on_nonconsecutive_data_accuracy(data_2D_linear_real_system, regress
     )
     n_steps = 9
     x_pred = model.simulate(x[0], n_steps=n_steps)
-    assert_allclose(x[1: n_steps + 1], x_pred)
+    assert_allclose(x[1 : n_steps + 1], x_pred)
 
 
 # def test_koopman_matrix_shape(data_random):
@@ -246,7 +246,7 @@ def test_simulate_with_time_delay(data_2D_superposition, regressor, observables)
     n_consumed_samples = observables.n_consumed_samples
     x_pred = model.simulate(x[: n_consumed_samples + 1], n_steps=n_steps)
     assert_allclose(
-        x[n_consumed_samples + 1: n_consumed_samples + n_steps + 1], x_pred
+        x[n_consumed_samples + 1 : n_consumed_samples + n_steps + 1], x_pred
     )
 
 
@@ -268,7 +268,7 @@ def test_simulate_with_time_delay(data_2D_superposition, regressor, observables)
     ],
 )
 def test_simulate_with_time_delay_ensemble(
-        data_2D_superposition, regressor, observables
+    data_2D_superposition, regressor, observables
 ):
     x = data_2D_superposition[:-1]
     y = data_2D_superposition[1:]
@@ -279,12 +279,12 @@ def test_simulate_with_time_delay_ensemble(
     n_consumed_samples = observables.n_consumed_samples
     x_pred = model.simulate(x[: n_consumed_samples + 1], n_steps=n_steps)
     assert_allclose(
-        x[n_consumed_samples + 1: n_consumed_samples + n_steps + 1], x_pred
+        x[n_consumed_samples + 1 : n_consumed_samples + n_steps + 1], x_pred
     )
 
 
 def test_if_dmdc_model_is_accurate_with_known_controlmatrix(
-        data_2D_linear_control_system,
+    data_2D_linear_control_system,
 ):
     X, C, A, B = data_2D_linear_control_system
     # model = Koopman()
@@ -297,7 +297,7 @@ def test_if_dmdc_model_is_accurate_with_known_controlmatrix(
 
 
 def test_if_dmdc_model_is_accurate_with_unknown_controlmatrix(
-        data_2D_linear_control_system,
+    data_2D_linear_control_system,
 ):
     X, C, A, B = data_2D_linear_control_system
     # model = Koopman()
@@ -402,9 +402,9 @@ def test_edmdc_vanderpol():
     # Integrate
     for step in range(n_int):
         y = examples.rk4(0, x, u[step, :], dT, examples.vdp_osc)
-        X[:, (step) * n_traj: (step + 1) * n_traj] = x
-        Y[:, (step) * n_traj: (step + 1) * n_traj] = y
-        U[:, (step) * n_traj: (step + 1) * n_traj] = u[step, :]
+        X[:, (step) * n_traj : (step + 1) * n_traj] = x
+        Y[:, (step) * n_traj : (step + 1) * n_traj] = y
+        U[:, (step) * n_traj : (step + 1) * n_traj] = u[step, :]
         x = y
 
     # Create Koopman model
@@ -472,58 +472,95 @@ def test_accuracy_koopman_validity_check(data_for_validty_check, regressor):
 
 @pytest.mark.parametrize(
     "regressor",
-    [NNDMD(look_forward=1,
-           config_encoder=dict(input_size=2, hidden_sizes=[32] * 2, output_size=2,
-                               activations="linear"),
-           config_decoder=dict(input_size=2, hidden_sizes=[32] * 2, output_size=2,
-                               activations="linear"),
-           batch_size=512, lbfgs=True,
-           normalize=True, normalize_mode='max',
-           trainer_kwargs=dict(max_epochs=3)),
-     NNDMD(look_forward=1,
-           config_encoder=dict(input_size=2, hidden_sizes=[32] * 2, output_size=2,
-                               activations="linear"),
-           config_decoder=dict(input_size=2, hidden_sizes=[32] * 2, output_size=2,
-                               activations="linear"),
-           batch_size=512, lbfgs=True,
-           normalize=True, normalize_mode='equal',
-           trainer_kwargs=dict(max_epochs=3)),
-     NNDMD(look_forward=1,
-           config_encoder=dict(input_size=2, hidden_sizes=[32] * 2, output_size=2,
-                               activations="linear"),
-           config_decoder=dict(input_size=2, hidden_sizes=[32] * 2, output_size=2,
-                               activations="linear"),
-           batch_size=512, lbfgs=True,
-           normalize=False, normalize_mode='max',
-           trainer_kwargs=dict(max_epochs=3)),
-     NNDMD(mode='Dissipative',
-           look_forward=1,
-           config_encoder=dict(input_size=2, hidden_sizes=[32] * 2, output_size=2,
-                               activations="linear"),
-           config_decoder=dict(input_size=2, hidden_sizes=[32] * 2, output_size=2,
-                               activations="linear"),
-           batch_size=512, lbfgs=True,
-           normalize=True, normalize_mode='max',
-           trainer_kwargs=dict(max_epochs=3)),
-     NNDMD(mode='Dissipative',
-           look_forward=1,
-           config_encoder=dict(input_size=2, hidden_sizes=[32] * 2, output_size=2,
-                               activations="linear"),
-           config_decoder=dict(input_size=2, hidden_sizes=[32] * 2, output_size=2,
-                               activations="linear"),
-           batch_size=512, lbfgs=True,
-           normalize=True, normalize_mode='equal',
-           trainer_kwargs=dict(max_epochs=3)),
-     NNDMD(mode='Dissipative',
-           look_forward=1,
-           config_encoder=dict(input_size=2, hidden_sizes=[32] * 2, output_size=2,
-                               activations="linear"),
-           config_decoder=dict(input_size=2, hidden_sizes=[32] * 2, output_size=2,
-                               activations="linear"),
-           batch_size=512, lbfgs=True,
-           normalize=False, normalize_mode='max',
-           trainer_kwargs=dict(max_epochs=3)),
-     ]
+    [
+        NNDMD(
+            look_forward=1,
+            config_encoder=dict(
+                input_size=2, hidden_sizes=[32] * 2, output_size=2, activations="linear"
+            ),
+            config_decoder=dict(
+                input_size=2, hidden_sizes=[32] * 2, output_size=2, activations="linear"
+            ),
+            batch_size=512,
+            lbfgs=True,
+            normalize=True,
+            normalize_mode="max",
+            trainer_kwargs=dict(max_epochs=3),
+        ),
+        NNDMD(
+            look_forward=1,
+            config_encoder=dict(
+                input_size=2, hidden_sizes=[32] * 2, output_size=2, activations="linear"
+            ),
+            config_decoder=dict(
+                input_size=2, hidden_sizes=[32] * 2, output_size=2, activations="linear"
+            ),
+            batch_size=512,
+            lbfgs=True,
+            normalize=True,
+            normalize_mode="equal",
+            trainer_kwargs=dict(max_epochs=3),
+        ),
+        NNDMD(
+            look_forward=1,
+            config_encoder=dict(
+                input_size=2, hidden_sizes=[32] * 2, output_size=2, activations="linear"
+            ),
+            config_decoder=dict(
+                input_size=2, hidden_sizes=[32] * 2, output_size=2, activations="linear"
+            ),
+            batch_size=512,
+            lbfgs=True,
+            normalize=False,
+            normalize_mode="max",
+            trainer_kwargs=dict(max_epochs=3),
+        ),
+        NNDMD(
+            mode="Dissipative",
+            look_forward=1,
+            config_encoder=dict(
+                input_size=2, hidden_sizes=[32] * 2, output_size=2, activations="linear"
+            ),
+            config_decoder=dict(
+                input_size=2, hidden_sizes=[32] * 2, output_size=2, activations="linear"
+            ),
+            batch_size=512,
+            lbfgs=True,
+            normalize=True,
+            normalize_mode="max",
+            trainer_kwargs=dict(max_epochs=3),
+        ),
+        NNDMD(
+            mode="Dissipative",
+            look_forward=1,
+            config_encoder=dict(
+                input_size=2, hidden_sizes=[32] * 2, output_size=2, activations="linear"
+            ),
+            config_decoder=dict(
+                input_size=2, hidden_sizes=[32] * 2, output_size=2, activations="linear"
+            ),
+            batch_size=512,
+            lbfgs=True,
+            normalize=True,
+            normalize_mode="equal",
+            trainer_kwargs=dict(max_epochs=3),
+        ),
+        NNDMD(
+            mode="Dissipative",
+            look_forward=1,
+            config_encoder=dict(
+                input_size=2, hidden_sizes=[32] * 2, output_size=2, activations="linear"
+            ),
+            config_decoder=dict(
+                input_size=2, hidden_sizes=[32] * 2, output_size=2, activations="linear"
+            ),
+            batch_size=512,
+            lbfgs=True,
+            normalize=False,
+            normalize_mode="max",
+            trainer_kwargs=dict(max_epochs=3),
+        ),
+    ],
 )
 def test_accuracy_nndmd_linear_system(regressor):
     # prepare training data
