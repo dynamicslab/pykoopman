@@ -288,11 +288,6 @@ class PyDMDRegressor(BaseRegressor):
         check_is_fitted(self, "_state_matrix_")
         return self._state_matrix_
 
-    # @property
-    # def reduced_state_matrix_(self):
-    #     check_is_fitted(self, "_reduced_state_matrix_")
-    #     return self._reduced_state_matrix_
-
     @property
     def eigenvalues_(self):
         check_is_fitted(self, "_eigenvalues_")

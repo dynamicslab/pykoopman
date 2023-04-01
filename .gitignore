@@ -25,6 +25,8 @@ docs/_build
 
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
+*/lightning_logs/*
+lightning_logs
 .DS_Store
 .vscode
 

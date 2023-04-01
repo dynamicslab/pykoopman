@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import pickle
+from abc import abstractmethod
 from warnings import warn
 
 import lightning as L
@@ -11,49 +12,12 @@ from torch import nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
+from sklearn.utils.validation import check_is_fitted
 
 from pykoopman.regression._base import BaseRegressor
 
-# todo: later add one for with control
 
-
-class StableKMatrix(torch.nn.Module):
-    """
-    A PyTorch module for creating trainable skew-symmetric matrices
-    with negative diagonal elements.
-
-    Args:
-        dim (int): The dimension of the matrix.
-        init_std (float): The standard deviation for initializing
-        the trainable parameters
-        # with truncated normal distribution.
-
-    Attributes:
-        diagonal (torch.nn.Parameter): The diagonal elements of the
-        skew-symmetric matrix.
-        off_diagonal (torch.nn.Parameter): The off-diagonal elements
-        of the skew-symmetric matrix.
-    """
-
-    def __init__(self, dim: int, init_std: float = 0.1):
-        super().__init__()
-        self.dim = dim
-
-        # diagonal part = - some ^ 2
-        self.diagonal = torch.nn.Parameter(
-            -torch.pow(torch.nn.init.trunc_normal_(torch.empty(dim), std=init_std), 2)
-        )
-        self.off_diagonal = torch.nn.Parameter(
-            torch.nn.init.trunc_normal_(torch.empty(dim, dim), std=init_std)
-        )
-
-    def forward(self):
-        # Construct skew-symmetric matrix
-        skew_symmetric = torch.diag(self.diagonal)
-        skew_symmetric -= self.off_diagonal - self.off_diagonal.t()
-
-        return skew_symmetric
-
+# todo: add the control version
 
 class MaskedMSELoss(nn.Module):
     """
@@ -61,15 +25,15 @@ class MaskedMSELoss(nn.Module):
     masking based on `target_lens`.
 
     Args:
-        max_length
+        max_look_forward
 
     Returns:
         The MSE loss as a scalar tensor.
     """
 
-    def __init__(self, max_length):
+    def __init__(self, max_look_forward):
         super().__init__()
-        self.max_length = torch.tensor(max_length, dtype=torch.int)
+        self.max_look_forward = torch.tensor(max_look_forward, dtype=torch.int)
         # self.register_buffer("mask", torch.zeros_like(target, dtype=torch.bool))
 
     def forward(self, output, target, target_lens):
@@ -89,19 +53,18 @@ class MaskedMSELoss(nn.Module):
             The MSE loss as a scalar tensor.
         """
         # Create mask using target_lens
-        mask = torch.zeros_like(target, dtype=torch.bool)
+        mask = torch.zeros_like(output, dtype=torch.bool)
         for i, length in enumerate(target_lens):
-            if length > self.max_length:
-                length_used = self.max_length
+            if length > self.max_look_forward:
+                length_used = self.max_look_forward
             else:
                 length_used = length
             mask[i, :length_used, :] = 1
 
         # Compute squared differences and apply mask
         squared_diff = torch.pow(output - target, 2)
-        squared_diff_masked = torch.where(
-            mask, squared_diff, torch.zeros_like(squared_diff)
-        )
+        squared_diff_masked = torch.where(mask, squared_diff,
+                                          torch.zeros_like(squared_diff))
 
         # Compute the MSE loss
         mse_loss = squared_diff_masked.sum() / mask.sum()
@@ -141,21 +104,30 @@ class FFNN(nn.Module):
 
         # Define the input layer
         self.layers = nn.ModuleList()
-        if len(hidden_sizes) == 0:
-            self.layers.append(nn.Linear(input_size, output_size))
+
+        # if linear layer, remove bias
+        if activations == "linear":
+            bias = False
         else:
-            self.layers.append(nn.Linear(input_size, hidden_sizes[0]))
+            bias = True
+
+        if len(hidden_sizes) == 0:
+            self.layers.append(nn.Linear(input_size, output_size, bias))
+        else:
+            self.layers.append(nn.Linear(input_size, hidden_sizes[0], bias))
             if activations != "linear":
                 self.layers.append(act)
 
             # Define the hidden layers
             for i in range(1, len(hidden_sizes)):
-                self.layers.append(nn.Linear(hidden_sizes[i - 1], hidden_sizes[i]))
+                self.layers.append(
+                    nn.Linear(hidden_sizes[i - 1], hidden_sizes[i], bias))
                 if activations != "linear":
                     self.layers.append(act)
 
-            # Define the output layer
-            self.layers.append(nn.Linear(hidden_sizes[-1], output_size))
+            # Define the last output layer
+            bias_last = False # True  # last layer with bias
+            self.layers.append(nn.Linear(hidden_sizes[-1], output_size, bias_last))
 
     def forward(self, x):
         """Performs a forward pass through the neural network.
@@ -173,10 +145,10 @@ class FFNN(nn.Module):
 
 class BaseKoopmanOperator(nn.Module):
     def __init__(
-        self,
-        dim: int,
-        dt: float = 1.0,
-        init_std: float = 0.1,
+            self,
+            dim: int,
+            dt: float = 1.0,
+            init_std: float = 0.1,
     ):
         super().__init__()
         self.dim = dim
@@ -184,10 +156,16 @@ class BaseKoopmanOperator(nn.Module):
         self.init_std = init_std
 
     def forward(self, x):
-        K = self.get_K()
-        koopman_operator = torch.matrix_exp(self.dt * K)
-        xnext = torch.matmul(x, koopman_operator)
+        koopman_operator = self.get_discrete_time_Koopman_Operator()
+        xnext = torch.matmul(x, koopman_operator.t())  # following pytorch convention
         return xnext
+
+    def get_discrete_time_Koopman_Operator(self):
+        return torch.matrix_exp(self.dt * self.get_K())
+
+    @abstractmethod
+    def get_K(self):
+        pass
 
 
 class StandardKoopmanOperator(BaseKoopmanOperator):
@@ -272,13 +250,13 @@ class DLKoopmanRegressor(L.LightningModule):
     """
 
     def __init__(
-        self,
-        mode=None,
-        dt=1.0,
-        look_forward=1,
-        config_encoder={},
-        config_decoder={},
-        lbfgs=False,
+            self,
+            mode=None,
+            dt=1.0,
+            look_forward=1,
+            config_encoder={},
+            config_decoder={},
+            lbfgs=False,
     ):
         super(DLKoopmanRegressor, self).__init__()
 
@@ -316,6 +294,7 @@ class DLKoopmanRegressor(L.LightningModule):
         self.using_lbfgs = lbfgs
 
         self.masked_loss_metric = MaskedMSELoss(1)
+        # self.masked_loss_metric = MaskedMSELoss(self.look_forward)
 
         if self.using_lbfgs:
             self.automatic_optimization = False
@@ -501,23 +480,58 @@ class DLKoopmanRegressor(L.LightningModule):
 
 
 class SeqDataDataset(Dataset):
-    def __init__(self, x, y, ys):
+    def __init__(self, x, y, ys, transform=None):
         self.x = x.squeeze(1)
         self.y = y
         self.ys = ys
+        self.normalization = transform
 
     def __len__(self):
         return len(self.ys)
 
     def __getitem__(self, idx):
-        x = self.x[idx]
-        y = self.y[idx]
-        ys = self.ys[idx]
+        x = self.x[idx].clone()
+        y = self.y[idx].clone()
+        ys = self.ys[idx].clone()
+
+        if self.normalization:
+            x = self.normalization(x)
+            y = self.normalization(y)
+
         return x, y, ys
 
 
+class TensorNormalize(nn.Module):
+    def __init__(self, mean, std):
+        super().__init__()
+        self.mean = mean
+        self.std = std
+
+    def forward(self, tensor: torch.Tensor):
+        return torch.divide((tensor - self.mean), self.std)
+        # return # tensor.copy_(tensor.sub_(self.mean).div_(self.std))
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(mean={self.mean}, std={self.std})"
+
+
+class InverseTensorNormalize(nn.Module):
+    def __init__(self, mean, std):
+        super().__init__()
+        self.mean = mean
+        self.std = std
+
+    def forward(self, tensor: torch.Tensor):
+        return torch.multiply(tensor, self.std) + self.mean
+        # return tensor.copy_(tensor.mul_(self.std).add_(self.mean))
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(mean={self.mean}, std={self.std})"
+
+
 class SeqDataModule(L.LightningDataModule):
-    def __init__(self, data_tr, data_val, look_forward=10, batch_size=32):
+    def __init__(self, data_tr, data_val, look_forward=10, batch_size=32,
+                 normalize=True, normalize_mode='equal', normalize_std_factor=2.0):
         super().__init__()
         # input data_tr or data_val is a list of 2D np.ndarray. each 2d
         # np.ndarray is a trajectory, and the axis 0 is number of samples, axis 1 is
@@ -527,6 +541,11 @@ class SeqDataModule(L.LightningDataModule):
         self.look_forward = look_forward
         self.batch_size = batch_size
         self.look_back = 1
+        self.normalize = normalize
+        self.normalize_mode = normalize_mode
+        self.normalization = None
+        self.inverse_transform = None
+        self.normalize_std_factor = normalize_std_factor
 
     def prepare_data(self):
         # train data
@@ -543,8 +562,33 @@ class SeqDataModule(L.LightningDataModule):
         # check train data
         data_list = self.check_list_of_nparray(data_list)
 
+        # find the mean, std
+        if self.normalize:
+            stacked_data_list = np.vstack(data_list)
+            mean = stacked_data_list.mean(axis=0)
+            std = stacked_data_list.std(axis=0)
+
+            # zero mean so easier for downstream
+            self.mean = torch.FloatTensor(mean) * 0
+            # default = 2.0, more stable
+            self.std = torch.FloatTensor(std) * self.normalize_std_factor
+
+            if self.normalize_mode == 'max':
+                self.std = torch.ones_like(self.std) * self.std.max()
+
+            # prevent divide by zero error
+            for i in range(len(self.std)):
+                if self.std[i] < 1e-6:
+                    self.std[i] += 1e-3
+
+            # get transform
+            self.normalization = TensorNormalize(self.mean, self.std)
+
+            # get inverse transform
+            self.inverse_transform = InverseTensorNormalize(self.mean, self.std)
+
         # create time-delayed data
-        self.tr_x, self.tr_yseq, self.tr_ys = self.convert_seq_list_to_delayed_data(
+        self._tr_x, self._tr_yseq, self._tr_ys = self.convert_seq_list_to_delayed_data(
             data_list, self.look_back, self.look_forward
         )
 
@@ -564,9 +608,9 @@ class SeqDataModule(L.LightningDataModule):
 
             # create time-delayed data
             (
-                self.val_x,
-                self.val_yseq,
-                self.val_ys,
+                self._val_x,
+                self._val_yseq,
+                self._val_ys,
             ) = self.convert_seq_list_to_delayed_data(
                 data_list, self.look_back, self.look_forward
             )
@@ -577,22 +621,24 @@ class SeqDataModule(L.LightningDataModule):
         # Load data and split into train and validation sets here
         # Assign train/val datasets for use in dataloaders
         if stage == "fit":
-            self.tr_dataset = SeqDataDataset(self.tr_x, self.tr_yseq, self.tr_ys)
+            self.tr_dataset = SeqDataDataset(self._tr_x, self._tr_yseq, self._tr_ys,
+                                             self.normalization)
             if self.data_val is not None:
-                self.val_dataset = SeqDataDataset(
-                    self.val_x, self.val_yseq, self.val_ys
-                )
+                self.val_dataset = SeqDataDataset(self._val_x, self._val_yseq,
+                                                  self._val_ys, self.normalization)
         else:
             raise NotImplementedError("We didn't implement for stage not `fit`")
 
     def train_dataloader(self):
         return DataLoader(
-            self.tr_dataset, self.batch_size, shuffle=True, collate_fn=self.collate_fn
+            self.tr_dataset, self.batch_size, shuffle=True,
+            collate_fn=self.collate_fn
         )
 
     def val_dataloader(self):
         return DataLoader(
-            self.val_dataset, self.batch_size, shuffle=True, collate_fn=self.collate_fn
+            self.val_dataset, self.batch_size, shuffle=True,
+            collate_fn=self.collate_fn
         )
 
     def convert_seq_list_to_delayed_data(self, data_list, look_back, look_forward):
@@ -604,9 +650,9 @@ class SeqDataModule(L.LightningDataModule):
             n_sub_traj = len(seq) - look_back - look_forward + 1
             if n_sub_traj >= 1:
                 for i in range(len(seq) - look_back - look_forward + 1):
-                    time_delayed_x_list.append(seq[i : i + look_back])
+                    time_delayed_x_list.append(seq[i: i + look_back])
                     time_delayed_yseq_list.append(
-                        seq[i + look_back : i + look_back + look_forward]
+                        seq[i + look_back: i + look_back + look_forward]
                     )
             else:
                 # only 1 traj, just to predict to its end
@@ -615,7 +661,7 @@ class SeqDataModule(L.LightningDataModule):
         time_delayed_yseq_lens_list = [x.shape[0] for x in time_delayed_yseq_list]
 
         # convert data to tensor
-        time_delayed_x = torch.FloatTensor(time_delayed_x_list)
+        time_delayed_x = torch.FloatTensor(np.array(time_delayed_x_list))
         time_delayed_yseq = pad_sequence(
             [torch.FloatTensor(x) for x in time_delayed_yseq_list], True
         )
@@ -651,91 +697,164 @@ class SeqDataModule(L.LightningDataModule):
 
 class NNDMD(BaseRegressor):
     def __init__(
-        self,
-        mode=None,
-        dt=1.0,
-        look_forward=1,
-        config_encoder=dict(
-            input_size=2, hidden_sizes=[32] * 2, output_size=6, activations="tanh"
-        ),
-        config_decoder=dict(
-            input_size=6, hidden_sizes=[32] * 2, output_size=2, activations="linear"
-        ),
-        lbfgs=False,
-        **kwargs,
+            self,
+            mode=None, dt=1.0, look_forward=1,
+            config_encoder=dict(input_size=2, hidden_sizes=[32] * 2, output_size=6,
+                                activations="tanh"),
+            config_decoder=dict(input_size=6, hidden_sizes=[32] * 2, output_size=2,
+                                activations="linear"),
+            batch_size=16, lbfgs=False, normalize=True, normalize_mode='equal',
+            normalize_std_factor=2.0,
+            trainer_kwargs={}
     ):
         self.mode = mode
         self.look_forward = look_forward
-        self.dt = dt
-        self.lbfgs = lbfgs
         self.config_encoder = config_encoder
         self.config_decoder = config_decoder
-        self.trainer_kwargs = kwargs
+        self.lbfgs = lbfgs
+        self.normalize = normalize
+        self.normalize_mode = normalize_mode
+        self.dt = dt
+        self.trainer_kwargs = trainer_kwargs
+        self.normalize_std_factor = normalize_std_factor
+        self.batch_size = batch_size
 
         # build DLK regressor
-        self.regressor = DLKoopmanRegressor(
+        self._regressor = DLKoopmanRegressor(
             mode, dt, look_forward, config_encoder, config_decoder, lbfgs
         )
 
-    def fit(self, x, y=None, epochs=100, batch_size=32):
+    def fit(self, x, y=None, dt=None):
+        """
+        ..note:
+            `n_samples_` is meaningless here
+            this dt argument is just to please regressor class, no real use.
+        """
         # build trainer
         self.trainer = L.Trainer(**self.trainer_kwargs)
+
+        self.n_input_features_ = self.config_encoder['input_size']
 
         # create the data module
         # case: a single traj, x is 2D np.ndarray, no validation
         if y is None and isinstance(x, np.ndarray) and x.ndim == 2:
             t0, t1 = x[:-1], x[1:]
             list_of_traj = [np.stack((t0[i], t1[i]), 0) for i in range(len(x) - 1)]
-            dm = SeqDataModule(list_of_traj, None, self.look_forward, batch_size)
+            self.dm = SeqDataModule(list_of_traj, None, self.look_forward,
+                                    self.batch_size, self.normalize,
+                                    self.normalize_mode, self.normalize_std_factor)
+            self.n_samples_ = len(list_of_traj)
 
-        # case: x, y are 2D np.ndarray, no validation
+            # case: x, y are 2D np.ndarray, no validation
         elif (
-            isinstance(x, np.ndarray)
-            and isinstance(y, np.ndarray)
-            and x.ndim == 2
-            and y.ndim == 2
+                isinstance(x, np.ndarray)
+                and isinstance(y, np.ndarray)
+                and x.ndim == 2
+                and y.ndim == 2
         ):
             t0, t1 = x, y
             list_of_traj = [np.stack((t0[i], t1[i]), 0) for i in range(len(x) - 1)]
-            dm = SeqDataModule(list_of_traj, None, self.look_forward, batch_size)
+            self.dm = SeqDataModule(list_of_traj, None, self.look_forward,
+                                    self.batch_size, self.normalize,
+                                    self.normalize_mode, self.normalize_std_factor)
+            self.n_samples_ = len(list_of_traj)
 
         # case: only training data, x is a list of trajectories, y is None
         elif isinstance(x, list) and y is None:
-            dm = SeqDataModule(x, None, self.look_forward, batch_size)
+            self.dm = SeqDataModule(x, None, self.look_forward, self.batch_size,
+                                    self.normalize, self.normalize_mode,
+                                    self.normalize_std_factor)
+            self.n_samples_ = len(x)
 
         # case: x, y are two lists of trajectories, we have validation data
         elif isinstance(x, list) and isinstance(y, list):
-            dm = SeqDataModule(x, y, self.look_forward, batch_size)
-
+            self.dm = SeqDataModule(x, y, self.look_forward, self.batch_size,
+                                    self.normalize, self.normalize_mode,
+                                    self.normalize_std_factor)
+            self.n_samples_ = len(x)
         else:
             raise ValueError("check `x` and `y` for `self.fit`")
 
         # trainer starts to train
-        self.trainer.fit(self.regressor, dm)
+        self.trainer.fit(self._regressor, self.dm)
+
+        # compute Koopman operator information
+        self._state_matrix_ = self._regressor._koopman_propagator. \
+            get_discrete_time_Koopman_Operator().detach().numpy()
+        [self._eigenvalues_, self._eigenvectors_] = np.linalg.eig(self._state_matrix_)
+
+        self._coef_ = self._state_matrix_
+
+        # obtain effective linear transformation
+        decoder_weight_list = []
+        for i in range(len(self._regressor._decoder.layers)):
+            decoder_weight_list.append(self._regressor._decoder.layers[i].weight.
+                                       detach().numpy())
+        if len(decoder_weight_list) > 1:
+            self._ur = np.linalg.multi_dot(decoder_weight_list[::-1])
+        else:
+            self._ur = decoder_weight_list[0]
+
+        if self.normalize:
+            std = self.dm.inverse_transform.std
+            self._ur = np.diag(std) @ self._ur
+
+        # todo: remove _unnormalized_modes, they seem to be useless
+        self._unnormalized_modes = self._ur @ self._eigenvectors_
 
     def predict(self, x, n=1):
-        """make prediction of system state after n steps away from x_0=x"""
+        """make prediction of system state after n steps away from x_0=x
+
+        - By default, model is stored on CPU for inference.
+        - The result will be returned as numpy.ndarray
+        """
+        self._regressor.eval()
+        x = self._convert_input_ndarray_to_tensor(x)
+
+        with torch.no_grad():
+            # print("inference device = ", self._regressor.device)
+
+            if self.normalize:
+                y = self.dm.normalization(x)
+                y = self._regressor(y, n)
+                y = self.dm.inverse_transform(y).numpy()
+            else:
+                y = self._regressor(x, n).numpy()
+            return y
+
+    def _compute_phi(self, x):
+        """Returns `phi(x)` given `x`"""
+        self._regressor.eval()
+        x = self._convert_input_ndarray_to_tensor(x)
+
+        if self.normalize:
+            x = self.dm.normalization(x)
+        phi = self._regressor._encoder(x).detach().numpy().T
+        return phi
+
+    def _compute_psi(self, x):
+        phi = self._compute_phi(x)
+        psi = np.linalg.inv(self._eigenvectors_) @ phi
+        return psi
+
+    def _convert_input_ndarray_to_tensor(self, x):
         if isinstance(x, np.ndarray):
-            if x.ndim != 2:
-                raise ValueError("input array `x` must be a 2d array")
-            # convert to a float
+            if x.ndim > 2:
+                raise ValueError("input array should be 1 or 2D")
+            if x.ndim == 1:
+                x = x.reshape(1, -1)
+            # convert to a float32
+            # if x.dtype == np.float64:
             x = torch.FloatTensor(x)
         elif isinstance(x, torch.Tensor):
             if x.ndim != 2:
                 raise ValueError("input tensor `x` must be a 2d tensor")
-        with torch.no_grad():
-            print(self.regressor.device)
-            return self.regressor(x, n)
-
-    def _compute_phi(self, x):
-        pass
-
-    def _compute_psi(self, x):
-        pass
+        return x
 
     @property
     def coef_(self):
-        pass
+        check_is_fitted(self, "_coef_")
+        return self._coef_
 
     @property
     def state_matrix_(self):
@@ -743,32 +862,24 @@ class NNDMD(BaseRegressor):
 
     @property
     def eigenvalues_(self):
-        pass
+        check_is_fitted(self, "_eigenvalues_")
+        return self._eigenvalues_
 
     @property
     def eigenvectors_(self):
-        pass
+        check_is_fitted(self, "_eigenvectors_")
+        return self._eigenvectors_
 
     @property
     def unnormalized_modes(self):
-        pass
+        check_is_fitted(self, "_unnormalized_modes")
+        return self._unnormalized_modes
 
     @property
     def ur(self):
-        NotImplementedError("This should be not called in `nndmd`")
+        check_is_fitted(self, "_ur")
+        return self._ur
 
 
 if __name__ == "__main__":
     pass
-    # if __name__ == "__main__":
-    #     config_encoder = {"input_size": 2, "hidden_sizes": [3, 3],
-    #                       "output_size": 4, "activations": "tanh"}
-    #     config_decoder = {"input_size": 4, "hidden_sizes": [],
-    #                       "output_size": 2, "activations": "linear"}
-    #     config_koopman = {"init_std": 0.1}
-    #
-    #     model = NNDMD(config_encoder, config_decoder, config_koopman)
-    #
-    #
-    #     summary(model._encoder, input_size=(2,), batch_size=-1)
-    #     summary(model._decoder, input_size=(4,), batch_size=-1)

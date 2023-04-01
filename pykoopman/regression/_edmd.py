@@ -130,7 +130,7 @@ class EDMD(BaseRegressor):
         """Returns `phi(x)` given `x`"""
         if x.ndim == 1:
             x = x.reshape(1, -1)
-        phi = self._ur.T @ x.T
+        phi = self._ur.conj().T @ x.T
         return phi
 
     def _compute_psi(self, x):
