@@ -327,17 +327,6 @@ class Koopman(BaseEstimator):
                 )
             return self._pipeline.predict(X=x, u=u)
 
-    # todo: remove or embed my algorithm inside this command.
-    # def reduce(self, t, x, rank=None):
-    #     """
-    #     Reduce the Koopman operator only if the `regressor`
-    #     has the method `reduce`.
-    #     """
-    #     if not hasattr(self.regressor, "reduce"):
-    #         raise AttributeError("regressor type does not have this option.")
-    #     z = self._pipeline.steps[0][1].transform(x)
-    #     self._pipeline.steps[-1][1].reduce(t, x, z, self.eigenvalues_continuous, rank)
-
     def phi(self, x):
         y = self.observables.transform(x)
         phi = self._pipeline.steps[-1][1]._compute_phi(y)
@@ -527,7 +516,8 @@ class Koopman(BaseEstimator):
 
     def _regressor(self):
         # this can access the fitted regressor
-        # todo: we need to figure out a way to do time delay multiple trajectories DMD
+        # todo: future we need to figure out a way to do time delay multiple
+        #  trajectories DMD
         # my idea is to manually call xN observables then concate the data to let
         # the _regressor.fit to update the model coefficients.
         # call this function with _regressor()
