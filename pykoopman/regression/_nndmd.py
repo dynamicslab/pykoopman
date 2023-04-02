@@ -296,8 +296,8 @@ class DLKoopmanRegressor(L.LightningModule):
         self.look_forward = look_forward
         self.using_lbfgs = lbfgs
 
-        self.masked_loss_metric = MaskedMSELoss(1)
-        # self.masked_loss_metric = MaskedMSELoss(self.look_forward)
+        # self.masked_loss_metric = MaskedMSELoss(1)
+        self.masked_loss_metric = MaskedMSELoss(self.look_forward)
 
         if self.using_lbfgs:
             self.automatic_optimization = False
@@ -845,7 +845,6 @@ class NNDMD(BaseRegressor):
             std = self.dm.inverse_transform.std
             self._ur = np.diag(std) @ self._ur
 
-        # todo: remove _unnormalized_modes, they seem to be useless
         self._unnormalized_modes = self._ur @ self._eigenvectors_
 
     def predict(self, x, n=1):
@@ -867,6 +866,39 @@ class NNDMD(BaseRegressor):
             else:
                 y = self._regressor(x, n).numpy()
             return y
+
+    def simulate(self, x, n_steps):
+        self._regressor.eval()
+        x = self._convert_input_ndarray_to_tensor(x)
+        x_future = torch.zeros([n_steps + 1, x.size(1)])
+        x_future[0] = x
+        with torch.no_grad():
+            for i in range(n_steps):
+                if self.normalize:
+                    y = self.dm.normalization(x)
+                    y = self._regressor(y, i + 1)
+                    x_future[i + 1] = self.dm.inverse_transform(y)
+                else:
+                    x_future[i + 1] = self._regressor(x, i + 1)
+
+            return x_future.numpy()
+
+    @property
+    def A(self):
+        return self._state_matrix_
+
+    @property
+    def B(self):
+        # todo: we don't have control considered in nndmd for now
+        pass
+
+    @property
+    def C(self):
+        return self._ur
+
+    @property
+    def V(self):
+        return self._unnormalized_modes
 
     def _compute_phi(self, x):
         """Returns `phi(x)` given `x`"""
