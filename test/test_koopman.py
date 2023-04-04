@@ -34,7 +34,13 @@ def test_fit(data_random):
 
 @pytest.mark.parametrize(
     "regressor",
-    [DMD(svd_rank=10), KDMD(svd_rank=10), PyDMDRegressor(DMD(svd_rank=10))],
+    [
+        DMD(svd_rank=10),
+        KDMD(svd_rank=10),
+        PyDMDRegressor(DMD(svd_rank=10)),
+        EDMD(svd_rank=10),
+        NNDMD,
+    ],
 )
 def test_predict_shape(data_random, regressor):
     x = data_random
