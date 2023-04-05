@@ -139,7 +139,8 @@ class RadialBasisFunction(BaseObservables):
         -------
         self: returns a fit :class:`pykoopman.observables.RadialBasisFunction` instance
         """
-        n_samples, n_features = validate_input(x).shape
+        x = validate_input(x)
+        n_samples, n_features = x.shape
         self.n_consumed_samples = 0
 
         self.n_samples_ = n_samples

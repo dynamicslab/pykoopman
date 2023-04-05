@@ -1,4 +1,4 @@
-"""Tests for differentiation methods."""
+"""Tests for pykoopman.differentiation methods."""
 from __future__ import annotations
 
 import numpy as np

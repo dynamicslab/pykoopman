@@ -1,3 +1,4 @@
+"""Tests for pykoopman.koopman_continuous methods."""
 from __future__ import annotations
 
 import pytest
