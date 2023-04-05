@@ -424,7 +424,7 @@ class Koopman(BaseEstimator):
     @property
     def lamda_array(self):
         check_is_fitted(self, "_pipeline")
-        return np.diag(self.lamda)
+        return np.diag(self.lamda) + 0j
 
     @property
     def continuous_lamda_array(self):
@@ -446,7 +446,7 @@ class Koopman(BaseEstimator):
         """
 
         psi = self.psi(x)
-        omega = np.log(np.diag(self.lamda)) / self.time["dt"]
+        omega = np.log(np.diag(self.lamda) + 0j) / self.time["dt"]
 
         # omega = self.eigenvalues_continuous
         linearity_error = []

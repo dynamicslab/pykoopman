@@ -1,3 +1,4 @@
+"""Tests for pykoopman.observables objects."""
 from __future__ import annotations
 
 import pytest

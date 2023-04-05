@@ -23,7 +23,7 @@ from pykoopman.regression._base import BaseRegressor
 class MaskedMSELoss(nn.Module):
     """
     Calculates the mean squared error (MSE) loss between `output` and `target`, with
-    masking based on `target_lens`.
+    masking based on `target_lens`. The `max_look_forward` will determine the
 
     Args:
         max_look_forward
@@ -52,6 +52,11 @@ class MaskedMSELoss(nn.Module):
         Returns:
             The MSE loss as a scalar tensor.
         """
+
+        # if target is shorter than output, just cut output off
+        if target.size(1) < self.max_look_forward:
+            output = output[:, : target.size(1), :]
+
         # Create mask using target_lens
         mask = torch.zeros_like(output, dtype=torch.bool)
         for i, length in enumerate(target_lens):
@@ -158,6 +163,10 @@ class BaseKoopmanOperator(nn.Module):
         dim (int): The dimension of the state space.
         dt (torch.Tensor): The time step size.
         init_std (float): The standard deviation of the initializer.
+
+    Note:
+        rule for self.init_std: a number between 0.1 and 10 over dt
+
     """
 
     def __init__(
@@ -353,6 +362,7 @@ class DLKoopmanRegressor(L.LightningModule):
         config_encoder=dict(),
         config_decoder=dict(),
         lbfgs=False,
+        std_koopman=1e-1,
     ):
         super(DLKoopmanRegressor, self).__init__()
 
@@ -375,15 +385,15 @@ class DLKoopmanRegressor(L.LightningModule):
 
         if mode == "Dissipative":
             self._koopman_propagator = DissipativeKoopmanOperator(
-                dim=config_encoder["output_size"], dt=dt, init_std=1e-1
+                dim=config_encoder["output_size"], dt=dt, init_std=std_koopman
             )
         elif mode == "Hamiltonian":
             self._koopman_propagator = HamiltonianKoopmanOperator(
-                dim=config_encoder["output_size"], dt=dt, init_std=1e-1
+                dim=config_encoder["output_size"], dt=dt, init_std=std_koopman
             )
         else:
             self._koopman_propagator = StandardKoopmanOperator(
-                dim=config_encoder["output_size"], dt=dt, init_std=1e-1
+                dim=config_encoder["output_size"], dt=dt, init_std=std_koopman
             )
 
         self.look_forward = look_forward
@@ -1066,6 +1076,7 @@ class NNDMD(BaseRegressor):
         normalize=True,
         normalize_mode="equal",
         normalize_std_factor=2.0,
+        std_koopman=1e-1,
         trainer_kwargs={},
     ):
         """Initializes the NNDMD model."""
@@ -1080,10 +1091,11 @@ class NNDMD(BaseRegressor):
         self.trainer_kwargs = trainer_kwargs
         self.normalize_std_factor = normalize_std_factor
         self.batch_size = batch_size
+        self.std_koopman = std_koopman
 
         # build DLK regressor
         self._regressor = DLKoopmanRegressor(
-            mode, dt, look_forward, config_encoder, config_decoder, lbfgs
+            mode, dt, look_forward, config_encoder, config_decoder, lbfgs, std_koopman
         )
 
     def fit(self, x, y=None, dt=None):
@@ -1108,7 +1120,7 @@ class NNDMD(BaseRegressor):
         self.n_input_features_ = self.config_encoder["input_size"]
 
         # create the data module
-        # case: a single traj, x is 2D np.ndarray, no validation
+        # case  1: a single traj, x is 2D np.ndarray, no validation
         if y is None and isinstance(x, np.ndarray) and x.ndim == 2:
             t0, t1 = x[:-1], x[1:]
             list_of_traj = [np.stack((t0[i], t1[i]), 0) for i in range(len(x) - 1)]
@@ -1123,7 +1135,7 @@ class NNDMD(BaseRegressor):
             )
             self.n_samples_ = len(list_of_traj)
 
-            # case: x, y are 2D np.ndarray, no validation
+        # case 2: x, y are 2D np.ndarray, no validation
         elif (
             isinstance(x, np.ndarray)
             and isinstance(y, np.ndarray)
@@ -1143,7 +1155,7 @@ class NNDMD(BaseRegressor):
             )
             self.n_samples_ = len(list_of_traj)
 
-        # case: only training data, x is a list of trajectories, y is None
+        # case 3: only training data, x is a list of trajectories, y is None
         elif isinstance(x, list) and y is None:
             self.dm = SeqDataModule(
                 x,
@@ -1156,7 +1168,7 @@ class NNDMD(BaseRegressor):
             )
             self.n_samples_ = len(x)
 
-        # case: x, y are two lists of trajectories, we have validation data
+        # case 4: x, y are two lists of trajectories, we have validation data
         elif isinstance(x, list) and isinstance(y, list):
             self.dm = SeqDataModule(
                 x,
