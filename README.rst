@@ -106,6 +106,12 @@ References
    Koopman-invariant subspaces." Journal of Fluid Mechanics 917 (2021).
    `[DOI] <https://doi.org/10.1017/jfm.2021.271>`_
 
+TODO
+----
+- [ ] unit test for regressors
+- [ ] unit test for analytics
+- [ ] change docstring style except NNDMD
+
 .. |Build| image:: https://github.com/dynamicslab/pykoopman/workflows/Tests/badge.svg
     :target: https://github.com/dynamicslab/pykoopman/actions?query=workflow%3ATests
 

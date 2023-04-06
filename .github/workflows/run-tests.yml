@@ -40,8 +40,8 @@ jobs:
       run: |
         pip install coverage
         coverage run -m pytest
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v2
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
     - uses: actions/cache@v1
       with:
         path: ~/.cache/pip
