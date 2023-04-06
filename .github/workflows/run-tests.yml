@@ -36,15 +36,15 @@ jobs:
     - name: Test with pytest
       run: |
         py.test test
-    - uses: actions/cache@v1
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements-dev.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
     - name: Generate coverage report
       run: |
         pip install coverage
         coverage run -m pytest
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v2
+    - uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements-dev.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
