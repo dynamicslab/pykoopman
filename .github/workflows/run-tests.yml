@@ -38,9 +38,8 @@ jobs:
         py.test test
     - name: Generate coverage report
       run: |
-        pip install pytest
-        pip install pytest-cov
-        pytest --cov=./ --cov-report=xml
+        pip install coverage
+        coverage run -m pytest
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
     # - name: Upload coverage to Codecov
