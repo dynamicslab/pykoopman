@@ -4,6 +4,7 @@ from __future__ import annotations
 import numpy as np
 from sklearn.utils.validation import check_is_fitted
 
+from ..common import validate_input
 from ._base import BaseObservables
 
 
@@ -32,6 +33,7 @@ class Identity(BaseObservables):
         -------
         self: a fit :class:`pykoopman.observables.Identity` instance
         """
+        x = validate_input(x)
         self.n_input_features_ = self.n_output_features_ = x.shape[1]
         self.n_consumed_samples = 0
 
