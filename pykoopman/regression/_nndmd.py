@@ -1316,7 +1316,7 @@ class NNDMD(BaseRegressor):
         """
         return self._unnormalized_modes
 
-    def _compute_phi(self, x):
+    def _compute_phi(self, x_col):
         """
         Computes the Koopman observable vector `phi(x)` for input `x`.
 
@@ -1326,6 +1326,10 @@ class NNDMD(BaseRegressor):
         Returns:
             phi (np.ndarray): The Koopman observable vector `phi(x)` for input `x`.
         """
+        if x_col.ndim == 1:
+            x_col = x_col.reshape(-1, 1)
+        x = x_col.T
+
         self._regressor.eval()
         x = self._convert_input_ndarray_to_tensor(x)
 
@@ -1334,7 +1338,7 @@ class NNDMD(BaseRegressor):
         phi = self._regressor._encoder(x).detach().numpy().T
         return phi
 
-    def _compute_psi(self, x):
+    def _compute_psi(self, x_col):
         """
         Computes the Koopman eigenfunction expansion coefficients `psi(x)` given `x`.
 
@@ -1345,7 +1349,11 @@ class NNDMD(BaseRegressor):
             numpy.ndarray: Koopman eigenfunction expansion coefficients `psi(x)`
                 of shape `(n_koopman, n_samples)`.
         """
-        phi = self._compute_phi(x)
+        if x_col.ndim == 1:
+            x_col = x_col.reshape(-1, 1)
+        # x = x_col.T
+
+        phi = self._compute_phi(x_col)
         psi = np.linalg.inv(self._eigenvectors_) @ phi
         return psi
 

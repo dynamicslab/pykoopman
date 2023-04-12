@@ -175,11 +175,11 @@ class Koopman(BaseEstimator):
                 #     x[0 : 1 + self.observables.n_consumed_samples]
                 # )
                 self._amplitudes = np.abs(
-                    self.psi(x[0 : 1 + self.observables.n_consumed_samples])
+                    self.psi(x[0 : 1 + self.observables.n_consumed_samples].T)
                 )
             else:
                 # g0 = self.observables.transform(x[0:1])
-                self._amplitudes = np.abs(self.psi(x[0:1]))
+                self._amplitudes = np.abs(self.psi(x[0:1].T))
         else:
             self._amplitudes = None
 
@@ -334,16 +334,18 @@ class Koopman(BaseEstimator):
                 )
             return self._pipeline.predict(X=x, u=u)
 
-    def phi(self, x):
+    def phi(self, x_col):
+        """x_col is a column vector: shape (n_features, n_samples)"""
+        x = x_col.T
         y = self.observables.transform(x)
-        phi = self._pipeline.steps[-1][1]._compute_phi(y)
+        phi = self._pipeline.steps[-1][1]._compute_phi(y.T)
         return phi
 
-    def psi(self, x):
+    def psi(self, x_col):
         """
-        Compute Koopman psi(x) given `x`
+        Compute Koopman psi(x) given `x_col`
 
-        `x` is a row vector while phi will be a column vector
+        `x_col` is a column vector
 
         Parameters
         ----------
@@ -355,9 +357,9 @@ class Koopman(BaseEstimator):
         eigen_phi: numpy.ndarray, shape (n_samples, self.n_output_features_)
             Value of psi evaluated at input `z`
         """
-
+        x = x_col.T
         y = self.observables.transform(x)
-        ephi = self._pipeline.steps[-1][1]._compute_psi(y)
+        ephi = self._pipeline.steps[-1][1]._compute_psi(y.T)
         return ephi
 
     @property
@@ -441,7 +443,7 @@ class Koopman(BaseEstimator):
         eigenfunctions phi(x(t)) == phi(x(0))*exp(lambda*t)
         """
 
-        psi = self.psi(x)
+        psi = self.psi(x.T)
         omega = np.log(np.diag(self.lamda) + 0j) / self.time["dt"]
 
         # omega = self.eigenvalues_continuous

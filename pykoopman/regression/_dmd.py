@@ -193,14 +193,14 @@ class PyDMDRegressor(BaseRegressor):
         y = np.linalg.multi_dot([self.ur, self._coef_, self.ur.conj().T, x.T]).T
         return y
 
-    def _compute_phi(self, x):
+    def _compute_phi(self, x_col):
         """Returns `pji(x)` given `x`"""
-        if x.ndim == 1:
-            x = x.reshape(1, -1)
-        phi = self.ur.T @ x.T
+        if x_col.ndim == 1:
+            x_col = x_col.reshape(-1, 1)
+        phi = self.ur.T @ x_col
         return phi
 
-    def _compute_psi(self, x):
+    def _compute_psi(self, x_col):
         """Returns `psi(x)` given `x`
 
         Parameters
@@ -215,9 +215,9 @@ class PyDMDRegressor(BaseRegressor):
         """
 
         # compute psi - one column if x is a row
-        if x.ndim == 1:
-            x = x.reshape(1, -1)
-        psi = self._tmp_compute_psi @ x.T
+        if x_col.ndim == 1:
+            x_col = x_col.reshape(-1, 1)
+        psi = self._tmp_compute_psi @ x_col
         return psi
 
     def _set_initial_time_dictionary(self, time_dict):

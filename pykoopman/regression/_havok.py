@@ -200,14 +200,14 @@ class HAVOK(BaseRegressor):
         tout, ypred, xpred = lsim(sys, U=u, T=t, X0=y0.T)
         return ypred
 
-    def _compute_phi(self, x):
+    def _compute_phi(self, x_col):
         """Returns `phi(x)` given `x`"""
-        if x.ndim == 1:
-            x = x.reshape(1, -1)
-        phi = self._ur.T @ x.T
+        if x_col.ndim == 1:
+            x_col = x_col.reshape(-1, 1)
+        phi = self._ur.T @ x_col
         return phi
 
-    def _compute_psi(self, x):
+    def _compute_psi(self, x_col):
         """Returns `psi(x)` given `x`
 
         Parameters
@@ -221,9 +221,9 @@ class HAVOK(BaseRegressor):
             value of Koopman psi at x
         """
         # compute psi - one column if x is a row
-        if x.ndim == 1:
-            x = x.reshape(1, -1)
-        psi = self._tmp_compute_psi @ x.T
+        if x_col.ndim == 1:
+            x_col = x_col.reshape(-1, 1)
+        psi = self._tmp_compute_psi @ x_col
         return psi
 
     @property

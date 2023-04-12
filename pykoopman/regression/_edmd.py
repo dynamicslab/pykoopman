@@ -126,14 +126,14 @@ class EDMD(BaseRegressor):
         y = x @ self.ur.conj() @ self.state_matrix_.T @ self.ur.T
         return y
 
-    def _compute_phi(self, x):
+    def _compute_phi(self, x_col):
         """Returns `phi(x)` given `x`"""
-        if x.ndim == 1:
-            x = x.reshape(1, -1)
-        phi = self._ur.conj().T @ x.T
+        if x_col.ndim == 1:
+            x_col = x_col.reshape(-1, 1)
+        phi = self._ur.conj().T @ x_col
         return phi
 
-    def _compute_psi(self, x):
+    def _compute_psi(self, x_col):
         """Returns `psi(x)` given `x`
 
         Parameters
@@ -147,9 +147,9 @@ class EDMD(BaseRegressor):
             value of Koopman psi at x
         """
         # compute psi - one column if x is a row
-        if x.ndim == 1:
-            x = x.reshape(1, -1)
-        psi = self._tmp_compute_psi @ x.T
+        if x_col.ndim == 1:
+            x_col = x_col.reshape(-1, 1)
+        psi = self._tmp_compute_psi @ x_col
         return psi
 
     def _set_initial_time_dictionary(self, time_dict):
