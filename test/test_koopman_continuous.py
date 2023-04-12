@@ -37,7 +37,7 @@ def test_havok_prediction(data_lorenz):
     model = KoopmanContinuous(observables=TDC, differentiator=Diff, regressor=HAVOK)
     model.fit(x[:, 0], dt=dt)
 
-    xpred = model.predict(
+    xpred = model.simulate(
         x[: n_delays + 1, 0], t[n_delays:] - t[n_delays], model.regressor.forcing_signal
     )
 

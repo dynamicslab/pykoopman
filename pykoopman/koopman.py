@@ -168,6 +168,7 @@ class Koopman(BaseEstimator):
         if hasattr(self._pipeline.steps[1][1], "n_control_features_"):
             self.n_control_features_ = self._pipeline.steps[1][1].n_control_features_
 
+        # compute amplitudes
         if y is None:
             if hasattr(self.observables, "n_consumed_samples"):
                 # g0 = self.observables.transform(
@@ -250,11 +251,17 @@ class Koopman(BaseEstimator):
 
         if isinstance(self.observables, TimeDelay):
             n_consumed_samples = self.observables.n_consumed_samples
-            for k in range(n_consumed_samples):
-                y[k + 1] = self.predict(vstack((x0[k + 1 :], y[: k + 1])))
+            if u is None:
+                for k in range(n_consumed_samples):
+                    y[k + 1] = self.predict(vstack((x0[k + 1 :], y[: k + 1])))
+                for k in range(n_consumed_samples, n_steps - 1):
+                    y[k + 1] = self.predict(y[k - n_consumed_samples : k + 1])
+            else:
+                for k in range(n_consumed_samples):
+                    y[k + 1] = self.predict(vstack((x0[k + 1 :], y[: k + 1])), u[k + 1])
+                for k in range(n_consumed_samples, n_steps - 1):
+                    y[k + 1] = self.predict(y[k - n_consumed_samples : k + 1], u[k + 1])
 
-            for k in range(n_consumed_samples, n_steps - 1):
-                y[k + 1] = self.predict(y[k - n_consumed_samples : k + 1])
         else:
             if u is None:
                 for k in range(n_steps - 1):

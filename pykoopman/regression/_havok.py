@@ -4,6 +4,7 @@ from __future__ import annotations
 from warnings import warn
 
 import numpy as np
+from matplotlib import pyplot as plt
 from optht import optht
 from scipy.signal import lsim
 from scipy.signal import lti
@@ -62,9 +63,11 @@ class HAVOK(BaseRegressor):
         self,
         svd_rank=None,
         differentiator=Derivative(kind="finite_difference", k=1),
+        plot_sv=False,
     ):
         self.svd_rank = svd_rank
         self.differentiator = differentiator
+        self.plot_sv = plot_sv
 
     def fit(self, x, y=None, dt=None):
         """
@@ -98,6 +101,13 @@ class HAVOK(BaseRegressor):
 
         # SVD to calculate intrinsic observables
         U, s, Vh = np.linalg.svd(x.T, full_matrices=False)
+
+        if self.plot_sv:
+            plt.figure()
+            plt.semilogy(s)
+            plt.xlabel("number of terms")
+            plt.ylabel("singular values")
+            plt.show()
 
         # calculate rank using optimal hard threshold by Gavish & Donoho
         if self.svd_rank is None:
@@ -171,8 +181,8 @@ class HAVOK(BaseRegressor):
             Prediction of x at time instances provided in t.
 
         """
-        if t[0] != 0:
-            raise ValueError("the time vector must start at 0.")
+        # if t[0] != 0:
+        #    raise ValueError("the time vector must start at 0.")
 
         check_is_fitted(self, "coef_")
         y0 = (

@@ -47,8 +47,21 @@ class KoopmanContinuous(Koopman):
         super().__init__(observables, regressor)
         self.differentiator = differentiator
 
-    def predict(self, x, t=0, u=None):
+    def predict(self, x, dt=0, u=None):
         """Predict using continuous-time Koopman model"""
+        check_is_fitted(self, "_pipeline")
+
+        if u is None:
+            ypred = self._pipeline.predict(X=x, t=dt)
+        else:
+            ypred = self._pipeline.predict(X=x, u=u, t=dt)
+
+        output = self.observables.inverse(ypred)
+
+        return output
+
+    def simulate(self, x, t=0, u=None):
+        """Simulate continuous-time Koopman model"""
         check_is_fitted(self, "_pipeline")
 
         if u is None:
@@ -60,18 +73,7 @@ class KoopmanContinuous(Koopman):
         for k in range(ypred.shape[0]):
             output.append(np.squeeze(self.observables.inverse(ypred[k][np.newaxis, :])))
 
-        return output
-
-    def simulate(self, x, t=0, u=None):
-        """Simulate continuous-time Koopman model"""
-        check_is_fitted(self, "_pipeline")
-
-        # Note: the above method predict is doing simulation.
-
-        # output = [self.predict(x)]
-        # for k in range(n_steps - 1):
-        #     output.append(self.predict(output[-1]))
-        pass
+        return np.array(output)
 
     def _step(self, x, u=None):
         """For consistency kept."""

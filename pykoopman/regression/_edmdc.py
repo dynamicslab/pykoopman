@@ -6,6 +6,9 @@ from sklearn.utils.validation import check_is_fitted
 
 from ._base import BaseRegressor
 
+# TODO: add support for time delay observables, so we will
+#       have n_consumption_.
+
 
 class EDMDc(BaseRegressor):
     """
