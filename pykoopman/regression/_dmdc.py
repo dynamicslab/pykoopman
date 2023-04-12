@@ -349,14 +349,14 @@ class DMDc(BaseRegressor):
         # y = y.T
         return y
 
-    def _compute_phi(self, x):
+    def _compute_phi(self, x_col):
         """Returns `phi(x)` given `x`"""
-        if x.ndim == 1:
-            x = x.reshape(1, -1)
-        phi = self._ur.T @ x.T
+        if x_col.ndim == 1:
+            x_col = x_col.reshape(-1, 1)
+        phi = self._ur.T @ x_col
         return phi
 
-    def _compute_psi(self, x):
+    def _compute_psi(self, x_col):
         """Returns `psi(x)` given `x`
 
         Parameters
@@ -371,9 +371,9 @@ class DMDc(BaseRegressor):
         """
 
         # compute psi - one column if x is a row
-        if x.ndim == 1:
-            x = x.reshape(1, -1)
-        psi = self._tmp_compute_psi @ x.T
+        if x_col.ndim == 1:
+            x_col = x_col.reshape(-1, 1)
+        psi = self._tmp_compute_psi @ x_col
         return psi
 
     @property
@@ -424,14 +424,3 @@ class DMDc(BaseRegressor):
     @property
     def input_control_matrix(self):
         return self._input_control_matrix
-
-    #
-    # @property
-    # def projection_matrix_(self):
-    #     check_is_fitted(self, "_projection_matrix_")
-    #     return self._projection_matrix_
-    #
-    # @property
-    # def projection_matrix_output_(self):
-    #     check_is_fitted(self, "_projection_matrix_output_")
-    #     return self._projection_matrix_output_

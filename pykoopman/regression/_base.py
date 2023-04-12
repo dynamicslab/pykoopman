@@ -58,11 +58,11 @@ class BaseRegressor(BaseEstimator, ABC):
         pass
 
     @abstractmethod
-    def _compute_phi(self, x):
+    def _compute_phi(self, x_col):
         pass
 
     @abstractmethod
-    def _compute_psi(self, x):
+    def _compute_psi(self, x_col):
         pass
 
     @abstractmethod

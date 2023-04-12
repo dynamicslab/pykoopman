@@ -200,25 +200,27 @@ class KDMD(BaseRegressor):
 
         check_is_fitted(self, "coef_")
 
-        phi = self._compute_psi(x)
+        phi = self._compute_psi(x_col=x.T)
         phi_next = np.diag(self.eigenvalues_) @ phi
         x_next_T = self._unnormalized_modes @ phi_next
         return np.real(x_next_T).T
 
-    def _compute_phi(self, x):
+    def _compute_phi(self, x_col):
         """Returns `pji(x)` given `x`"""
-        psi = self._compute_psi(x)
+        if x_col.ndim == 1:
+            x_col = x_col.reshape(-1, 1)
+        psi = self._compute_psi(x_col)
         phi = np.real(self.eigenvectors_ @ psi)
         return phi
 
-    def _compute_psi(self, x):
+    def _compute_psi(self, x_col):
         """
         input data x is a row-wise data
         """
         # compute psi - one column if x is a row
-        if x.ndim == 1:
-            x = x.reshape(1, -1)
-        return self._tmp_compute_psi_kdmd @ self.kernel(self._X.T, x)
+        if x_col.ndim == 1:
+            x_col = x_col.reshape(-1, 1)
+        return self._tmp_compute_psi_kdmd @ self.kernel(self._X.T, x_col.T)
 
     @property
     def coef_(self):
