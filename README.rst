@@ -124,4 +124,3 @@ TODO
 
 .. |Codecov| image:: https://codecov.io/github/dynamicslab/pykoopman/coverage.svg
     :target: https://app.codecov.io/gh/dynamicslab/pykoopman
-
