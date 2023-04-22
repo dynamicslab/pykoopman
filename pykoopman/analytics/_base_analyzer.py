@@ -53,7 +53,7 @@ class BaseAnalyzer(object):
         """
 
         # shape of phi = (num_samples, num_modes)
-        psi = self.eigenfunction(validate_data_one_traj).T
+        psi = self.eigenfunction(validate_data_one_traj.T).T
 
         linear_residual_list = []
         for i in range(len(self.eigenvalues_cont)):

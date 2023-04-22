@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from prettytable import PrettyTable
 from sklearn.linear_model import enet_path
 
-from ._base import BaseAnalyzer
+from ._base_analyzer import BaseAnalyzer
 from ._pruned_koopman import PrunedKoopman
 from pykoopman.koopman import Koopman
 
@@ -111,7 +111,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
             )
 
             # 1.1 normalization factor for each psi
-            eigenfunction_evaluated_on_traj = self.eigenfunction(validate_data).T
+            eigenfunction_evaluated_on_traj = self.eigenfunction(validate_data.T).T
 
             tmp = np.abs(eigenfunction_evaluated_on_traj) ** 2  # pointwise square only
             dt_arr = np.diff(validate_time, prepend=validate_time[0] - validate_time[1])
@@ -137,7 +137,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
         R_i = []
         for validate_data_one_traj in validate_data_traj:
             validate_data = validate_data_one_traj["x"]
-            eigenfunction_evaluated_on_traj = self.eigenfunction(validate_data).T
+            eigenfunction_evaluated_on_traj = self.eigenfunction(validate_data.T).T
 
             # get reconstruction error with increasing number of V
             R_i_each = []
@@ -180,7 +180,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
 
         # prepare top max k selected eigentraj
         eigenfunction_evaluated_on_traj_total = np.vstack(
-            [self.eigenfunction(tmp1["x"]).T for tmp1 in validate_data_traj]
+            [self.eigenfunction(tmp1["x"].T).T for tmp1 in validate_data_traj]
         )
         self.eigenfunction_on_traj_total_top_k = eigenfunction_evaluated_on_traj_total[
             :, self.small_to_large_error_eigen_index[: max_terms_allowed + 1]
@@ -447,7 +447,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
             sweep_index_list.append(non_zero_index_bool_array)
         self.sweep_index_list = sweep_index_list
 
-    def prune_model(self, i_alpha, x_train):
+    def prune_model(self, i_alpha, x_train, dt=1):
         """Prune the `pykoopman.koopman.Koopman` model
 
         Aims to return a pruned model that contains most of the functionality of
@@ -471,6 +471,6 @@ class ModesSelectionPAD21(BaseAnalyzer):
         sweep_bool_index = self.sweep_index_list[i_alpha]
         sweep_index = self.small_to_large_error_eigen_index[: self.L][sweep_bool_index]
 
-        pruned_model = PrunedKoopman(self.model, sweep_index)
-        pruned_model = pruned_model.refit_modes(x_train)
+        pruned_model = PrunedKoopman(self.model, sweep_index, dt)
+        pruned_model = pruned_model.fit(x_train)
         return pruned_model

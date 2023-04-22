@@ -204,7 +204,7 @@ def test_if_fitted(data_random):
     with pytest.raises(NotFittedError):
         model.ur
     with pytest.raises(NotFittedError):
-        model.V
+        model.W
     with pytest.raises(NotFittedError):
         model._step(x)
 

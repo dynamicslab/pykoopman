@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 import numpy as np
+from sklearn.utils.validation import check_is_fitted
 
 from pykoopman.koopman import Koopman
 
 
-class PrunedKoopman(object):
+class PrunedKoopman:
     """Prune the given original Koopman `model` at `sweep_index`
 
     Parameters
@@ -33,14 +34,21 @@ class PrunedKoopman(object):
         back to the system state :math:`x = C \\phi`.
     """
 
-    def __init__(self, model: Koopman, sweep_index: np.ndarray):
+    def __init__(self, model: Koopman, sweep_index: np.ndarray, dt):
         # construct lambda
         self.sweep_index = sweep_index
-        self.lamda_ = np.diag(np.diag(model.lamda)[self.sweep_index])
+        # self.lamda_ = np.diag(np.diag(model.lamda)[self.sweep_index])
         self.original_model = model
+        self.time = {"dt": dt}
 
-    def refit_modes(self, x):
-        """Refit the Koopman V given data matrix `x`
+        # no support for controllable for now
+        if self.original_model.n_control_features_ > 0:
+            raise NotImplementedError
+
+        self.A_ = None
+
+    def fit(self, x):
+        """Fit the pruned model given data matrix `x`
 
         Parameters
         ----------
@@ -52,10 +60,17 @@ class PrunedKoopman(object):
         self : PrunedKoopman
         """
 
-        selected_eigenphi = self.selected_psi(x)
+        # pruned V
+        selected_eigenphi = self.psi(x.T).T
         result = np.linalg.lstsq(selected_eigenphi, x)
         # print('refit residual = {}'.format(result[1]))
-        self.V_ = result[0].T
+        self.W_ = result[0].T
+
+        # lamda, W = np.linalg.eig(self.original_model.A)
+
+        self.lamda_ = np.diag(np.diag(self.original_model.lamda)[self.sweep_index]) + 0j
+        # evecs = self.original_model._regressor_eigenvectors
+
         return self
 
     def predict(self, x):
@@ -72,17 +87,20 @@ class PrunedKoopman(object):
             System state at the next time stamp
         """
 
-        gnext = self.selected_psi(x) @ self.lamda_
-        xnext = self.compute_state_from_psi(gnext)
-        return xnext
+        if x.ndim == 1:
+            x = x.reshape(1, -1)
+        gnext = self.lamda @ self.psi(x.T)
+        # xnext = self.compute_state_from_psi(gnext)
+        xnext = self.W @ gnext
+        return np.real(xnext.T)
 
-    def selected_psi(self, x):
+    def psi(self, x_col):
         """Evaluate the selected psi at given state `x`
 
         Parameters
         ----------
         x : numpy.ndarray
-            System state `x` in row-wise
+            System state `x` in column-wise
 
         Returns
         -------
@@ -90,33 +108,54 @@ class PrunedKoopman(object):
             Selected eigenfunctions' value at given state `x`
         """
 
-        eigenphi_ori = self.original_model.psi(x).T
-        eigenphi = eigenphi_ori[:, self.sweep_index]
-        return eigenphi
+        # eigenphi_ori = self.original_model.psi(x_col).T
+        # eigenphi_selected = eigenphi_ori[:, self.sweep_index]
 
-    def compute_state_from_psi(self, g):
-        """Inverse selected observables from system state
+        eigenphi_ori = self.original_model.psi(x_col)
+        eigenphi_selected = eigenphi_ori[self.sweep_index]
+        return eigenphi_selected
 
-        We use the just refitted V to achieve that.
+    def phi(self, x_col):
+        # return self.original_model._regressor_eigenvectors @ self.psi(x_col)
+        raise NotImplementedError("Pruned model does not have `phi` but only `psi`")
 
-        Parameters
-        ----------
-        g : numpy.ndarray
-            Row-wise values of selected Koopman eigenfunctions
+    @property
+    def ur(self):
+        raise NotImplementedError("Pruned model does not have `ur`")
 
-        Returns
-        -------
-        x : numpy.ndarray
-            System state recovered
-        """
+    @property
+    def A(self):
+        raise NotImplementedError(
+            "Pruning only happen in eigen-space. So no self.A " "but only self.lamda"
+        )
 
-        x = g @ self.V.T
-        return x
+    @property
+    def B(self):
+        raise NotImplementedError(
+            "Pruning only for autonomous system rather than " "controlled system"
+        )
+
+    @property
+    def C(self):
+        return NotImplementedError("Pruning model does not have `C`")
+
+    @property
+    def W(self):
+        check_is_fitted(self, "W_")
+        return self.W_
 
     @property
     def lamda(self):
         return self.lamda_
 
     @property
-    def V(self):
-        return self.V_
+    def lamda_array(self):
+        return np.diag(self.lamda) + 0j
+
+    @property
+    def continuous_lamda_array(self):
+        check_is_fitted(self, "_pipeline")
+        return np.log(self.lamda_array) / self.time["dt"]
+
+    # TODO: implement `simulate`, `validity_check`, `score`
+    # TODO: implement sparsification for controlled case.
