@@ -117,8 +117,6 @@ class HAVOK(BaseRegressor):
         Ur = U[:, : self.svd_rank]
         sr = s[: self.svd_rank]
 
-        # Vrh[:-1, :].T
-
         # calculate time derivative dxdt of only the first rank-1 & normalize
         dVr = self.differentiator(Vr[:, :-1], t)
         # this line actually makes vh and dvh transposed

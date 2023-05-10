@@ -4,7 +4,11 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
+from pydmd import CDMD
 from pydmd import DMD
+from pydmd import FbDMD
+from pydmd import HODMD
+from pydmd import SpDMD
 from sklearn.exceptions import NotFittedError
 from sklearn.gaussian_process.kernels import DotProduct
 from sklearn.gaussian_process.kernels import RBF
@@ -215,6 +219,10 @@ def test_if_fitted(data_random):
         DMD(svd_rank=10),
         EDMD(svd_rank=10),
         PyDMDRegressor(DMD(svd_rank=10)),
+        FbDMD(svd_rank=10),
+        CDMD(svd_rank=10),
+        SpDMD(svd_rank=10),
+        HODMD(svd_rank=10, d=2),
         # NNDMD or KDMD(svd_rank=10) cannot be applied to complex data
     ],
 )
@@ -231,6 +239,14 @@ def test_score_without_target(data_2D_superposition, regressor):
         DMD(svd_rank=10),
         EDMD(svd_rank=10),
         PyDMDRegressor(DMD(svd_rank=10)),
+        FbDMD(svd_rank=10),
+        PyDMDRegressor(FbDMD(svd_rank=10)),
+        CDMD(svd_rank=10),
+        PyDMDRegressor(CDMD(svd_rank=10)),
+        SpDMD(svd_rank=10),
+        PyDMDRegressor(SpDMD(svd_rank=10)),
+        HODMD(svd_rank=10, d=2),
+        PyDMDRegressor(HODMD(svd_rank=10, d=2)),
     ],
 )
 def test_score_with_target(data_2D_superposition, regressor):
@@ -246,6 +262,14 @@ def test_score_with_target(data_2D_superposition, regressor):
         DMD(svd_rank=10),
         EDMD(svd_rank=10),
         PyDMDRegressor(DMD(svd_rank=10)),
+        FbDMD(svd_rank=10),
+        PyDMDRegressor(FbDMD(svd_rank=10)),
+        CDMD(svd_rank=10),
+        PyDMDRegressor(CDMD(svd_rank=10)),
+        SpDMD(svd_rank=10),
+        PyDMDRegressor(SpDMD(svd_rank=10)),
+        HODMD(svd_rank=10, d=2),
+        PyDMDRegressor(HODMD(svd_rank=10, d=2)),
     ],
 )
 def test_score_complex_data(data_random_complex, regressor):
@@ -273,6 +297,14 @@ def test_score_complex_data(data_random_complex, regressor):
         DMD(svd_rank=10),
         EDMD(svd_rank=10),
         PyDMDRegressor(DMD(svd_rank=10)),
+        FbDMD(svd_rank=10),
+        PyDMDRegressor(FbDMD(svd_rank=10)),
+        CDMD(svd_rank=10),
+        PyDMDRegressor(CDMD(svd_rank=10)),
+        SpDMD(svd_rank=10),
+        PyDMDRegressor(SpDMD(svd_rank=10)),
+        HODMD(svd_rank=10, d=2),
+        PyDMDRegressor(HODMD(svd_rank=10, d=2)),
         KDMD(svd_rank=10, kernel=RBF(length_scale=50.0)),
     ],
 )
@@ -347,6 +379,10 @@ def test_observables_integration_with_nndmd(data_random, observables):
         DMD(svd_rank=10),
         EDMD(svd_rank=10),
         PyDMDRegressor(DMD(svd_rank=10)),
+        FbDMD(svd_rank=10),
+        CDMD(svd_rank=10),
+        SpDMD(svd_rank=10),
+        HODMD(svd_rank=10, d=2),
         KDMD(svd_rank=10, kernel=RBF(length_scale=1)),
     ],
 )
@@ -406,6 +442,10 @@ def test_observables_integration_accuracy_with_nndmd(data_1D_cosine, observables
         DMD(svd_rank=10),
         EDMD(svd_rank=10),
         PyDMDRegressor(DMD(svd_rank=10)),
+        CDMD(svd_rank=10),
+        PyDMDRegressor(CDMD(svd_rank=10)),
+        SpDMD(svd_rank=10),
+        PyDMDRegressor(SpDMD(svd_rank=10)),
     ],
 )
 @pytest.mark.parametrize(
@@ -437,6 +477,10 @@ def test_simulate_with_time_delay(data_2D_superposition, regressor, observables)
         DMD(svd_rank=10),
         EDMD(svd_rank=10),
         PyDMDRegressor(DMD(svd_rank=10)),
+        CDMD(svd_rank=10),
+        PyDMDRegressor(CDMD(svd_rank=10)),
+        SpDMD(svd_rank=10),
+        PyDMDRegressor(SpDMD(svd_rank=10)),
     ],
 )
 @pytest.mark.parametrize(
@@ -656,6 +700,9 @@ def test_accuracy_of_edmd_prediction(data_rev_dvdp):
     [
         DMD(svd_rank=2),
         PyDMDRegressor(DMD(svd_rank=2)),
+        CDMD(svd_rank=2),
+        SpDMD(svd_rank=2),
+        HODMD(svd_rank=2, d=5),
         EDMD(),
         KDMD(svd_rank=2, kernel=DotProduct(sigma_0=0.0)),
     ],

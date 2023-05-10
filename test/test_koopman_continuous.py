@@ -37,8 +37,15 @@ def test_havok_prediction(data_lorenz):
     model = KoopmanContinuous(observables=TDC, differentiator=Diff, regressor=HAVOK)
     model.fit(x[:, 0], dt=dt)
 
+    known_external_input = model.regressor.forcing_signal
+
+    # one step prediction
+    xpred_one_step = model.predict(x[: n_delays + 1, 0], dt, u=known_external_input[0])
+    assert_allclose(x[n_delays + 1, 0], xpred_one_step, atol=1e-3)
+
+    # simulate: mult steps prediction
     xpred = model.simulate(
-        x[: n_delays + 1, 0], t[n_delays:] - t[n_delays], model.regressor.forcing_signal
+        x=x[: n_delays + 1, 0], t=t[n_delays:] - t[n_delays], u=known_external_input
     )
 
     assert_allclose(xpred[50], 3.54512034, atol=1e-3)
