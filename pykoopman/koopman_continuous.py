@@ -14,8 +14,8 @@ class KoopmanContinuous(Koopman):
 
     Parameters
     ----------
-    observables: observables object, optional \
-            (default :class:`pykoopman.observables.Identity`)
+    observables: observables object, optional
+        (default :class:`pykoopman.observables.Identity`)
         Map(s) to apply to raw measurement data before estimating the
         Koopman operator.
         Must extend :class:`pykoopman.observables.BaseObservables`.
