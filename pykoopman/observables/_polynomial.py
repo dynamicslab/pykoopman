@@ -181,11 +181,11 @@ class Polynomial(PolynomialFeatures, BaseObservables):
         check_is_fitted(self)
 
         combinations = self._combinations(
-            n_features=self.n_features_in_,
+            n_features=self.n_input_features_,
             degree=self.degree,
             interaction_only=self.interaction_only,
             include_bias=self.include_bias,
         )
         return np.vstack(
-            [np.bincount(c, minlength=self.n_features_in_) for c in combinations]
+            [np.bincount(c, minlength=self.n_input_features_) for c in combinations]
         )

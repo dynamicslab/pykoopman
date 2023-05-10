@@ -215,13 +215,13 @@ class FunctionTransformer(TransformerMixin, BaseEstimator):
 
     Attributes
     ----------
-    n_features_in_ : int
+    n_input_features_ : int
         Number of features seen during :term:`fit`. Defined only when
         `validate=True`.
 
         .. versionadded:: 0.24
 
-    feature_names_in_ : ndarray of shape (`n_features_in_`,)
+    feature_names_in_ : ndarray of shape (`n_input_features_`,)
         Names of features seen during :term:`fit`. Defined only when `validate=True`
         and `X` has feature names that are all strings.
 
