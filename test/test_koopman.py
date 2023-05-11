@@ -357,6 +357,9 @@ def test_observables_integration_with_nndmd(data_random, observables):
     model = Koopman(observables=observables, regressor=regressor).fit(x)
     check_is_fitted(model)
     y = model.predict(x)
+    model.A
+    model.C
+    model.W
     assert y.shape[1] == x.shape[1]
 
 

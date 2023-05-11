@@ -108,17 +108,3 @@ def test_fit_nndmd_regressor(data_xy, regressor):
     """test if using nndmd regressor alone will run the fit without error"""
     x, y = data_xy
     regressor.fit(x, y)
-
-
-# Regressor list:
-# PyDMDRegressor, EDMD, KDMD, NNDMD
-# TODO: regressor methods accuracy check
-#     - .predict
-#     - ._compute_phi, psi
-# TODO: regressor attributes accuracy check
-#     - coef_
-#     - state_matrix_
-#     - eigenvalues_
-#     - eigenvectors_
-#     - unnormalized_modes
-#     - ur

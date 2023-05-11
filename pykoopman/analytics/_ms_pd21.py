@@ -227,7 +227,12 @@ class ModesSelectionPAD21(BaseAnalyzer):
             plt.show()
 
     def sweep_among_best_L_modes(
-        self, L, ALPHA_RANGE=np.logspace(-3, 1, 100), MAX_ITER=1e5, save_figure=True
+        self,
+        L,
+        ALPHA_RANGE=np.logspace(-3, 1, 100),
+        MAX_ITER=1e5,
+        save_figure=True,
+        plot=True,
     ):
         """Computing multi task elastic net over a list of alpha and save the
         coefficient for each path
@@ -380,62 +385,65 @@ class ModesSelectionPAD21(BaseAnalyzer):
 
         #####################################################################
         # figure set 1 -- sparsity of Koopman mode in reconstructing each target
-        for i_component in range(num_target_components):
-            plt.figure(figsize=(6, 6))
-            for i in top_k_modes_list:
-                i_s = self.small_to_large_error_eigen_index[i]
-                plt.plot(
-                    alphas_enet_log_negative,
-                    abs(coefs_enet[i_component, i, :]),
-                    "-*",
-                    label=r"$\lambda_{}$ = {:.2f}".format(
-                        i_s, self.eigenvalues_discrete[i_s]
-                    ),
-                )
-            max_val = np.max(abs(coefs_enet[i_component, :, -1]))
-            min_val = np.min(abs(coefs_enet[i_component, :, -1]))
-            diss = (max_val - min_val) / 2
-            mean = (max_val + min_val) / 2
-            plt.xlabel(r"-$\log_{10}(\alpha)$", fontsize=16)
-            plt.ylabel("absolute value of coefficients", fontsize=16)
-            plt.ylim([mean - diss * 3, mean + diss * 3])
-            plt.title(r"$x_{}$".format(i_component + 1))
-            plt.legend(loc="best")
-            # lgd = plt.legend(bbox_to_anchor=(1.15, 0.95))
+        if plot:
+            for i_component in range(num_target_components):
+                plt.figure(figsize=(6, 6))
+                for i in top_k_modes_list:
+                    i_s = self.small_to_large_error_eigen_index[i]
+                    plt.plot(
+                        alphas_enet_log_negative,
+                        abs(coefs_enet[i_component, i, :]),
+                        "-*",
+                        label=r"$\lambda_{}$ = {:.2f}".format(
+                            i_s, self.eigenvalues_discrete[i_s]
+                        ),
+                    )
+                max_val = np.max(abs(coefs_enet[i_component, :, -1]))
+                min_val = np.min(abs(coefs_enet[i_component, :, -1]))
+                diss = (max_val - min_val) / 2
+                mean = (max_val + min_val) / 2
+                plt.xlabel(r"-$\log_{10}(\alpha)$", fontsize=16)
+                plt.ylabel("absolute value of coefficients", fontsize=16)
+                plt.ylim([mean - diss * 3, mean + diss * 3])
+                plt.title(r"$x_{}$".format(i_component + 1))
+                plt.legend(loc="best")
+                # lgd = plt.legend(bbox_to_anchor=(1.15, 0.95))
+                if save_figure:
+                    plt.savefig(
+                        self.dir
+                        + "multi-elastic-net-coef-"
+                        + str(i_component + 1)
+                        + ".png",
+                        # bbox_extra_artists=(lgd,),
+                        bbox_inches="tight",
+                    )
+                    plt.close()
+                else:
+                    plt.tight_layout()
+                    plt.show()
+
+            #####################################################################
+            # figure set 2 -- reconstruction MSE vs alpha
+            fig = plt.figure(figsize=(6, 6))
+            ax1 = fig.add_subplot(111)
+            ax2 = ax1.twinx()
+            ax1.plot(alphas_enet_log_negative, residual_array, "k*-")
+            ax1.set_xlabel(r"-$\log_{10}(\alpha)$", fontsize=16)
+            ax1.set_ylabel("normalized reconstruction MSE", color="k", fontsize=16)
+            # ax1.set_yscale('log')
+
+            ax2.plot(alphas_enet_log_negative, num_non_zero_all_alpha, "r*-")
+            ax2.set_ylabel("number of selected Koopman V", color="r", fontsize=16)
+            # lgd = plt.legend(bbox_to_anchor=(1, 0.5))
+
             if save_figure:
                 plt.savefig(
-                    self.dir
-                    + "multi-elastic-net-coef-"
-                    + str(i_component + 1)
-                    + ".png",
-                    # bbox_extra_artists=(lgd,),
-                    bbox_inches="tight",
+                    self.dir + "/multi-elastic-net-mse.png", bbox_inches="tight"
                 )
                 plt.close()
             else:
                 plt.tight_layout()
                 plt.show()
-
-        #####################################################################
-        # figure set 2 -- reconstruction MSE vs alpha
-        fig = plt.figure(figsize=(6, 6))
-        ax1 = fig.add_subplot(111)
-        ax2 = ax1.twinx()
-        ax1.plot(alphas_enet_log_negative, residual_array, "k*-")
-        ax1.set_xlabel(r"-$\log_{10}(\alpha)$", fontsize=16)
-        ax1.set_ylabel("normalized reconstruction MSE", color="k", fontsize=16)
-        # ax1.set_yscale('log')
-
-        ax2.plot(alphas_enet_log_negative, num_non_zero_all_alpha, "r*-")
-        ax2.set_ylabel("number of selected Koopman V", color="r", fontsize=16)
-        # lgd = plt.legend(bbox_to_anchor=(1, 0.5))
-
-        if save_figure:
-            plt.savefig(self.dir + "/multi-elastic-net-mse.png", bbox_inches="tight")
-            plt.close()
-        else:
-            plt.tight_layout()
-            plt.show()
 
         # 4. find the selected index within top L best eigenmodes for each alpha
         sweep_index_list = []

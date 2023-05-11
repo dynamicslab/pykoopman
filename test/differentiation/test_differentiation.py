@@ -93,3 +93,6 @@ def test_accuracy(data):
 
     # Ignore endpoints
     np.testing.assert_allclose(x_dot[1:-1], x_dot_method[1:-1])
+
+    method.set_params()
+    method.get_params()
