@@ -1304,9 +1304,9 @@ class NNDMD(BaseRegressor):
         return self._ur
 
     @property
-    def V(self):
+    def W(self):
         """
-        Returns the matrix V representing the Koopman modes. The matrix V is computed
+        Returns the matrix W representing the Koopman modes. The matrix W is computed
         during the fit process as the eigenvectors of the Koopman operator.
 
         Returns:
@@ -1315,6 +1315,12 @@ class NNDMD(BaseRegressor):
             The matrix V, where each column represents a Koopman mode.
         """
         return self._unnormalized_modes
+
+    def phi(self, x_col):
+        return self._compute_phi(x_col)
+
+    def psi(self, x_col):
+        return self._compute_psi(x_col)
 
     def _compute_phi(self, x_col):
         """

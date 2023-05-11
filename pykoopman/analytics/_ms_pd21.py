@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from prettytable import PrettyTable
 from sklearn.linear_model import enet_path
 
-from ._base import BaseAnalyzer
+from ._base_analyzer import BaseAnalyzer
 from ._pruned_koopman import PrunedKoopman
 from pykoopman.koopman import Koopman
 
@@ -111,7 +111,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
             )
 
             # 1.1 normalization factor for each psi
-            eigenfunction_evaluated_on_traj = self.eigenfunction(validate_data).T
+            eigenfunction_evaluated_on_traj = self.eigenfunction(validate_data.T).T
 
             tmp = np.abs(eigenfunction_evaluated_on_traj) ** 2  # pointwise square only
             dt_arr = np.diff(validate_time, prepend=validate_time[0] - validate_time[1])
@@ -137,7 +137,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
         R_i = []
         for validate_data_one_traj in validate_data_traj:
             validate_data = validate_data_one_traj["x"]
-            eigenfunction_evaluated_on_traj = self.eigenfunction(validate_data).T
+            eigenfunction_evaluated_on_traj = self.eigenfunction(validate_data.T).T
 
             # get reconstruction error with increasing number of V
             R_i_each = []
@@ -180,7 +180,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
 
         # prepare top max k selected eigentraj
         eigenfunction_evaluated_on_traj_total = np.vstack(
-            [self.eigenfunction(tmp1["x"]).T for tmp1 in validate_data_traj]
+            [self.eigenfunction(tmp1["x"].T).T for tmp1 in validate_data_traj]
         )
         self.eigenfunction_on_traj_total_top_k = eigenfunction_evaluated_on_traj_total[
             :, self.small_to_large_error_eigen_index[: max_terms_allowed + 1]
@@ -227,7 +227,12 @@ class ModesSelectionPAD21(BaseAnalyzer):
             plt.show()
 
     def sweep_among_best_L_modes(
-        self, L, ALPHA_RANGE=np.logspace(-3, 1, 100), MAX_ITER=1e5, save_figure=True
+        self,
+        L,
+        ALPHA_RANGE=np.logspace(-3, 1, 100),
+        MAX_ITER=1e5,
+        save_figure=True,
+        plot=True,
     ):
         """Computing multi task elastic net over a list of alpha and save the
         coefficient for each path
@@ -380,62 +385,65 @@ class ModesSelectionPAD21(BaseAnalyzer):
 
         #####################################################################
         # figure set 1 -- sparsity of Koopman mode in reconstructing each target
-        for i_component in range(num_target_components):
-            plt.figure(figsize=(6, 6))
-            for i in top_k_modes_list:
-                i_s = self.small_to_large_error_eigen_index[i]
-                plt.plot(
-                    alphas_enet_log_negative,
-                    abs(coefs_enet[i_component, i, :]),
-                    "-*",
-                    label=r"$\lambda_{}$ = {:.2f}".format(
-                        i_s, self.eigenvalues_discrete[i_s]
-                    ),
-                )
-            max_val = np.max(abs(coefs_enet[i_component, :, -1]))
-            min_val = np.min(abs(coefs_enet[i_component, :, -1]))
-            diss = (max_val - min_val) / 2
-            mean = (max_val + min_val) / 2
-            plt.xlabel(r"-$\log_{10}(\alpha)$", fontsize=16)
-            plt.ylabel("absolute value of coefficients", fontsize=16)
-            plt.ylim([mean - diss * 3, mean + diss * 3])
-            plt.title(r"$x_{}$".format(i_component + 1))
-            plt.legend(loc="best")
-            # lgd = plt.legend(bbox_to_anchor=(1.15, 0.95))
+        if plot:
+            for i_component in range(num_target_components):
+                plt.figure(figsize=(6, 6))
+                for i in top_k_modes_list:
+                    i_s = self.small_to_large_error_eigen_index[i]
+                    plt.plot(
+                        alphas_enet_log_negative,
+                        abs(coefs_enet[i_component, i, :]),
+                        "-*",
+                        label=r"$\lambda_{}$ = {:.2f}".format(
+                            i_s, self.eigenvalues_discrete[i_s]
+                        ),
+                    )
+                max_val = np.max(abs(coefs_enet[i_component, :, -1]))
+                min_val = np.min(abs(coefs_enet[i_component, :, -1]))
+                diss = (max_val - min_val) / 2
+                mean = (max_val + min_val) / 2
+                plt.xlabel(r"-$\log_{10}(\alpha)$", fontsize=16)
+                plt.ylabel("absolute value of coefficients", fontsize=16)
+                plt.ylim([mean - diss * 3, mean + diss * 3])
+                plt.title(r"$x_{}$".format(i_component + 1))
+                plt.legend(loc="best")
+                # lgd = plt.legend(bbox_to_anchor=(1.15, 0.95))
+                if save_figure:
+                    plt.savefig(
+                        self.dir
+                        + "multi-elastic-net-coef-"
+                        + str(i_component + 1)
+                        + ".png",
+                        # bbox_extra_artists=(lgd,),
+                        bbox_inches="tight",
+                    )
+                    plt.close()
+                else:
+                    plt.tight_layout()
+                    plt.show()
+
+            #####################################################################
+            # figure set 2 -- reconstruction MSE vs alpha
+            fig = plt.figure(figsize=(6, 6))
+            ax1 = fig.add_subplot(111)
+            ax2 = ax1.twinx()
+            ax1.plot(alphas_enet_log_negative, residual_array, "k*-")
+            ax1.set_xlabel(r"-$\log_{10}(\alpha)$", fontsize=16)
+            ax1.set_ylabel("normalized reconstruction MSE", color="k", fontsize=16)
+            # ax1.set_yscale('log')
+
+            ax2.plot(alphas_enet_log_negative, num_non_zero_all_alpha, "r*-")
+            ax2.set_ylabel("number of selected Koopman V", color="r", fontsize=16)
+            # lgd = plt.legend(bbox_to_anchor=(1, 0.5))
+
             if save_figure:
                 plt.savefig(
-                    self.dir
-                    + "multi-elastic-net-coef-"
-                    + str(i_component + 1)
-                    + ".png",
-                    # bbox_extra_artists=(lgd,),
-                    bbox_inches="tight",
+                    self.dir + "/multi-elastic-net-mse.png", bbox_inches="tight"
                 )
                 plt.close()
             else:
                 plt.tight_layout()
                 plt.show()
-
-        #####################################################################
-        # figure set 2 -- reconstruction MSE vs alpha
-        fig = plt.figure(figsize=(6, 6))
-        ax1 = fig.add_subplot(111)
-        ax2 = ax1.twinx()
-        ax1.plot(alphas_enet_log_negative, residual_array, "k*-")
-        ax1.set_xlabel(r"-$\log_{10}(\alpha)$", fontsize=16)
-        ax1.set_ylabel("normalized reconstruction MSE", color="k", fontsize=16)
-        # ax1.set_yscale('log')
-
-        ax2.plot(alphas_enet_log_negative, num_non_zero_all_alpha, "r*-")
-        ax2.set_ylabel("number of selected Koopman V", color="r", fontsize=16)
-        # lgd = plt.legend(bbox_to_anchor=(1, 0.5))
-
-        if save_figure:
-            plt.savefig(self.dir + "/multi-elastic-net-mse.png", bbox_inches="tight")
-            plt.close()
-        else:
-            plt.tight_layout()
-            plt.show()
 
         # 4. find the selected index within top L best eigenmodes for each alpha
         sweep_index_list = []
@@ -447,7 +455,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
             sweep_index_list.append(non_zero_index_bool_array)
         self.sweep_index_list = sweep_index_list
 
-    def prune_model(self, i_alpha, x_train):
+    def prune_model(self, i_alpha, x_train, dt=1):
         """Prune the `pykoopman.koopman.Koopman` model
 
         Aims to return a pruned model that contains most of the functionality of
@@ -471,6 +479,6 @@ class ModesSelectionPAD21(BaseAnalyzer):
         sweep_bool_index = self.sweep_index_list[i_alpha]
         sweep_index = self.small_to_large_error_eigen_index[: self.L][sweep_bool_index]
 
-        pruned_model = PrunedKoopman(self.model, sweep_index)
-        pruned_model = pruned_model.refit_modes(x_train)
+        pruned_model = PrunedKoopman(self.model, sweep_index, dt)
+        pruned_model = pruned_model.fit(x_train)
         return pruned_model

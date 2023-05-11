@@ -25,78 +25,106 @@ affiliations:
    index: 2
  - name: Department of Mechanical, Aerospace, and Nuclear Engineering, Rensselaer Polytechnic Institute
    index: 3
-date: 06 April 2023
+date: 07 May 2023
 output: bookdown::html_document2
 bibliography: paper.bib
 ---
 
 # Summary
 
-
-
-Automated data-driven modeling, the process of directly discovering the governing equations of a system from data, is increasingly being used across the scientific community. `PySINDy` is a Python package that provides tools for applying the sparse identification of nonlinear dynamics (SINDy) approach to data-driven model discovery. In this major update to `PySINDy`, we implement several advanced features that enable the discovery of more general differential equations from noisy and limited data. The library of candidate terms is extended for the identification of actuated systems, partial differential equations (PDEs), and implicit differential equations. Robust formulations, including the integral form of SINDy and ensembling techniques, are also implemented to improve performance for real-world data. Finally, we provide a range of new optimization algorithms, including several sparse regression techniques and algorithms to enforce and promote inequality constraints and stability. Together, these updates enable entirely new SINDy model discovery capabilities that have not been reported in the literature, such as constrained PDE identification and ensembling with different sparse regression optimizers.
+`PyKoopman` is a Python package for the data-driven approximation of the Koopman operator in the dynamical systems. The Koopman operator has emerged as a principled linear embedding of nonlinear dynamics and facilitates the prediction, estimation, and control of strongly nonlinear dynamics using linear systems theory. In particular, `PyKoopman` provides tools for data-driven system identification for unforced and actuated systems that build on the equation-free dynamic mode decomposition (DMD) [@schmid2010jfm] and its variants. In this work, we provide a brief description of the mathematical underpinnings of the Koopman operator, an overview and demonstration of the features implemented in `PyKoopman` (with code examples), practical advice for users, and a list of potential extensions to `PyKoopman`.  Software is available at \url{https://github.com/dynamicslab/pyKoopman}.
 
 # Statement of need
-Traditionally, the governing laws and equations of nature have been derived from first principles and based on rigorous experimentation and expert intuition.
-In the modern era, cheap and efficient sensors have resulted in an unprecedented growth in the availability of measurement data, opening up the opportunity to perform automated model discovery using data-driven modeling. These data-driven approaches are also increasingly useful for processing and interpreting the information in these large datasets.
-A number of such approaches have been developed in recent years, including the dynamic mode decomposition [@schmid2010dynamic;@Kutz2016book], Koopman theory [@Brunton2021koopman], nonlinear autoregressive algorithms [@Billings2013book], neural networks [@pathak2018model;@vlachas2018data;@Raissi2019jcp], Gaussian process regression [@raissi2017machine], operator inference and reduced-order modeling [@Benner2015siamreview;@peherstorfer2016data;@qian2020lift], genetic programming [@Bongard2007pnas;@schmidt_distilling_2009], and sparse regression [@brunton2016pnas].
-These approaches have seen many variants and improvements over the years, so data-driven modeling software must be regularly updated to remain useful to the scientific community. The SINDy approach has experienced particularly rapid development, motivating this major update to aggregate these innovations into a single open-source tool that is transparent and easy to use for non-experts or scientists from other fields.
 
-The original `PySINDy` code [@de2020pysindy] provided an implementation of the traditional SINDy method [@brunton2016pnas], which
-assumes that the dynamical evolution of a state variable $\mathbf{q}(t)\in\mathbb{R}^n$ follows an ODE described by a function $\mathbf{f}$,
-\begin{equation}\label{eq:sindy_eq}
-   \frac{d}{dt} \mathbf{q} = \mathbf{f}(\mathbf{q}).
-\end{equation}
-SINDy approximates the dynamical system $\mathbf{f}$ in Eq. \eqref{eq:sindy_eq} as a sparse combination of terms from a library of candidate basis functions $\boldsymbol{\theta}(\mathbf{q}) = [\theta_1(\mathbf{q}),\theta_2(\mathbf{q}),\dots,\theta_p(\mathbf{q})]$
-\begin{equation}\label{eq:sindy_expansion}
-\mathbf{f}(\mathbf{q})\approx \sum_{k=1}^{p}\theta_k(\mathbf{q})\boldsymbol\xi_k, \quad \text{or equivalently} \quad \frac{d}{dt}\mathbf{q} \approx \mathbf{\Theta}(\mathbf{q})\mathbf{\Xi},
-\end{equation}
-where $\boldsymbol{\Xi} = [\boldsymbol\xi_1,\boldsymbol\xi_2,\dots,\boldsymbol\xi_p]$ contain the sparse coefficients. In order for this strategy to be successful, a reasonably accurate approximation of $\mathbf{f}(\mathbf{q})$ should exist as a sparse expansion in the span of $\boldsymbol{\theta}$. Therefore, background scientific knowledge about expected terms in $\mathbf{f}(\mathbf{q})$ can be used to choose the library $\boldsymbol{\theta}$.
-To pose SINDy as a regression problem, we assume we have a set of state measurements sampled at time steps $t_1, ..., t_m$ and rearrange the data into the data matrix $\mathbf{Q} \in \mathbb{R}^{m\times n}$, \begin{eqnarray}\label{eq:Q_matrix}
-\mathbf{Q} = \begin{bmatrix}
-q_1(t_1) & q_2(t_1) & \cdots & q_n(t_1)\\
-q_1(t_2) & q_2(t_2) & \cdots & q_n(t_2)\\
-\vdots & \vdots & \ddots & \vdots \\
-q_1(t_m) & q_2(t_m) & \cdots & q_n(t_m)
-\end{bmatrix}
-\label{Eq:DataMatrix}.
-\end{eqnarray}
-A matrix of derivatives in time, $\mathbf Q_t$, is defined similarly and can be numerically computed from $\mathbf{Q}$. PySINDy defaults to second order finite differences for computing derivatives, although a host of more sophisticated methods are now available, including arbitrary order finite differences, Savitzky-Golay derivatives (i.e. polynomial-filtered derivatives), spectral derivatives with optional filters, arbitrary order spline derivatives, and total variational derivatives [@ahnert2007numerical;@chartrand2011numerical;@tibshirani2011solution].
+Engineers have long employed linearization to bridge the gap between closed-form linear theory and the intricate nonlinear reality [@ljung2010arc;@wright1999numerical]. Local linearization, using low-order Taylor expansion, has been prevalent in system identification [@ljung2010arc], optimization [@wright1999numerical], and numerous other fields to render problems more manageable. However, the current expansion of available measurement data, coupled with challenges posed by increasingly complex systems that resist first-principle-based analysis, has spurred the adoption of data-driven modeling techniques. These methods aim to extract a linear embedding from nonlinear dynamics [@Brunton2019book].
 
-After $\mathbf Q_t$ is obtained, Eq. \eqref{eq:sindy_expansion} becomes $\mathbf Q_t \approx \mathbf{\Theta}(\mathbf{Q})\mathbf{\Xi}$ and the goal of the SINDy sparse regression problem is to choose a sparse set of coefficients $\mathbf{\Xi}$ that accurately fits the measured data in $\mathbf Q_t$. We can promote sparsity in the identified coefficients via a sparse regularizer $R(\mathbf{\Xi})$, such as the $l_0$ or $l_1$ norm, and use a sparse regression algorithm such as SR3 [@champion2020unified] to solve the resulting optimization problem,
-\begin{equation}\label{eq:sindy_regression}
-  \text{argmin}_{\boldsymbol\Xi}\|\mathbf Q_t - \boldsymbol\Theta(\mathbf{Q}) \boldsymbol\Xi\|^2 + R(\boldsymbol\Xi).
-\end{equation}
+Within the diverse landscape of data-driven modeling approaches for unknown systems, the Koopman operator theory has garnered considerable attention in recent years [@Budivsic2012chaos;@Mezic2013arfm;@Williams2015jnls;@klus2017data;@Li2017chaos;@Brunton2017natcomm]. These approaches cover not only linear methods [@Nelles2013book;@ljung2010arc] and dynamic mode decomposition (DMD) [@schmid2010jfm;@Kutz2016book], but also more advanced techniques such as nonlinear autoregressive algorithms [@Akaike1969annals;@Billings2013book], neural networks [@long2017pde;@yang2020physics;@Wehmeyer2018jcp;@Mardt2018natcomm;@vlachas2018data;@pathak2018model;@lu2019deepxde;@Raissi2019jcp;@Champion2019pnas;@raissi2020science], Gaussian process regression [@raissi2017parametric], operator inference and reduced-order modeling [@Benner2015siamreview;@peherstorfer2016data;@qian2020lift], among others [@Giannakis2012pnas;@Yair2017pnas;@bongard_automated_2007;@schmidt_distilling_2009;@Daniels2015naturecomm;@brunton2016pnas;@Rudy2017sciadv]. The Koopman operator occupies a unique position within data-driven modeling techniques due to its distinct objective of achieving global linearization of nonlinear dynamics based on data. This approach allows for the application of closed-form, convergence-guaranteed methods from linear system theory to general nonlinear dynamics. In contrast, most other algorithms primarily concentrate on learning end-to-end and/or black-box mappings from parameters to solutions, which sets the Koopman operator apart from its counterparts. To fully harness the potential of data-driven global linearization across a broad array of scientific and engineering disciplines, it is essential to develop tools that automate state-of-the-art Koopman operator algorithms.
 
-The original `PySINDy` package was developed to identify a particular class of systems described by Eq. \eqref{eq:sindy_eq}.
-Recent variants of the SINDy method are available that address systems with control inputs and model predictive control (MPC) [@Kaiser2018prsa;@fasel2021sindy], systems with physical constraints [@Loiseau2017jfm;@kaptanoglu2020physics], implicit ODEs [@mangan2016inferring;@kaheman2020sindy], PDEs [@Rudy2017sciadv;@Schaeffer2017prsa], and weak form ODEs and PDEs [@Schaeffer2017pre;@Reinbold2020pre;@messenger2021weakpde]. Other methods, such as ensembling and sub-sampling [@maddu2019stability;@reinbold2021robust;@delahunt2021toolkit], are often vital for making the identification of Eq. \eqref{eq:sindy_eq} more robust.
-In order to incorporate these new developments and accommodate the wide variety of possible dynamical systems, we have extended `PySINDy` to a more general setting and added significant new functionality. Our code\footnote{\url{https://github.com/dynamicslab/pysindy}} is thoroughly documented, contains extensive examples, and integrates a wide range of functionality, some of which may be found in a number of other local SINDy implementations\footnote{\url{https://github.com/snagcliffs/PDE-FIND}, \url{https://github.com/eurika-kaiser/SINDY-MPC},\\ \url{https://github.com/dynamicslab/SINDy-PI}, \url{https://github.com/SchatzLabGT/SymbolicRegression},\\ \url{https://github.com/dynamicslab/databook_python}, \url{https://github.com/sheadan/SINDy-BVP},\\ \url{https://github.com/sethhirsh/BayesianSindy}, \url{https://github.com/racdale/sindyr},\\ \url{https://github.com/SciML/DataDrivenDiffEq.jl}, \url{https://github.com/MathBioCU/WSINDy_PDE},\\ \url{https://github.com/pakreinbold/PDE_Discovery_Weak_Formulation}, \url{https://github.com/ZIB-IOL/CINDy}}. In contrast to some of these existing codes, `PySINDy` is completely open-source, professionally-maintained (for instance, providing unit tests and adhering to PEP8 stylistic standards), and minimally dependent on non-standard Python packages.
+
+As a result, the `PyKoopman` is developed as a Python package for approximating the Koopman operator associated with natural and actuated dynamical systems from data. In particular, `PyKoopman` provides tools for designing the observables (e.g., functions of system state) and inferring a finite-dimensional linear operator that governs the observables. These two steps can be either performed sequentially [@Williams2015jcd;@Williams2015jnls] or combined as in the case of more recent neural network models [@lusch2018deep;@otto2019linearly]. After a linear embedding is discovered from the data, one can leverage the linearity of the lifted dynamical system for better interpretability [@pan2021sparsity] or near-optimal observer [@surana2016linear] or controller on the original nonlinear system [@korda2020optimal;@mauroy2020koopman;@kaiser2021data].
+
+
 
 # New features
-Given spatiotemporal data $\mathbf{Q}(\mathbf{x}, t) \in \mathbb{R}^{m\times n}$, and optional control inputs $\mathbf{u} \in \mathbb{R}^{m \times r}$ (note $m$ has been redefined here to be the product of the number of spatial measurements and the number of time samples), `PySINDy` can now approximate algebraic systems of PDEs (and corresponding weak forms) in an arbitrary number of spatial dimensions. Assuming the system is described by a function $\mathbf{g}$, we have
-\begin{equation}\label{eq:pysindy_eq}
-    \mathbf{g}(\mathbf{q},\mathbf q_t, \mathbf q_x, \mathbf q_y, \mathbf q_{xx}, ..., \mathbf{u}) = 0.
-\end{equation}
-ODEs, implicit ODEs, PDEs, and other dynamical systems are subsets of Eq. \eqref{eq:pysindy_eq}. We can accommodate control terms and partial derivatives in the SINDy library by adding them as columns in $\mathbf{\Theta}(\mathbf{Q})$, which becomes $\mathbf{\Theta}(\mathbf{Q}, \mathbf Q_t, \mathbf Q_x, ..., \mathbf{u})$.
 
-In addition, we have extended `PySINDy` to handle more complex modeling scenarios, including trapping SINDy for provably stable ODE models for fluids [@kaptanoglu2021promoting], models trained using multiple dynamic trajectories, and the generation of many models with sub-sampling and ensembling methods [@fasel2021ensemble] for cross-validation and probabilistic system identification. In order to solve Eq. \eqref{eq:pysindy_eq}, `PySINDy` implements several different sparse regression algorithms. Greedy sparse regression algorithms, including step-wise sparse regression (SSR) [@boninsegna2018sparse] and forward regression orthogonal least squares (FROLS) [@Billings2013book], are now available. For maximally versatile candidate libraries, the new `GeneralizedLibrary` class allows for tensoring, concatenating, and otherwise combining many different candidate libraries, along with optionally specifying a subset of the inputs to use for generating each of the libraries. \autoref{fig:package-structure} illustrates the `PySINDy` code structure, changes, and high-level goals for future work, and [`YouTube` tutorials](https://www.youtube.com/playlist?list=PLN90bHJU-JLoOfEk0KyBs2qLTV7OkMZ25) for this new functionality are available online.
+The core component of the `PyKoopman` package is the `Koopman` model class. To make this package accessible to a broader user base, this class is implemented as a `scikit-learn` estimator. The external package dependencies are illustrated in Fig. \ref{fig:package-structure-dependency}. Additionally, users can create sophisticated pipelines for hyperparameter tuning and model selection by integrating `pyKoopman` with `scikit-learn`.
 
-`PySINDy` includes extensive Jupyter notebook tutorials that demonstrate the usage of various features of the package and reproduce nearly the entirety of the examples from the original SINDy paper [@brunton2016pnas], trapping SINDy paper [@kaptanoglu2021promoting], and the PDE-FIND paper [@Rudy2017sciadv].
-We include an extended example for the quasiperiodic shear-driven cavity flow [@callaham2021role].
-As a simple illustration of the new functionality, we demonstrate how SINDy can be used to identify the Kuramoto-Sivashinsky (KS) PDE from data. We train the model on the first 60\% of the data from Rudy et al. [@Rudy2017sciadv], which in total contains 1024 spatial grid points and 251 time steps. The KS model is identified correctly and the prediction for $\dot{\mathbf{q}}$ on the remaining testing data indicates strong performance in \autoref{fig:pde_id}. Lastly, we provide a useful flow chart in \autoref{fig:flow_chart} so that users can make informed choices about which advanced methods are suitable for their datasets.
+
+As illustrated in Fig. \ref{fig:koopman-formalism}, `PyKoopman` is designed to lift nonlinear dynamics into a linear system with linear actuation. Specifically, our `PyKoopman` implementation involves two major steps:
+
+
+- `observables`: the nonlinear observables used to lift $\mathbf{x}$ to $\mathbf{z}$, and reconstruct $\mathbf{x}$ from $\mathbf{z}$;
+- `regression`: the regression used to find the optimal $\mathbf{A}$.
+
+Additionally, we have a `differentiation` module that evaluates the time derivative from a trajectory and the `analytics` module for sparsifying arbitrary approximations of the Koopman operator.
+
+
+At the time of writing, we have the following features implemented:
+
+- Observable library for lifting the state $\mathbf{x}$ into the observable space
+
+  - Identity (for DMD/DMDc or in case users want to compute observables themselves): `Identity`
+  - Multivariate polynomials: `Polynomial`
+  - Time delay coordinates: `TimeDelay`
+  - Radial basis functions: `RadialBasisFunctions`
+  - Random Fourier features: `RandomFourierFeatures`
+  - Custom library (defined by user-supplied functions): `CustomObservables`
+  - Concatenation of observables: `ConcatObservables`
+
+
+- System identification method for performing regression
+
+  - Dynamic mode decomposition [@schmid2010jfm;@rowley2009spectral]: `PyDMDRegressor`
+  - Dynamic mode decomposition with control [@proctor2016dynamic]: `DMDc`
+  - Extended dynamic mode decomposition [@Williams2015jnls]: `EDMD`
+  - Extended dynamic mode decomposition with control [@korda2020optimal]: `EDMDc`
+  - Kernel dynamic mode decomposition [@Williams2015jcd]: `KDMD`
+  - Hankel DMD [@brunton2016pnas]: `HDMD`
+  - Hankel DMD with control: `HDMDc`
+  - Neural Network DMD [@pan2020physics;@otto2019linearly;@lusch2018deep]: `NNDMD`
+
+- Sparse construction of Koopman invariant subspace
+  - Multi-task learning based on linearity consistency[@pan2021sparsity]: `ModesSelectionPAD21`
+
+- Numerical differentiation for computing $\dot{\mathbf{X}}$ from $\mathbf{X}$
+
+  - Finite difference: `FiniteDifference`
+  - 4th order central finite difference: `Derivative(kind="finite_difference")`
+  - Savitzky-Golay with cubic polynomials: `Derivative(kind="savitzky-golay")`
+  - Spectral derivative: `Derivative(kind="spectral")`
+  - Spline derivative: `Derivative(kind="spline")`
+  - Regularized total variation derivative: `Derivative(kind="trend_filtered")`
+
+- Common toy dynamics
+
+  - Discrete-time random, stable, linear state-space model: `drss`
+  - Van del Pol oscillator: `vdp_osc`
+  - Lorenz system: `lorenz`
+  - Two-dimensional linear dynamics: `Linear2Ddynamics`
+  - Linear dynamics on a torus: `torus_dynamics`
+  - Forced Duffing Oscillator: `forced_duffing`
+  - Cubic-quintic Ginzburg-Landau equation: `cqgle`
+  - Kuramoto-Sivashinsky equation:`ks`
+  - Nonlinear Schrodinger equation: `nls`
+  - Viscous Burgers equation: `vbe`
+
+- Validation routines for consistency checks
 
 # Conclusion
-The goal of the `PySINDy` package is to enable anyone with access to measurement data to engage in scientific model discovery. The package is designed to be accessible to inexperienced users, adhere to `scikit-learn` standards, include most of the existing SINDy variations in the literature, and provide a large variety of functionality for more advanced users. We hope that researchers will use and contribute to the code in the future, pushing the boundaries of what is possible in system identification.
+
+Our goal of the `PyKoopman` package is to provide a central hub for education, application and research development of learning algorithms for Koopman operator. The `PyKoopman` package is aimed at researchers and practitioners alike, enabling anyone with access to discover linear embeddings of nonlinear systems from data. The package is designed to be accessible to users with basic knowledge of linear systems, adhering to `scikit-learn` standards, while also being modular for more advanced users. We hope that researchers and practioners will use `PyKoopman` as a platform for algorithms developement and applications of linear embedding.
+
 
 # Acknowledgments
-`PySINDy` is a fork of [`sparsereg`](https://github.com/Ohjeah/sparsereg) [@markus_quade_sparsereg].
-SLB, AAK, KK, and UF acknowledge support from the Army Research Office (ARO  W911NF-19-1-0045). JLC acknowledges support from funding support from the Department of Defense (DoD) through the National Defense Science \& Engineering Graduate (NDSEG) Fellowship Program. ZGN is a Washington Research Foundation Postdoctoral Fellow.
 
-![Summary of SINDy features organized by (a) `PySINDy` structure and (b) functionality. (a) Hierarchy from the sparse regression problem solved by SINDy, to the submodules of `PySINDy`, to the individual optimizers, libraries, and differentiation methods implemented in the code.
-(b) Flow chart for organizing the SINDy variants and functionality in the literature. Bright color boxes indicate the features that have been implemented through this work, roughly organized by functionality. Semi-transparent boxes indicate features that have not yet been implemented.\label{fig:package-structure}](Fig1.png)
+![Lifting of the state $\mathbf{x}$ of the continuous autonomous dynamical system into a new coordinate system, in which the original nonlinear dynamics become linear and are easier to handle. One can also linearly reconstruct the state $\mathbf{x}$ from the new coordinate system. This is facilitated with `PyKoopman` in a data-driven manner.\label{fig:LinearizingTransformation}](Fig1.png)
 
-![`PySINDy` can now be used for PDE identification; we illustrate this new capability by accurately capturing a set of testing data from the Kuramoto-Sivashinsky system, described by $q_t = -qq_x - q_{xx} - q_{xxxx}$. The identified model is $q_t = -0.98qq_x -0.99q_{xx} - 1.0q_{xxxx}$.\label{fig:pde_id}](Fig2.png)
+![External package dependencies of PyKoopman.\label{fig:package-structure-dependency}](Fig2.png)
 
-![This flow chart summarizes how `PySINDy` users can start with a dataset and systematically choose the proper candidate library and sparse regression optimizer that are tailored for a specific scientific task. \label{fig:flow_chart}](Fig3.png)
+
+<img src="Fig3.png" alt="Broad categorization of model types that can be identified with current PyKoopman. While the dotted parts (marked with '·') can be simultaneously discovered within the framework, they are typically ignored for control purposes." width="250" height="100" />
+
+![{Broad categorization of model types that can be identified with current `PyKoopman`. While the dotted parts (marked with ``$\cdot$'') can be simultaneously discovered within the framework, they are typically ignored for control purposes.\label{fig:koopman-formalism}](Fig3.png)
+
 
 # References

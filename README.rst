@@ -1,7 +1,7 @@
 PyKoopman
 =========
 
-|Build| |Docs| |PyPI|
+|Build| |Docs| |PyPI| |Codecov|
 
 **PyKoopman** is a Python package for computing data-driven approximations to the Koopman operator.
 
@@ -121,3 +121,6 @@ TODO
 
 .. |PyPI| image:: https://badge.fury.io/py/pykoopman.svg
     :target: https://badge.fury.io/py/pykoopman
+
+.. |Codecov| image:: https://codecov.io/github/dynamicslab/pykoopman/coverage.svg
+    :target: https://app.codecov.io/gh/dynamicslab/pykoopman

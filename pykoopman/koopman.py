@@ -403,12 +403,17 @@ class Koopman(BaseEstimator):
         return C
 
     @property
-    def V(self):
+    def W(self):
         """Returns Koopman modes"""
 
         check_is_fitted(self, "_pipeline")
         # return self.C @ self._pipeline.steps[-1][1].unnormalized_modes
         return self.C @ self._pipeline.steps[-1][1].eigenvectors_
+
+    @property
+    def _regressor_eigenvectors(self):
+        check_is_fitted(self, "_pipeline")
+        return self._pipeline.steps[-1][1].eigenvectors_
 
     @property
     def lamda(self):
