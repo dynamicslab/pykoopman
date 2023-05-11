@@ -8,7 +8,6 @@ from ._edmd import EDMD
 from ._edmdc import EDMDc
 from ._havok import HAVOK
 from ._kdmd import KDMD
-from ._kef import KEF
 from ._nndmd import NNDMD
 
 __all__ = [
@@ -19,6 +18,5 @@ __all__ = [
     "EDMDc",
     "EnsembleBaseRegressor",
     "HAVOK",
-    "KEF",
     "NNDMD",
 ]
