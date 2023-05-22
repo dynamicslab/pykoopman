@@ -9,19 +9,38 @@ from sklearn.base import BaseEstimator
 
 class BaseRegressor(BaseEstimator, ABC):
     """
-    Wrapper class for PyKoopman regressors.
+    Base class for PyKoopman regressors.
 
-    This class is inherited from `sklearn.base.BaseEstimator`
+    This class provides a wrapper for regressors used in the PyKoopman package.
+    It's designed to be used with any regressor object that implements `fit`
+    and `predict` methods following the `sklearn.base.BaseEstimator` interface.
 
-    Parameters
-    ----------
-    regressor : sklearn.base.BaseEstimator
-        A regressor object implementing ``fit`` and ``predict`` methods.
+    Note: This is an abstract base class, and should not be instantiated directly.
+    Instead, a subclass should be created that implements the required abstract methods.
 
-    Attributes
-    ----------
-    regressor : sklearn.base.BaseEstimator
-        A regressor object implementing ``fit`` and ``predict`` methods.
+    Args:
+        regressor (BaseEstimator): A regressor object implementing `fit` and `predict`
+        methods.
+
+    Attributes:
+        regressor (BaseEstimator): The regressor object passed during initialization.
+
+    Abstract methods:
+        coef_ : Should return the coefficients of the regression model.
+
+        state_matrix_ : Should return the state matrix of the dynamic system.
+
+        eigenvectors_ : Should return the eigenvectors of the system.
+
+        eigenvalues_ : Should return the eigenvalues of the system.
+
+        _compute_phi(x_col) : Should compute and return the phi function on given data.
+
+        _compute_psi(x_col) : Should compute and return the psi function on given data.
+
+        ur : Should return the u_r of the system.
+
+        unnormalized_modes : Should return the unnormalized modes of the system.
     """
 
     def __init__(self, regressor):

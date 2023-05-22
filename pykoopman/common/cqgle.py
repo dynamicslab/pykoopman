@@ -1,4 +1,4 @@
-"""module for cubic-quintic Ginzburg-Landau equation"""
+"""Module for cubic-quintic Ginzburg-Landau equation."""
 from __future__ import annotations
 
 import numpy as np
@@ -13,12 +13,38 @@ from pykoopman.common.examples import rk4
 
 class cqgle:
     """
-    cubic-quintic Ginzburg-Landau equation
+    Cubic-quintic Ginzburg-Landau equation solver.
 
+    Solves the equation:
     i*u_t + (0.5 - i * tau) u_{xx} - i * kappa u_{xxxx} + (1-i * beta)|u|^2 u +
     (nu - i * sigma)|u|^4 u - i * gamma u = 0
 
-    periodic B.C. PDE is solved using spectral methods
+    Solves the periodic boundary conditions PDE using spectral methods.
+
+    Attributes:
+        n_states (int): Number of states.
+        x (numpy.ndarray): x-coordinates.
+        dt (float): Time step.
+        tau (float): Parameter tau.
+        kappa (float): Parameter kappa.
+        beta (float): Parameter beta.
+        nu (float): Parameter nu.
+        sigma (float): Parameter sigma.
+        gamma (float): Parameter gamma.
+        k (numpy.ndarray): Wave numbers.
+        dk (float): Wave number spacing.
+
+    Methods:
+        sys(t, x, u): System dynamics function.
+        simulate(x0, n_int, n_sample): Simulate the system for a given initial
+            condition.
+        collect_data_continuous(x0): Collect training data pairs in continuous sense.
+        collect_one_step_data_discrete(x0): Collect training data pairs in discrete
+            sense.
+        collect_one_trajectory_data(x0, n_int, n_sample): Collect data for one
+            trajectory.
+        visualize_data(x, t, X): Visualize the data in physical space.
+        visualize_state_space(X): Visualize the data in state space.
     """
 
     def __init__(

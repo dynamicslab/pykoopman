@@ -26,53 +26,71 @@ from .regression import PyDMDRegressor
 
 
 class Koopman(BaseEstimator):
-    """
-    Discrete-Time Koopman class.
+    """Discrete-Time Koopman class.
 
     The input-output data is all row-wise if stated elsewhere.
     All of the matrix, are based on column-wise linear system.
-    This class is inherited from :class:`pykoopman.regression.BaseEstimator`
+    This class is inherited from `pykoopman.regression.BaseEstimator`.
 
-    Parameters
-    ----------
-    observables: observables object, optional
-    (default :class:`pykoopman.observables.Identity`)
-        Map(s) to apply to raw measurement data before estimating the
-        Koopman operator.
-        Must extend :class:`pykoopman.observables.BaseObservables`.
-        The default option, :class:`pykoopman.observables.Identity` leaves
-        the input untouched.
+    Args:
+        observables: observables object, optional
+            (default: `pykoopman.observables.Identity`)
+            Map(s) to apply to raw measurement data before estimating the
+            Koopman operator.
+            Must extend `pykoopman.observables.BaseObservables`.
+            The default option, `pykoopman.observables.Identity`, leaves
+            the input untouched.
 
-    regressor: regressor object, optional (default ``DMD``)
-        The regressor used to learn the Koopman operator from the observables.
-        ``regressor`` can either extend the
-        :class:`pykoopman.regression.BaseRegressor`, or ``pydmd.DMDBase``.
-        In the latter case, the pydmd object must have both a ``fit``
-        and a ``predict`` method.
+        regressor: regressor object, optional (default: `DMD`)
+            The regressor used to learn the Koopman operator from the observables.
+            `regressor` can either extend the `pykoopman.regression.BaseRegressor`,
+            or `pydmd.DMDBase`.
+            In the latter case, the pydmd object must have both a `fit`
+            and a `predict` method.
 
-    quiet: booolean, optional (default False)
-        Whether or not warnings should be silenced during fitting.
+        quiet: boolean, optional (default: False)
+            Whether or not warnings should be silenced during fitting.
 
-    Attributes
-    ----------
-    model: sklearn.pipeline.Pipeline
-        Internal representation of the forward model.
-        Applies the observables and the regressor.
+    Attributes:
+        model: sklearn.pipeline.Pipeline
+            Internal representation of the forward model.
+            Applies the observables and the regressor.
 
-    n_input_features_: int
-        Number of input features before computing observables.
+        n_input_features_: int
+            Number of input features before computing observables.
 
-    n_output_features_: int
-        Number of output features after computing observables.
+        n_output_features_: int
+            Number of output features after computing observables.
 
-    n_control_features_: int
-        Number of control features used as input to the system.
+        n_control_features_: int
+            Number of control features used as input to the system.
 
-    time: dictionary
-        Time vector properties.
+        time: dictionary
+            Time vector properties.
     """
 
     def __init__(self, observables=None, regressor=None, quiet=False):
+        """Constructor for the Koopman class.
+
+        Args:
+            observables: observables object, optional
+                (default: `pykoopman.observables.Identity`)
+                Map(s) to apply to raw measurement data before estimating the
+                Koopman operator.
+                Must extend `pykoopman.observables.BaseObservables`.
+                The default option, `pykoopman.observables.Identity`, leaves
+                the input untouched.
+
+            regressor: regressor object, optional (default: `DMD`)
+                The regressor used to learn the Koopman operator from the observables.
+                `regressor` can either extend the `pykoopman.regression.BaseRegressor`,
+                or `pydmd.DMDBase`.
+                In the latter case, the pydmd object must have both a `fit`
+                and a `predict` method.
+
+            quiet: boolean, optional (default: False)
+                Whether or not warnings should be silenced during fitting.
+        """
         if observables is None:
             observables = Identity()
         if regressor is None:
@@ -89,32 +107,31 @@ class Koopman(BaseEstimator):
         """
         Fit the Koopman model by learning an approximate Koopman operator.
 
-        Parameters
-        ----------
-        x: numpy.ndarray, shape (n_samples, n_features)
-            Measurement data to be fit. Each row should correspond to an example
-            and each column a feature. If only x is provided, it is assumed that
-            examples are equi-spaced in time (i.e. a uniform timestep is assumed).
+        Args:
+            x: numpy.ndarray, shape (n_samples, n_features)
+                Measurement data to be fit. Each row should correspond to an example
+                and each column a feature. If only x is provided, it is assumed that
+                examples are equi-spaced in time (i.e., a uniform timestep is assumed).
 
-        y: numpy.ndarray, shape (n_samples, n_features), (default=None)
-            Target measurement data to be fit, i.e. it is assumed y = fun(x). Each row
-            should correspond to an example and each column a feature. The samples in
-            x and y are generally not required to be consecutive and equi-spaced.
+            y: numpy.ndarray, shape (n_samples, n_features), optional (default: None)
+                Target measurement data to be fit, i.e., it is assumed y = fun(x). Each
+                row should correspond to an example and each column a feature. The
+                samples in x and y are generally not required to be consecutive and
+                equi-spaced.
 
-        u: numpy.ndarray, shape (n_samples, n_control_features), (default=None)
-            Control/actuation/external parameter data. Each row should correspond
-            to one sample and each column a control variable or feature.
-            The control variable may be amplitude of an actuator or an external,
-            time-varying parameter. It is assumed that samples in u occur at the
-            time instances of the corresponding samples in x,
-            e.g. x(t+1) = fun(x(t), u(t)).
+            u: numpy.ndarray, shape (n_samples, n_control_features), optional (default:
+                None) Control/actuation/external parameter data. Each row should
+                correspond to one sample and each column a control variable or feature.
+                The control variable may be the amplitude of an actuator or an external,
+                time-varying parameter. It is assumed that samples in u occur at the
+                time instances of the corresponding samples in x,
+                e.g., x(t+1) = fun(x(t), u(t)).
 
-        dt: float, (default=1)
-            Time step between samples
+            dt: float, optional (default: 1)
+                Time step between samples
 
-        Returns
-        -------
-        self: returns a fit ``Koopman`` instance
+        Returns:
+            self: returns a fit `Koopman` instance
         """
         x = validate_input(x)
 
@@ -195,49 +212,44 @@ class Koopman(BaseEstimator):
         """
         Predict the state one timestep in the future.
 
-        Parameters
-        ----------
-        x: numpy.ndarray, shape (n_samples, n_input_features)
-            Current state.
+        Args:
+            x: numpy.ndarray, shape (n_samples, n_input_features)
+                Current state.
 
-        u: numpy.ndarray, shape (n_samples, n_control_features), \
+            u: numpy.ndarray, shape (n_samples, n_control_features),
                 optional (default None)
-            Time series of external actuation/control.
+                Time series of external actuation/control.
 
-        Returns
-        -------
-        y: numpy.ndarray, shape (n_samples, n_input_features)
-            Predicted state one timestep in the future.
+        Returns:
+            y: numpy.ndarray, shape (n_samples, n_input_features)
+                Predicted state one timestep in the future.
         """
 
         check_is_fitted(self, "n_output_features_")
         return self.observables.inverse(self._step(x, u))
 
     def simulate(self, x0, u=None, n_steps=1):
-        """
-        Simulate an initial state forward in time with the learned Koopman model.
+        """Simulate an initial state forward in time with the learned Koopman model.
 
-        Parameters
-        ----------
-        x0: numpy.ndarray, shape (n_input_features,) or \
+        Args:
+            x0: numpy.ndarray, shape (n_input_features,) or
                 (n_consumed_samples + 1, n_input_features)
-            Initial state from which to simulate.
-            If using :code:`TimeDelay` observables, ``x0`` should contain
-            enough examples to compute all required time delays,
-            i.e. ``n_consumed_samples + 1``.
+                Initial state from which to simulate.
+                If using TimeDelay observables, `x0` should contain
+                enough examples to compute all required time delays,
+                i.e., `n_consumed_samples + 1`.
 
-        u: numpy.ndarray, shape (n_samples, n_control_features), \
+            u: numpy.ndarray, shape (n_samples, n_control_features),
                 optional (default None)
-            Time series of external actuation/control.
+                Time series of external actuation/control.
 
-        n_steps: int, optional (default 1)
-            Number of forward steps to be simulated.
+            n_steps: int, optional (default 1)
+                Number of forward steps to be simulated.
 
-        Returns
-        -------
-        y: numpy.ndarray, shape (n_steps, n_input_features)
-            Simulated states.
-            Note that ``y[0, :]`` is one timestep ahead of ``x0``.
+        Returns:
+            y: numpy.ndarray, shape (n_steps, n_input_features)
+                Simulated states.
+                Note that `y[0, :]` is one timestep ahead of `x0`.
         """
         check_is_fitted(self, "n_output_features_")
         # Could have an option to only return the end state and not all
@@ -275,41 +287,35 @@ class Koopman(BaseEstimator):
         return y
 
     def get_feature_names(self, input_features=None):
-        """
-        Get the names of the individual features constituting the observables.
+        """Get the names of the individual features constituting the observables.
 
-        Parameters
-        ----------
-        input_features: list of string, length n_input_features, \
+        Args:
+            input_features: list of string, length n_input_features,
                 optional (default None)
-            String names for input features, if available. By default,
-            the names "x0", "x1", ... ,"xn_input_features" are used.
+                String names for input features, if available. By default,
+                the names "x0", "x1", ..., "xn_input_features" are used.
 
-        Returns
-        -------
-        output_feature_names: list of string, length n_ouput_features
-            Output feature names.
+        Returns:
+            output_feature_names: list of string, length n_output_features
+                Output feature names.
         """
         check_is_fitted(self, "n_input_features_")
         return self.observables.get_feature_names(input_features=input_features)
 
     def _step(self, x, u=None):
-        """
-        Map x one timestep forward in the space of observables.
+        """Map x one timestep forward in the space of observables.
 
-        Parameters
-        ----------
-        x: numpy.ndarray, shape (n_samples, n_input_features)
-            State vectors to be stepped forward.
+        Args:
+            x: numpy.ndarray, shape (n_samples, n_input_features)
+                State vectors to be stepped forward.
 
-        u: numpy.ndarray, shape (n_samples, n_control_features), \
+            u: numpy.ndarray, shape (n_samples, n_control_features),
                 optional (default None)
-            Time series of external actuation/control.
+                Time series of external actuation/control.
 
-        Returns
-        -------
-        X': numpy.ndarray, shape (n_samples, self.n_output_features_)
-            Observables one timestep after x.
+        Returns:
+            X': numpy.ndarray, shape (n_samples, self.n_output_features_)
+                Observables one timestep after x.
         """
         check_is_fitted(self, "n_output_features_")
 
@@ -335,27 +341,31 @@ class Koopman(BaseEstimator):
             return self._pipeline.predict(X=x, u=u)
 
     def phi(self, x_col):
-        """x_col is a column vector: shape (n_features, n_samples)"""
+        """Compute the feature matrix phi(x) given `x_col`.
+
+        Args:
+            x_col: numpy.ndarray, shape (n_features, n_samples)
+                State vectors to be evaluated for phi.
+
+        Returns:
+            phi: numpy.ndarray, shape (n_samples, self.n_output_features_)
+                Value of phi evaluated at input `x_col`.
+        """
         x = x_col.T
         y = self.observables.transform(x)
         phi = self._pipeline.steps[-1][1]._compute_phi(y.T)
         return phi
 
     def psi(self, x_col):
-        """
-        Compute Koopman psi(x) given `x_col`
+        """Compute the Koopman psi(x) given `x_col`.
 
-        `x_col` is a column vector
+        Args:
+            x_col: numpy.ndarray, shape (n_features, n_samples)
+                State vectors to be evaluated for psi.
 
-        Parameters
-        ----------
-        z: numpy.ndarray, shape (n_input_features, n_samples)
-            State vectors to be evaluated for psi
-
-        Returns
-        -------
-        eigen_phi: numpy.ndarray, shape (n_samples, self.n_output_features_)
-            Value of psi evaluated at input `z`
+        Returns:
+            eigen_phi: numpy.ndarray, shape (n_samples, self.n_output_features_)
+                Value of psi evaluated at input `x_col`.
         """
         x = x_col.T
         y = self.observables.transform(x)
@@ -364,10 +374,10 @@ class Koopman(BaseEstimator):
 
     @property
     def A(self):
-        """Returns the state transition matrix `A`
+        """Returns the state transition matrix `A`.
 
-        The state transition matrix A satisfies y' = Ay or y' = Ay + Bu, respectively,
-        where y = g(x) and y is a low-rank representation.
+        The state transition matrix A satisfies y' = Ay or y' = Ay + Bu,
+        respectively, where y = g(x) and y is a low-rank representation.
         """
         check_is_fitted(self, "_pipeline")
         if isinstance(self.regressor, DMDBase):
@@ -379,10 +389,10 @@ class Koopman(BaseEstimator):
 
     @property
     def B(self):
-        """Returns the control matrix `B`
+        """Returns the control matrix `B`.
 
         The control matrix (or vector) B satisfies y' = Ay + Bu.
-        y is the reduced system state
+        y is the reduced system state.
         """
         check_is_fitted(self, "_pipeline")
         if isinstance(self.regressor, DMDBase):
@@ -391,7 +401,10 @@ class Koopman(BaseEstimator):
 
     @property
     def C(self):
-        """Return the measurement matrix (or vector) C satisfies x = C*phi_r"""
+        """Returns the measurement matrix (or vector) C.
+
+        The measurement matrix C satisfies x = C * phi_r.
+        """
         check_is_fitted(self, "_pipeline")
         # if not isinstance(self.observables, RadialBasisFunction):
         #     raise ValueError("this type of self.observable has no C")
@@ -404,7 +417,7 @@ class Koopman(BaseEstimator):
 
     @property
     def W(self):
-        """Returns Koopman modes"""
+        """Returns the Koopman modes."""
 
         check_is_fitted(self, "_pipeline")
         # return self.C @ self._pipeline.steps[-1][1].unnormalized_modes
@@ -412,40 +425,52 @@ class Koopman(BaseEstimator):
 
     @property
     def _regressor_eigenvectors(self):
+        """Returns the eigenvectors of the regressor."""
         check_is_fitted(self, "_pipeline")
         return self._pipeline.steps[-1][1].eigenvectors_
 
     @property
     def lamda(self):
-        """
-        Discrete-time Koopman lamda obtained from spectral decomposition
-        of the Koopman matrix
-        """
+        """Returns the discrete-time Koopman lambda obtained from spectral
+        decomposition."""
         check_is_fitted(self, "_pipeline")
         return np.diag(self._pipeline.steps[-1][1].eigenvalues_)
 
     @property
     def lamda_array(self):
+        """Returns the discrete-time Koopman lambda as an array."""
         check_is_fitted(self, "_pipeline")
         return np.diag(self.lamda) + 0j
 
     @property
     def continuous_lamda_array(self):
+        """Returns the continuous-time Koopman lambda as an array."""
         check_is_fitted(self, "_pipeline")
         return np.log(self.lamda_array) / self.time["dt"]
 
     @property
     def ur(self):
-        """
-        Returns the projection matrix Ur
-        """
+        """Returns the projection matrix Ur."""
         check_is_fitted(self, "_pipeline")
         return self._pipeline.steps[-1][1].ur
 
     def validity_check(self, t, x):
-        """
-        Validity check (i.e. linearity check ) of
-        eigenfunctions phi(x(t)) == phi(x(0))*exp(lambda*t)
+        """Perform a validity check of eigenfunctions.
+
+        The validity check tests the linearity of eigenfunctions phi(x(t)) == phi(x(0))
+        * exp(lambda*t).
+
+        Args:
+            t: numpy.ndarray, shape (n_samples,)
+                Time vector.
+            x: numpy.ndarray, shape (n_samples, n_input_features)
+                State vectors to be checked.
+
+        Returns:
+            efun_index: list
+                Sorted indices of eigenfunctions based on linearity error.
+            linearity_error: list
+                Linearity error for each eigenfunction.
         """
 
         psi = self.psi(x.T)
@@ -463,34 +488,23 @@ class Koopman(BaseEstimator):
         return efun_index, linearity_error
 
     def score(self, x, y=None, cast_as_real=True, metric=r2_score, **metric_kws):
-        """
-        Score the model prediction for the next timestep.
-        Parameters
-        ----------
-        x: numpy.ndarray, shape (n_samples, n_input_features)
-            State measurements.
-            Each row should correspond to the system state at some point
-            in time.
-            If ``y`` is not passed, then it is assumed that the examples are
-            equi-spaced in time and are given in sequential order.
-            If ``y`` is passed, then this assumption need not hold.
-        y: numpy.ndarray, shape (n_samples, n_input_features), optional \
-                (default None)
-            State measurements one timestep in the future.
-            Each row of this array should give the corresponding row in x advanced
-            forward in time by one timestep.
-            If None, the rows of ``x`` are used to construct ``y``.
-        cast_as_real: bool, optional (default True)
-            Whether to take the real part of predictions when computing the score.
-            Many Scikit-learn metrics do not support complex numbers.
-        metric: callable, optional (default ``r2_score``)
-            The metric function used to score the model predictions.
-        metric_kws: dict, optional
-            Optional parameters to pass to the metric function.
-        Returns
-        -------
-        score: float
-            Metric function value for the model predictions at the next timestep.
+        """Score the model predictions for the next timestep.
+
+        Parameters:
+            x: numpy.ndarray, shape (n_samples, n_input_features)
+                State measurements.
+            y: numpy.ndarray, shape (n_samples, n_input_features), optional
+                (default None). State measurements one timestep in the future.
+            cast_as_real: bool, optional (default True)
+                Whether to take the real part of predictions when computing the score.
+            metric: callable, optional (default r2_score)
+                The metric function used to score the model predictions.
+            metric_kws: dict, optional
+                Optional parameters to pass to the metric function.
+
+        Returns:
+            score: float
+                Metric function value for the model predictions at the next timestep.
         """
         check_is_fitted(self, "n_output_features_")
         x = validate_input(x)
@@ -526,9 +540,11 @@ class Koopman(BaseEstimator):
                 return metric(y, self.predict(x), **metric_kws)
 
     def _observable(self):
+        """Returns the observable transformation."""
         return self._pipeline.steps[0][1]
 
     def _regressor(self):
+        """Returns the fitted regressor."""
         # this can access the fitted regressor
         # todo: future we need to figure out a way to do time delay multiple
         #  trajectories DMD

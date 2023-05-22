@@ -1,4 +1,4 @@
-"""module for pruning Koopman models"""
+"""Module for pruning Koopman models."""
 from __future__ import annotations
 
 import numpy as np
@@ -8,30 +8,35 @@ from pykoopman.koopman import Koopman
 
 
 class PrunedKoopman:
-    """Prune the given original Koopman `model` at `sweep_index`
+    """Prune the given original Koopman `model` at `sweep_index`.
 
-    Parameters
-    ----------
-    model : Koopman
-        An instance of `pykoopman.koopman.Koopman`
+    Parameters:
+        model (Koopman): An instance of `pykoopman.koopman.Koopman`.
+        sweep_index (np.ndarray): Selected indices in the original Koopman model.
+        dt (float): Time step used in the original model.
 
-    sweep_index : numpy.ndarray
-        selected indices in the original Koopman model
+    Attributes:
+        sweep_index (np.ndarray): Selected indices in the original Koopman model.
+        lamda_ (np.ndarray): Diagonal matrix that contains the selected eigenvalues.
+        original_model (Koopman): An instance of `pykoopman.koopman.Koopman`.
+        W_ (np.ndarray): Matrix that maps selected Koopman eigenfunctions back to the
+            system state.
 
-    Attributes
-    ----------
-    sweep_index : numpy.ndarray
-        selected indices in the original Koopman model
-
-    lamda_ : numpy.ndarray
-        The diagonal matrix that contains the selected lamda
-
-    original_model : Koopman
-        An instance of `pykoopman.koopman.Koopman`
-
-    V_ : numpy.ndarray
-        The matrix that maps selected Koopman eigenfunctions
-        back to the system state :math:`x = C \\phi`.
+    Methods:
+        fit(x): Fit the pruned model to the training data `x`.
+        predict(x): Predict the system state at the next time stamp given `x`.
+        psi(x_col): Evaluate the selected eigenfunctions at a given state `x`.
+        phi(x_col): **Not implemented**.
+        ur: **Not implemented**.
+        A: **Not implemented**.
+        B: **Not implemented**.
+        C: Property. Returns `NotImplementedError`.
+        W: Property. Returns the matrix that maps the selected Koopman eigenfunctions
+            back to the system state.
+        lamda: Property. Returns the diagonal matrix of selected eigenvalues.
+        lamda_array: Property. Returns the selected eigenvalues as a 1D array.
+        continuous_lamda_array: Property. Returns the selected eigenvalues in
+            continuous-time as a 1D array.
     """
 
     def __init__(self, model: Koopman, sweep_index: np.ndarray, dt):
@@ -156,6 +161,3 @@ class PrunedKoopman:
     def continuous_lamda_array(self):
         check_is_fitted(self, "_pipeline")
         return np.log(self.lamda_array) / self.time["dt"]
-
-    # TODO: implement `simulate`, `validity_check`, `score`
-    # TODO: implement sparsification for controlled case.

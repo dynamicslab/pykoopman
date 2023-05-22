@@ -21,96 +21,57 @@ class KDMD(BaseRegressor):
 
     See the following reference for more details:
 
-        `Williams, M. O., Rowley, C. W., & Kevrekidis, I. G. (2014).
-        "A kernel-based approach to data-driven Koopman spectral analysis."
-        arXiv preprint arXiv:1411.2260. <https://arxiv.org/pdf/1411.2260.pdf> `_
+    `Williams, M. O., Rowley, C. W., & Kevrekidis, I. G. (2014).
+    "A kernel-based approach to data-driven Koopman spectral analysis."
+    arXiv preprint arXiv:1411.2260. <https://arxiv.org/pdf/1411.2260.pdf>`
 
-    Parameters
-    ----------
-    svd_rank : int
-        the rank for the truncation; If 0, the method computes
-        the optimal rank and uses it for truncation; if positive interger,
-        the method uses the argument for the truncation; if float between 0
-        and 1, the rank is the number of the biggest singular values that
-        are needed to reach the 'energy' specified by `svd_rank`; if -1,
-        the method does not compute truncation. Default is 0.
+    Args:
+        svd_rank (int): The rank for the truncation. If 0, the method computes
+            the optimal rank and uses it for truncation. If positive integer,
+            the method uses the argument for the truncation. If float between 0
+            and 1, the rank is the number of the biggest singular values that
+            are needed to reach the 'energy' specified by `svd_rank`. If -1,
+            the method does not compute truncation. Default is 0.
+        tlsq_rank (int): The rank for the truncation. If 0, the method does not
+            compute any noise reduction. If positive number, the method uses the
+            argument for the SVD truncation used in the TLSQ method.
+        forward_backward (bool): If True, the low-rank operator is computed
+            like in fbDMD (reference: https://arxiv.org/abs/1507.02264).
+            Default is False.
+        tikhonov_regularization (bool or None): Tikhonov parameter for the
+            regularization. If None, no regularization is applied. If float,
+            it is used as the λ Tikhonov parameter.
+        kernel (sklearn.gaussian_process.Kernel): An instance of kernel from sklearn.
 
-    tlsq_rank : int
-        the rank for the truncation; If 0, the method
-        does not compute any noise reduction; if positive number, the
-        method uses the argument for the SVD truncation used in the TLSQ
-        method.
-
-    forward_backward : bool
-        If `True`, the low-rank operator is computed
-        like in fbDMD (reference: https://arxiv.org/abs/1507.02264). Default is
-        False.
-
-    tikhonov_regularization : bool or NoneType, default=None
-        Tikhonov parameter for the regularization.
-        If `None`, no regularization is applied, if `float`, it is used as the
-        :math:`\\lambda` tikhonov parameter.
-
-    kernel : sklearn.gaussian_process.Kernel
-        An instance of kernel from sklearn
-
-    Attributes
-    ----------
-    svd_rank : int
-        the rank for the truncation
-
-    tlsq_rank : int
-        the rank for the truncation;
-
-    forward_backward : bool
-        If `True`, the low-rank operator is computed
-        like in fbDMD (reference: https://arxiv.org/abs/1507.02264). Default is
-        False.
-
-    tikhonov_regularization : bool or NoneType, default=None
-        Tikhonov parameter for the regularization.
-        If `None`, no regularization is applied, if `float`, it is used as the
-        :math:`\\lambda` tikhonov parameter.
-
-    kernel : sklearn.gaussian_process.Kernel
-        An instance of kernel from sklearn
-
-    n_samples_ : int
-        Number of samples in KDMD
-
-    n_input_features_ : int
-        Dimension of input features, i.e., the dimension of each sample
-
-    _snapshots : numpy.ndarray, shape (n_input_features_, n_samples_)
-        Column-wise data matrix
-
-    _snapshots_shape : tuple
-        Shape of column-wise data matrix
-
-    _X : numpy.ndarray, shape (n_input_features_, n_samples)
-        Training features columnwise arranged. This is needed in KDMD in
-         order to perform prediction, since KDMD is a nonparametric model.
-
-    _Y : numpy.ndarray, shape (n_input_features_, n_samples)
-        Training target, columnwise arranged.
-
-    _coef_ : numpy.ndarray, shape (svd_rank, svd_rank)
-        reduced Koopman state transition matrix
-
-    _eigenvalues_ : numpy.ndarray, shape (svd_rank,)
-        Koopman lamda
-
-    _eigenvectors_ : numpy.ndarray, shape (svd_rank, svd_rank)
-        Koopman eigenvectors
-
-    _unnormalized_modes : numpy.ndarray, shape (svd_rank, n_input_features_)
-        Koopman V
-
-    _state_matrix_ : numpy.ndarray, shape (svd_rank, svd_rank)
-        reduced Koopman state transition matrix
-
-    self.C : numpy.ndarray, shape (svd_rank, n_samples_)
-        linear matrix that maps kernel product features to eigenfunctions
+    Attributes:
+        svd_rank (int): The rank for the truncation.
+        tlsq_rank (int): The rank for the truncation.
+        forward_backward (bool): If True, the low-rank operator is computed
+            like in fbDMD (reference: https://arxiv.org/abs/1507.02264).
+        tikhonov_regularization (bool or None): Tikhonov parameter for the
+            regularization.
+        kernel (sklearn.gaussian_process.Kernel): An instance of kernel from sklearn.
+        n_samples_ (int): Number of samples in KDMD.
+        n_input_features_ (int): Dimension of input features, i.e., the dimension
+            of each sample.
+        _snapshots (numpy.ndarray): Column-wise data matrix of shape
+            (n_input_features_, n_samples_).
+        _snapshots_shape (tuple): Shape of column-wise data matrix.
+        _X (numpy.ndarray): Training features column-wise arranged, needed for
+            prediction. Shape is (n_input_features_, n_samples).
+        _Y (numpy.ndarray): Training target, column-wise arranged. Shape is
+            (n_input_features_, n_samples).
+        _coef_ (numpy.ndarray): Reduced Koopman state transition matrix of shape
+            (svd_rank, svd_rank).
+        _eigenvalues_ (numpy.ndarray): Koopman lambda of shape (svd_rank,).
+        _eigenvectors_ (numpy.ndarray): Koopman eigenvectors of shape
+            (svd_rank, svd_rank).
+        _unnormalized_modes (numpy.ndarray): Koopman V of shape
+            (svd_rank, n_input_features_).
+        _state_matrix_ (numpy.ndarray): Reduced Koopman state transition matrix
+            of shape (svd_rank, svd_rank).
+        self.C (numpy.ndarray): Linear matrix that maps kernel product features
+            to eigenfunctions of shape (svd_rank, n_samples_).
     """
 
     def __init__(
@@ -121,7 +82,34 @@ class KDMD(BaseRegressor):
         tikhonov_regularization=None,
         kernel=RBF(),
     ):
+        """
+        Kernel Dynamic Mode Decomposition.
 
+        Args:
+            svd_rank (int, optional): The rank for the truncation.
+                If set to 0, the method computes the optimal rank
+                and uses it for truncation. If set to a positive integer,
+                the method uses the specified rank for truncation.
+                If set to a float between 0 and 1, the rank is determined
+                based on the specified energy level. If set to -1, no
+                truncation is performed. Default is 1.0.
+            tlsq_rank (int, optional): The rank for the truncation used
+                in the total least squares preprocessing. If set to 0,
+                no noise reduction is performed. If set to a positive integer,
+                the method uses the specified rank for the SVD truncation
+                in the TLSQ method. Default is 0.
+            forward_backward (bool, optional): Whether to compute the
+                low-rank operator using the forward-backward method similar
+                to fbDMD. If set to True, the low-rank operator is computed
+                with forward-backward DMD. If set to False, standard DMD is used.
+                Default is False.
+            tikhonov_regularization (float or None, optional): Tikhonov
+                regularization parameter for regularization. If set to None,
+                no regularization is applied. If set to a float, it is used
+                as the regularization parameter. Default is None.
+            kernel (Kernel, optional): An instance of the kernel class from
+                sklearn.gaussian_process. Default is RBF().
+        """
         self.svd_rank = svd_rank
         self.tlsq_rank = tlsq_rank
         self.forward_backward = forward_backward
@@ -135,20 +123,21 @@ class KDMD(BaseRegressor):
 
     def fit(self, x, y=None, dt=1):
         """
-        Parameters
-        ----------
-        x: numpy ndarray, shape (n_samples, n_features)
-            Measurement data input
+        Fits the KDMD model to the provided training data.
 
-        y: numpy ndarray, shape (n_samples, n_features), default=None
-            Measurement data output to be fitted
+        Args:
+            x: numpy.ndarray, shape (n_samples, n_features)
+                Measurement data input.
 
-        dt : float
-            Time interval between `x` and `y`
+            y: numpy.ndarray, shape (n_samples, n_features), optional
+                Measurement data output to be fitted. Defaults to None.
 
-        Returns
-        -------
-        self : KDMD
+            dt: float, optional
+                Time interval between `x` and `y`. Defaults to 1.
+
+        Returns:
+            KDMD:
+                The fitted KDMD instance.
         """
 
         # if y is not None:
@@ -187,15 +176,15 @@ class KDMD(BaseRegressor):
 
     def predict(self, x):
         """
-        Parameters
-        ----------
-        x : numpy ndarray, shape (n_samples, n_features)
-            Measurement data upon which to base prediction.
+        Predicts the future states based on the given input data.
 
-        Returns
-        -------
-        y : numpy ndarray, shape (n_samples, n_features)
-            Prediction of x one timestep in the future.
+        Args:
+            x: numpy.ndarray, shape (n_samples, n_features)
+                Measurement data upon which to base the prediction.
+
+        Returns:
+            numpy.ndarray, shape (n_samples, n_features)
+                Prediction of the future states.
         """
 
         check_is_fitted(self, "coef_")
@@ -206,7 +195,17 @@ class KDMD(BaseRegressor):
         return np.real(x_next_T).T
 
     def _compute_phi(self, x_col):
-        """Returns `pji(x)` given `x`"""
+        """
+        Computes the phi(x) given x.
+
+        Args:
+            x_col: numpy.ndarray, shape (n_samples, n_features)
+                Measurement data upon which to compute phi values.
+
+        Returns:
+            numpy.ndarray, shape (n_samples, n_input_features_)
+                Value of phi at x.
+        """
         if x_col.ndim == 1:
             x_col = x_col.reshape(-1, 1)
         psi = self._compute_psi(x_col)
@@ -215,7 +214,15 @@ class KDMD(BaseRegressor):
 
     def _compute_psi(self, x_col):
         """
-        input data x is a row-wise data
+        Computes the psi(x) given x.
+
+        Args:
+            x_col: numpy.ndarray, shape (n_samples, n_features)
+                Measurement data upon which to compute psi values.
+
+        Returns:
+            numpy.ndarray, shape (n_samples, n_input_features_)
+                Value of psi at x.
         """
         # compute psi - one column if x is a row
         if x_col.ndim == 1:
@@ -224,62 +231,98 @@ class KDMD(BaseRegressor):
 
     @property
     def coef_(self):
+        """
+        Getter property for the coef_ attribute.
+
+        Returns:
+            numpy.ndarray, shape (svd_rank, svd_rank)
+                Reduced Koopman state transition matrix.
+        """
         check_is_fitted(self, "_coef_")
         return self._coef_
 
     @property
     def state_matrix_(self):
+        """
+        Getter property for the state_matrix_ attribute.
+
+        Returns:
+            numpy.ndarray, shape (svd_rank, svd_rank)
+                Reduced Koopman state transition matrix.
+        """
         check_is_fitted(self, "_state_matrix_")
         return self._state_matrix_
 
     @property
     def eigenvalues_(self):
+        """
+        Getter property for the eigenvalues_ attribute.
+
+        Returns:
+            numpy.ndarray, shape (svd_rank,)
+                Koopman eigenvalues.
+        """
         check_is_fitted(self, "_eigenvalues_")
         return self._eigenvalues_
 
     @property
     def eigenvectors_(self):
+        """
+        Getter property for the eigenvectors_ attribute.
+
+        Returns:
+            numpy.ndarray, shape (svd_rank, svd_rank)
+                Koopman eigenvectors.
+        """
         check_is_fitted(self, "_eigenvectors_")
         return self._eigenvectors_
 
     @property
     def unnormalized_modes(self):
+        """
+        Getter property for the unnormalized_modes attribute.
+
+        Returns:
+            numpy.ndarray, shape (svd_rank, n_input_features_)
+                Koopman unnormalized modes.
+        """
         check_is_fitted(self, "_unnormalized_modes")
         return self._unnormalized_modes
 
     @property
     def ur(self):
+        """
+        Getter property for the ur attribute.
+
+        Returns:
+            numpy.ndarray, shape (n_samples_, n_input_features_)
+                Linear matrix that maps kernel product features to eigenfunctions.
+        """
         check_is_fitted(self, "_ur")
         return self._ur
 
     def _regressor_compute_kdmdoperator(self, X, Y):
-        """Compute KDMD operator given row-wise data
-
-        So we can directly use existing formulas in the original reference.
-
-        Parameters
-        ----------
-        X : numpy.ndarray, shape (n_samples_, n_input_features_)
-            Training data input
-
-        Y : numpy.ndarray, shape (n_samples_, n_input_features_)
-            Training data target output
-
-        Returns
-        -------
-        koopman_matrix : numpy.ndarray, shape (svd_rank, svd_rank)
-            reduced Koopman state transition matrix
-
-        koopman_eigvals : numpy.ndarray, shape (svd_rank,)
-            reduced Koopman lamda
-
-        koopman_eigenvectors : numpy.ndarray, shape (svd_rank, svd_rank)
-            reduced Koopman eigenvectors
-
-        unnormalized_modes : numpy.ndarray, shape (svd_rank, n_input_features_)
-            Koopman V
         """
+        Computes the KDMD operator given input data X and target data Y.
 
+        Args:
+            X: numpy.ndarray, shape (n_samples_, n_input_features_)
+                Training data input.
+            Y: numpy.ndarray, shape (n_samples_, n_input_features_)
+                Training data target output.
+
+        Returns:
+            list
+                A list containing the following elements:
+                - koopman_matrix: numpy.ndarray, shape (svd_rank, svd_rank)
+                    Reduced Koopman state transition matrix.
+                - koopman_eigvals: numpy.ndarray, shape (svd_rank,)
+                    Koopman eigenvalues.
+                - koopman_eigenvectors: numpy.ndarray, shape (svd_rank, svd_rank)
+                    Koopman eigenvectors.
+                - unnormalized_modes: numpy.ndarray, shape (svd_rank, n_input_features_)
+                    Koopman unnormalized modes.
+        """
         # compute kernel K(X,X)
         # since sklearn kernel function takes rowwise collected data.
         KXX = self.kernel(X, X)
@@ -348,6 +391,14 @@ class KDMD(BaseRegressor):
         ]
 
     def _set_initial_time_dictionary(self, time_dict):
+        """
+        Sets the initial time dictionary.
+
+        Args:
+            time_dict: dict
+                Dictionary containing the time information with keys 't0', 'tend',
+                and 'dt'.
+        """
         if not ("t0" in time_dict and "tend" in time_dict and "dt" in time_dict):
             raise ValueError('time_dict must contain the keys "t0", "tend" and "dt".')
         if len(time_dict) > 3:
@@ -360,25 +411,21 @@ class KDMD(BaseRegressor):
 
 
 def _col_major_2darray(X):
-    """
-    Private method that takes as input the snapshots and stores them into a
-    2D matrix, by column. If the input data is already formatted as 2D
-    array, the method saves it, otherwise it also saves the original
-    snapshots shape and reshapes the snapshots.
+    def _col_major_2darray(X):
+        """
+        Converts the input snapshots into a 2D matrix by column-major ordering.
 
-    Parameters
-    ----------
-    X : int or numpy.ndarray
-        the input snapshots
+        Args:
+            X: int or numpy.ndarray
+                The input snapshots.
 
-    Returns
-    -------
-    snapshots : numpy.ndarray
-        the shape of original snapshots
+        Returns:
+            snapshots: numpy.ndarray
+                The 2D matrix that contains the flattened snapshots.
 
-    snapshots_shape : tuple
-        the 2D matrix that contains the flatten snapshots
-    """
+            snapshots_shape: tuple
+                The shape of the original snapshots.
+        """
 
     # If the data is already 2D ndarray
     if isinstance(X, np.ndarray) and X.ndim == 2:

@@ -14,24 +14,26 @@ class Identity(BaseObservables):
     """
 
     def __init__(self):
+        """
+        Initialize the Identity class.
+
+        This constructor initializes the Identity class which simply returns its input
+        when transformed.
+        """
         super().__init__()
         self.include_state = True
 
     def fit(self, x, y=None):
         """
-        Fit to measurement data.
+        Fit the model to the provided measurement data.
 
-        Parameters
-        ----------
-        x: array-like, shape (n_samples, n_input_features)
-            Measurement data to be fit.
+        Args:
+            x (array-like): The measurement data to be fit. It must have a shape of
+                (n_samples, n_input_features).
+            y (None): This parameter is retained for sklearn compatibility.
 
-        y: None
-            Dummy parameter retained for sklearn compatibility.
-
-        Returns
-        -------
-        self: a fit :class:`pykoopman.observables.Identity` instance
+        Returns:
+            self: Returns a fit instance of the class `pykoopman.observables.Identity`.
         """
         x = validate_input(x)
         self.n_input_features_ = self.n_output_features_ = x.shape[1]
@@ -42,17 +44,15 @@ class Identity(BaseObservables):
 
     def transform(self, x):
         """
-        Apply Identity transformation to data.
+        Apply Identity transformation to the provided data.
 
-        Parameters
-        ----------
-        x: array-like, shape (n_samples, n_input_features)
-            Measurement data to be transformed.
+        Args:
+            x (array-like): The measurement data to be transformed. It must have a
+                shape of (n_samples, n_input_features).
 
-        Returns
-        -------
-        y: array-like, shape (n_samples, n_input_features)
-            Transformed data (same as x in this case).
+        Returns:
+            array-like: Returns the transformed data which is the same as the input
+                data in this case.
         """
         check_is_fitted(self, "n_input_features_")
         return x
@@ -61,17 +61,13 @@ class Identity(BaseObservables):
         """
         Get the names of the output features.
 
-        Parameters
-        ----------
-        input_features: list of string, length n_input_features,\
-         optional (default None)
-            String names for input features, if available. By default,
-            the names "x0", "x1", ... ,"xn_input_features" are used.
+        Args:
+            input_features (list of string, optional): The string names for input
+                features, if available. By default, the names "x0", "x1", ... ,
+                "xn_input_features" are used.
 
-        Returns
-        -------
-        output_feature_names: list of string, length n_ouput_features
-            Output feature names.
+        Returns:
+            list of string: Returns the output feature names.
         """
         check_is_fitted(self, "n_input_features_")
         if input_features is None:

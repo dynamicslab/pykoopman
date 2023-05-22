@@ -12,25 +12,35 @@ from sklearn.compose import TransformedTargetRegressor
 
 class EnsembleBaseRegressor(TransformedTargetRegressor):
     """
-    Wrapper class for PyKoopman regressors using ensemble or non-consecutive training
-    data.
+    This class serves as a wrapper for PyKoopman regressors that utilize ensemble or
+    non-consecutive training data.
 
-    Parameters
-    ----------
-    regressor : sklearn.base.BaseEstimator
-        A regressor object implementing ``fit`` and ``predict`` methods.
+    `EnsembleBaseRegressor` inherits from `TransformedTargetRegressor` and checks
+    whether the provided regressor object implements the `fit` and `predict` methods.
 
-    func : function
-        Function to apply to `y` before passing to :meth:`fit`. Cannot be set
-        at the same time as `transformer`. The function needs to return a
-        2-dimensional array. If `func is None`, the function used will be the
-        identity function.
+    Attributes:
+        regressor (sklearn.base.BaseEstimator): A regressor object that implements
+            `fit` and `predict` methods.
+        func (function): A function to apply to the target `y` before passing it to
+            the `fit` method. The function must return a 2-dimensional array.
+            If `func` is `None`, the identity function is used.
+        inverse_func (function): A function to apply to the prediction of the
+            regressor. This function is used to return predictions to the same space
+            as the original training labels. It must return a 2-dimensional array.
 
-    inverse_func : function
-        Function to apply to the prediction of the regressor. Cannot be set at
-        the same time as `transformer`. The function needs to return a
-        2-dimensional array. The inverse function is used to return
-        predictions to the same space of the original training labels.
+    Raises:
+        AttributeError: If the regressor does not have a callable `fit` or
+            `predict` method.
+        ValueError: If both `transformer` and functions `func`/`inverse_func`
+            are set, or if 'func' is provided while 'inverse_func' is not.
+
+    Note:
+        This class does not implement the `fit` method on its own, instead, it checks
+        the methods of the provided regressor object and raises an AttributeError if
+        the required methods are not present or not callable. It also performs some
+        pre-processing on the target values `y` before fitting the regressor, and
+        provides additional checks and warnings for the transformer and inverse
+        functions.
     """
 
     def __init__(self, regressor, func, inverse_func):
@@ -43,34 +53,29 @@ class EnsembleBaseRegressor(TransformedTargetRegressor):
             raise AttributeError("regressor does not have a callable predict method")
 
     def fit(self, X, y, **fit_params):
-        """Fit the model according to the given training data.
-
-        Parameters
-        ----------
-        X : {array-like, sparse matrix} of shape (n_samples, n_features)
-            Training vector, where `n_samples` is the number of samples and
-            `n_features` is the number of features.
-
-        y : array-like of shape (n_samples,)
-            Target values.
-
-        **fit_params : dict
-            Parameters passed to the `fit` method of the underlying
-            regressor.
-
-        Returns
-        -------
-        self : object
-            Fitted estimator.
         """
-        # y = check_array(
-        #     y,
-        #     accept_sparse=False,
-        #     force_all_finite=True,
-        #     ensure_2d=False,
-        #     dtype="numeric",
-        #     allow_nd=True,
-        # )
+        Fits the model according to the given training data.
+
+        Args:
+            X (array-like or sparse matrix of shape (n_samples, n_features)):
+                Training vector, where `n_samples` is the number of samples and
+                `n_features` is the number of features.
+            y (array-like of shape (n_samples,)): Target values.
+            **fit_params (dict): Additional parameters passed to the `fit` method of
+                the underlying regressor.
+
+        Returns:
+            self: The fitted estimator.
+
+        Raises:
+            ValueError: If 'transformer' and functions 'func'/'inverse_func' are both
+                set, or if 'func' is provided while 'inverse_func' is not.
+
+        Note:
+            This method transforms the target `y` before fitting the regressor and
+            performs additional checks and warnings for the transformer and inverse
+            functions.
+        """
 
         # store the number of dimension of the target to predict an array of
         # similar shape at predict
@@ -107,11 +112,24 @@ class EnsembleBaseRegressor(TransformedTargetRegressor):
         return self
 
     def _fit_transformer(self, y):
-        """Check transformer and fit transformer.
+        """
+        Checks the transformer and fits it.
 
-        Create the default transformer, fit it and make additional inverse
-        check on a subset (optional).
+        This method creates the default transformer if necessary, fits it, and
+        performs additional inverse checks on a subset (optional).
 
+        Args:
+            y (array-like): The target values.
+
+        Raises:
+            ValueError: If both 'transformer' and functions 'func'/'inverse_func'
+                are set, or if 'func' is provided while 'inverse_func' is not.
+
+        Note:
+            The method does not currently pass 'sample_weight' to the transformer.
+            However, if the transformer starts using 'sample_weight', the code should
+            be modified accordingly. During the consideration of the 'sample_prop'
+            feature, this is also a good use case to consider.
         """
         if self.transformer is not None and (
             self.func is not None or self.inverse_func is not None
@@ -154,97 +172,44 @@ class EnsembleBaseRegressor(TransformedTargetRegressor):
 class FunctionTransformer(TransformerMixin, BaseEstimator):
     """Constructs a transformer from an arbitrary callable.
 
-    A FunctionTransformer forwards its X (and optionally y) arguments to a
-    user-defined function or function object and returns the result of this
-    function. This is useful for stateless transformations such as taking the
-    log of frequencies, doing custom scaling, etc.
+    This class forwards its X (and optionally y) arguments to a user-defined function
+    or function object and returns the result of this function. This is useful for
+    stateless transformations such as taking the log of frequencies, doing custom
+    scaling, etc.
 
-    Note: If a lambda is used as the function, then the resulting
-    transformer will not be pickleable.
+    Note: If a lambda is used as the function, then the resulting transformer will
+        not be pickleable.
 
-    .. versionadded:: 0.17
+    Attributes:
+        func (callable): The callable to use for the transformation. This will be
+            passed the same arguments as transform, with args and kwargs forwarded.
+            If func is None, then func will be the identity function.
+        inverse_func (callable): The callable to use for the inverse transformation.
+            This will be passed the same arguments as inverse transform, with args
+            and kwargs forwarded. If inverse_func is None, then inverse_func will be
+            the identity function.
+        validate (bool): Indicate that the input X array should be checked before
+            calling func. The default is False.
+        accept_sparse (bool): Indicate that func accepts a sparse matrix as input.
+            The default is False.
+        check_inverse (bool): Whether to check that or func followed by inverse_func
+            leads to the original inputs. The default is True.
+        kw_args (dict): Dictionary of additional keyword arguments to pass to func.
+        inv_kw_args (dict): Dictionary of additional keyword arguments to pass to
+            inverse_func.
+        n_input_features_ (int): Number of features seen during fit. Defined only
+            when validate=True.
+        feature_names_in_ (ndarray): Names of features seen during fit. Defined only
+            when validate=True and X has feature names that are all strings.
 
-    Read more in the :ref:`User Guide <function_transformer>`.
-
-    Parameters
-    ----------
-    func : callable, default=None
-        The callable to use for the transformation. This will be passed
-        the same arguments as transform, with args and kwargs forwarded.
-        If func is None, then func will be the identity function.
-
-    inverse_func : callable, default=None
-        The callable to use for the inverse transformation. This will be
-        passed the same arguments as inverse transform, with args and
-        kwargs forwarded. If inverse_func is None, then inverse_func
-        will be the identity function.
-
-    validate : bool, default=False
-        Indicate that the input X array should be checked before calling
-        ``func``. The possibilities are:
-
-        - If False, there is no input validation.
-        - If True, then X will be converted to a 2-dimensional NumPy array or
-          sparse matrix. If the conversion is not possible an exception is
-          raised.
-
-        .. versionchanged:: 0.22
-           The default of ``validate`` changed from True to False.
-
-    accept_sparse : bool, default=False
-        Indicate that func accepts a sparse matrix as input. If validate is
-        False, this has no effect. Otherwise, if accept_sparse is false,
-        sparse matrix inputs will cause an exception to be raised.
-
-    check_inverse : bool, default=True
-       Whether to check that or ``func`` followed by ``inverse_func`` leads to
-       the original inputs. It can be used for a sanity check, raising a
-       warning when the condition is not fulfilled.
-
-       .. versionadded:: 0.20
-
-    kw_args : dict, default=None
-        Dictionary of additional keyword arguments to pass to func.
-
-        .. versionadded:: 0.18
-
-    inv_kw_args : dict, default=None
-        Dictionary of additional keyword arguments to pass to inverse_func.
-
-        .. versionadded:: 0.18
-
-    Attributes
-    ----------
-    n_input_features_ : int
-        Number of features seen during :term:`fit`. Defined only when
-        `validate=True`.
-
-        .. versionadded:: 0.24
-
-    feature_names_in_ : ndarray of shape (`n_input_features_`,)
-        Names of features seen during :term:`fit`. Defined only when `validate=True`
-        and `X` has feature names that are all strings.
-
-        .. versionadded:: 1.0
-
-    See Also
-    --------
-    MaxAbsScaler : Scale each feature by its maximum absolute value.
-    StandardScaler : Standardize features by removing the mean and
-        scaling to unit variance.
-    LabelBinarizer : Binarize labels in a one-vs-all fashion.
-    MultiLabelBinarizer : Transform between iterable of iterables
-        and a multilabel format.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from sklearn.preprocessing import FunctionTransformer
-    >>> transformer = FunctionTransformer(np.log1p)
-    >>> X = np.array([[0, 1], [2, 3]])
-    >>> transformer.transform(X)
-    array([[0.       , 0.6931...],
-           [1.0986..., 1.3862...]])
+    Examples:
+        >>> import numpy as np
+        >>> from sklearn.preprocessing import FunctionTransformer
+        >>> transformer = FunctionTransformer(np.log1p)
+        >>> X = np.array([[0, 1], [2, 3]])
+        >>> transformer.transform(X)
+        array([[0.       , 0.6931...],
+               [1.0986..., 1.3862...]])
     """
 
     def __init__(
@@ -258,6 +223,28 @@ class FunctionTransformer(TransformerMixin, BaseEstimator):
         kw_args=None,
         inv_kw_args=None,
     ):
+        """Initialize the FunctionTransformer instance.
+
+        Args:
+            func (callable, optional): The callable to use for the transformation.
+                This will be passed the same arguments as transform, with args and
+                kwargs forwarded. If func is None, then
+                func will be the identity function. Defaults to None.
+            inverse_func (callable, optional): The callable to use for the inverse
+                transformation. This will be passed the same arguments as inverse
+                transform, with args and kwargs forwarded. If inverse_func is None, then
+                inverse_func will be the identity function. Defaults to None.
+            validate (bool, optional): Indicate that the input X array should be
+                checked before calling func. Defaults to False.
+            accept_sparse (bool, optional): Indicate that func accepts a sparse matrix
+                as input. Defaults to False.
+            check_inverse (bool, optional): Whether to check that func followed by
+                inverse_func leads to the original inputs. Defaults to True.
+            kw_args (dict, optional): Dictionary of additional keyword arguments to
+                pass to func. Defaults to None.
+            inv_kw_args (dict, optional): Dictionary of additional keyword arguments
+                to pass to inverse_func. Defaults to None.
+        """
         self.func = func
         self.inverse_func = inverse_func
         self.validate = validate
@@ -267,13 +254,31 @@ class FunctionTransformer(TransformerMixin, BaseEstimator):
         self.inv_kw_args = inv_kw_args
 
     def _check_input(self, X, *, reset):
+        """Checks the input X. If validation is enabled, it validates the data.
+
+        Args:
+            X (array-like): Input data to be checked/validated.
+            reset (bool): Flag indicating whether to reset the validation.
+
+        Returns:
+            array-like: The original input data, possibly validated if `validate`
+                attribute is set to True.
+        """
         # if self.validate:
         #     return self._validate_data(X, accept_sparse=self.accept_sparse,
         #     reset=reset)
         return X
 
     def _check_inverse_transform(self, X):
-        """Check that func and inverse_func are the inverse."""
+        """Checks if the provided functions are the inverse of each other.
+
+        Selects a subset of X and performs a round trip transformation: forward
+        transform followed by inverse transform. Raises a warning if the round trip
+        does not return the original inputs.
+
+        Args:
+            X (array-like): Input data to be checked for inverse transform consistency.
+        """
         idx_selected = slice(None, None, max(1, X.shape[0] // 100))
         # X_round_trip = self.inverse_transform(self.transform(X[idx_selected]))
         self.inverse_transform(self.transform(X[idx_selected]))
@@ -287,22 +292,18 @@ class FunctionTransformer(TransformerMixin, BaseEstimator):
         #     )
 
     def fit(self, X, y=None):
-        """Fit transformer by checking X.
+        """Fits transformer by checking X.
 
-        If ``validate`` is ``True``, ``X`` will be checked.
+        If ``validate`` is ``True``, ``X`` will be checked. Also checks if the provided
+        functions are the inverse of each other if `check_inverse` is set to True.
 
-        Parameters
-        ----------
-        X : array-like, shape (n_samples, n_features)
-            Input array.
+        Args:
+            X (array-like): The data to fit. Shape should be (n_samples, n_features).
+            y (None, optional): Ignored. Not used, present here for API consistency by
+                convention.
 
-        y : Ignored
-            Not used, present here for API consistency by convention.
-
-        Returns
-        -------
-        self : object
-            FunctionTransformer class instance.
+        Returns:
+            FunctionTransformer: The fitted transformer.
         """
         X = self._check_input(X, reset=True)
         if self.check_inverse and not (self.func is None or self.inverse_func is None):
@@ -310,39 +311,45 @@ class FunctionTransformer(TransformerMixin, BaseEstimator):
         return self
 
     def transform(self, X):
-        """Transform X using the forward function.
+        """Transforms X using the forward function.
 
-        Parameters
-        ----------
-        X : array-like, shape (n_samples, n_features)
-            Input array.
+        Args:
+            X (array-like): The data to transform. Shape should be (n_samples,
+                n_features).
 
-        Returns
-        -------
-        X_out : array-like, shape (n_samples, n_features)
-            Transformed input.
+        Returns:
+            array-like: Transformed data with same shape as input.
         """
         X = self._check_input(X, reset=False)
         return self._transform(X, func=self.func, kw_args=self.kw_args)
 
     def inverse_transform(self, X):
-        """Transform X using the inverse function.
+        """Transforms X using the inverse function.
 
-        Parameters
-        ----------
-        X : array-like, shape (n_samples, n_features)
-            Input array.
+        Args:
+            X (array-like): The data to inverse transform. Shape should be
+                (n_samples, n_features).
 
-        Returns
-        -------
-        X_out : array-like, shape (n_samples, n_features)
-            Transformed input.
+        Returns:
+            array-like: Inverse transformed data with the same shape as input.
         """
         # if self.validate:
         #     X = check_array(X, accept_sparse=self.accept_sparse)
         return self._transform(X, func=self.inverse_func, kw_args=self.inv_kw_args)
 
     def _transform(self, X, func=None, kw_args=None):
+        """Applies the given function to the data X.
+
+        Args:
+            X (array-like): The data to transform. Shape should be (n_samples,
+                n_features).
+            func (callable, optional): The function to apply. If None, identity
+                function is used.
+            kw_args (dict, optional): Additional arguments to pass to the function.
+
+        Returns:
+            array-like: Transformed data with the same shape as input.
+        """
         if func is None:
             func = _identity
 

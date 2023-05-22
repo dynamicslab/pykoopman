@@ -16,84 +16,58 @@ from ._base import BaseRegressor
 
 class PyDMDRegressor(BaseRegressor):
     """
-    Wrapper for `pydmd` regressors.
+    PyDMDRegressor is a wrapper for `pydmd` regressors.
 
-    See the following reference for more details on `pydmd`
+    This class provides a wrapper for the `pydmd` regressor. The details about
+    `pydmd` can be found in the reference:
 
-        Demo, N., Tezzele, M., & Rozza, G. (2018). PyDMD: Python
-        dynamic mode decomposition. Journal of Open Source
-        Software, 3(22), 530.
-        <https://joss.theoj.org/papers/10.21105/joss.00530.pdf>`_
+    Demo, N., Tezzele, M., & Rozza, G. (2018). PyDMD: Python dynamic mode decomposition.
+    Journal of Open Source Software, 3(22), 530.
+    <https://joss.theoj.org/papers/10.21105/joss.00530.pdf>`_
 
-    Parameters
-    ----------
-    regressor:
-        A regressor instance from DMDBase in `pydmd`
+    Args:
+        regressor (DMDBase): A regressor instance from DMDBase in `pydmd`.
+        tikhonov_regularization (bool or None, optional): Indicates if Tikhonov
+        regularization should be applied. Defaults to None.
 
-    tikhonov_regularization: bool or NoneType
-        Whether or not to choose tikhonov regularization
-
-    Attributes
-    ----------
-    tlsq_rank : int
-        the rank for the truncation; If 0, the method
-        does not compute any noise reduction; if positive number, the
-        method uses the argument for the SVD truncation used in the TLSQ
-        method.
-
-    svd_rank : int
-        the rank for the truncation; If 0, the method computes
-        the optimal rank and uses it for truncation; if positive interger,
-        the method uses the argument for the truncation; if float between 0
-        and 1, the rank is the number of the biggest singular values that
-        are needed to reach the 'energy' specified by `svd_rank`; if -1,
-        the method does not compute truncation. Default is 0.
-
-    forward_backward : bool
-        If `True`, the low-rank operator is computed
-        like in fbDMD (reference: https://arxiv.org/abs/1507.02264). Default is
-        False.
-
-    tikhonov_regularization : bool or NoneType, default=None
-        Tikhonov parameter for the regularization.
-        If `None`, no regularization is applied, if `float`, it is used as the
-        :math:`\\lambda` tikhonov parameter.
-
-    flag_xy : bool
-        If `True`, the regressor is operating on multiple trajectories instead
-        of just one.
-
-    n_samples_ : int
-        Number of samples
-
-    n_input_features_ : int
-        Number of features, i.e., the dimension of :math:`\\phi`
-
-    _unnormalized_modes : numpy.ndarray, shape (n_input_features_, svd_rank)
-        Raw DMD V with each column as one DMD mode
-
-    _state_matrix_ : numpy.ndarray, shape (n_input_features_, n_input_features_)
-        DMD state transition matrix
-
-    _reduced_state_matrix_ : numpy.ndarray, shape (svd_rank, svd_rank)
-        Reduced DMD state transition matrix
-
-    _eigenvalues_ : numpy.ndarray, shape (n_input_features_,)
-        Identified Koopman lamda
-
-    _eigenvectors_ : numpy.ndarray, shape (n_input_features_, n_input_features_)
-        Identified Koopman eigenvectors
-
-    _coef_ : numpy.ndarray, shape (n_input_features_, n_input_features_) or
-        (n_input_features_, n_input_features_ + n_control_features_)
-        Weight vectors of the regression problem. Corresponds to either [A] or [A,B]
-
-    C : numpy.ndarray, shape (n_input_features_, n_input_features_)
-        Matrix that maps psi to the input features
-
+    Attributes:
+        tlsq_rank (int): Rank for truncation in TLSQ method. If 0, no noise reduction
+            is computed. If positive, it is used for SVD truncation.
+        svd_rank (int): Rank for truncation. If 0, optimal rank is computed and used
+            for truncation. If positive integer, it is used for truncation. If float
+            between 0 and 1, the rank is the number of the biggest singular values
+            that are needed to reach the 'energy' specified by `svd_rank`. If -1, no
+            truncation is computed.
+        forward_backward (bool): If True, the low-rank operator is computed like in
+            fbDMD.
+        tikhonov_regularization (bool or None, optional): If None, no regularization
+            is applied. If float, it is used as the Tikhonov regularization parameter.
+        flag_xy (bool): If True, the regressor is operating on multiple trajectories
+            instead of just one.
+        n_samples_ (int): Number of samples.
+        n_input_features_ (int): Number of features, i.e., the dimension of phi.
+        _unnormalized_modes (ndarray): Raw DMD V with each column as one DMD mode.
+        _state_matrix_ (ndarray): DMD state transition matrix.
+        _reduced_state_matrix_ (ndarray): Reduced DMD state transition matrix.
+        _eigenvalues_ (ndarray): Identified Koopman lambda.
+        _eigenvectors_ (ndarray): Identified Koopman eigenvectors.
+        _coef_ (ndarray): Weight vectors of the regression problem. Corresponds to
+            either [A] or [A,B].
+        C (ndarray): Matrix that maps psi to the input features.
     """
 
     def __init__(self, regressor, tikhonov_regularization=None):
+        """
+        Initializes a PyDMDRegressor instance.
+
+        Args:
+            regressor (DMDBase): A regressor instance from DMDBase in `pydmd`.
+            tikhonov_regularization (bool or None, optional): Indicates if Tikhonov
+                regularization should be applied. Defaults to None.
+
+        Raises:
+            ValueError: If regressor is not a subclass of DMDBase from pydmd.
+        """
         if not isinstance(regressor, DMDBase):
             raise ValueError("regressor must be a subclass of DMDBase from pydmd.")
         self.regressor = regressor
@@ -107,20 +81,17 @@ class PyDMDRegressor(BaseRegressor):
 
     def fit(self, x, y=None, dt=1):
         """
-        Parameters
-        ----------
-        x: numpy ndarray, shape (n_samples, n_features)
-            Measurement data input
+        Fit the PyDMDRegressor model according to the given training data.
 
-        y: numpy ndarray, shape (n_samples, n_features), default=None
-            Measurement data output to be fitted
+        Args:
+            x (np.ndarray): Measurement data input. Should be of shape (n_samples,
+                n_features).
+            y (np.ndarray, optional): Measurement data output to be fitted. Should be
+                of shape (n_samples, n_features). Defaults to None.
+            dt (float, optional): Time interval between `x` and `y`. Defaults to 1.
 
-        dt : float
-            Time interval between `x` and `y`
-
-        Returns
-        -------
-        self : PyDMDRegressor
+        Returns:
+            self : Returns the instance itself.
         """
 
         self.n_samples_, self.n_input_features_ = x.shape
@@ -176,16 +147,15 @@ class PyDMDRegressor(BaseRegressor):
 
     def predict(self, x):
         """
-        Parameters
-        ----------
-        x: numpy ndarray, shape (n_samples, n_features)
-            Measurement data upon which to base prediction.
+        Predict the future values based on the input measurement data.
 
-        Returns
-        -------
-        y: numpy ndarray, shape (n_samples, n_features)
-            Prediction of x one timestep in the future.
+        Args:
+            x (np.ndarray): Measurement data upon which to base the prediction.
+                Should be of shape (n_samples, n_features).
 
+        Returns:
+            np.ndarray: Predicted values of `x` one timestep in the future. The shape
+                is (n_samples, n_features).
         """
         if x.ndim == 1:
             x = x.reshape(1, -1)
@@ -194,24 +164,31 @@ class PyDMDRegressor(BaseRegressor):
         return y
 
     def _compute_phi(self, x_col):
-        """Returns `pji(x)` given `x`"""
+        """
+        Compute the `phi(x)` value given `x`.
+
+        Args:
+            x_col (np.ndarray): Input data, if one-dimensional it will be reshaped
+                to (-1, 1).
+
+        Returns:
+            np.ndarray: Computed `phi(x)` value.
+        """
         if x_col.ndim == 1:
             x_col = x_col.reshape(-1, 1)
         phi = self.ur.T @ x_col
         return phi
 
     def _compute_psi(self, x_col):
-        """Returns `psi(x)` given `x`
+        """
+        Compute the `psi(x)` value given `x`.
 
-        Parameters
-        ----------
-        x: numpy.ndarray, shape (n_samples, n_features)
-            Measurement data upon which to compute psi values.
+        Args:
+            x_col (np.ndarray): Input data, if one-dimensional it will be reshaped
+                to (-1, 1).
 
-        Returns
-        -------
-        psi : numpy.ndarray, shape (n_samples, n_input_features_)
-            value of Koopman eigenfunction psi at x
+        Returns:
+            np.ndarray: Value of Koopman eigenfunction psi at x.
         """
 
         # compute psi - one column if x is a row
@@ -222,13 +199,16 @@ class PyDMDRegressor(BaseRegressor):
 
     def _set_initial_time_dictionary(self, time_dict):
         """
-        Set the initial values for the class fields `time_dict` and
-        `original_time`. This is usually called in `fit()` and never again.
+        Sets the initial values for `time_dict` and `original_time`.
+        Typically called in `fit()` and not used again afterwards.
 
-        Parameters
-        ----------
-        time_dict : dict
-            Initial time dictionary for this DMD instance.
+        Args:
+            time_dict (dict): Initial time dictionary for this DMD instance. Must
+                contain the keys "t0", "tend", and "dt".
+
+        Raises:
+            ValueError: If the time_dict does not contain the keys "t0", "tend" and
+                "dt" or if it contains more than these keys.
         """
 
         if not ("t0" in time_dict and "tend" in time_dict and "dt" in time_dict):
@@ -245,32 +225,22 @@ class PyDMDRegressor(BaseRegressor):
 
     def _least_square_operator(self, U, s, V, Y, tikhonov_regularization, _norm_X):
         """
-        Parameters
-        ----------
-        U : numpy.ndarray, shape (n_features, svd_rank)
-            Left singular vectors
+        Calculates the least square estimation 'A' using the provided parameters.
 
-        s : numpy.ndarray, shape (svd_rank, )
-            Singular values
+        Args:
+            U (numpy.ndarray): Left singular vectors, shape (n_features, svd_rank).
+            s (numpy.ndarray): Singular values, shape (svd_rank, ).
+            V (numpy.ndarray): Right singular vectors, shape (n_features, svd_rank).
+            Y (numpy.ndarray): Measurement data for prediction, shape (n_samples,
+                n_features).
+            tikhonov_regularization (bool or NoneType): Tikhonov parameter for
+                regularization. If `None`, no regularization is applied, if `float`,
+                it is used as the :math:`\\lambda` tikhonov parameter.
+            _norm_X (numpy.ndarray): Norm of `X` for Tikhonov regularization, shape
+                (n_samples, n_features).
 
-        V : numpy.ndarray, shape (n_features, svd_rank)
-            Right singular vectors
-
-        Y : numpy.ndarray, shape (n_samples, n_features)
-            Measurement data upon which to base prediction
-
-        tikhonov_regularization : bool or NoneType
-            Tikhonov parameter for the regularization.
-            If `None`, no regularization is applied, if `float`, it is used as the
-            :math:`\\lambda` tikhonov parameter.
-
-        _norm_X : numpy.ndarray, shape (n_samples, n_features)
-            Norm of `X` for Tikhonov regularization
-
-        Returns
-        -------
-        A : numpy.ndarray, shape (svd_rank, svd_rank)
-            the least square estimation
+        Returns:
+            numpy.ndarray: The least square estimation 'A', shape (svd_rank, svd_rank).
         """
 
         if tikhonov_regularization is not None:
@@ -280,30 +250,97 @@ class PyDMDRegressor(BaseRegressor):
 
     @property
     def coef_(self):
+        """
+        The weight vectors of the regression problem.
+
+        This method checks if the regressor is fitted before returning the coefficient.
+
+        Returns:
+            numpy.ndarray: The coefficient matrix.
+
+        Raises:
+            NotFittedError: If the regressor is not fitted yet.
+        """
         check_is_fitted(self, "_coef_")
         return self._coef_
 
     @property
     def state_matrix_(self):
+        """
+        The DMD state transition matrix.
+
+        This method checks if the regressor is fitted before returning the state matrix.
+
+        Returns:
+            numpy.ndarray: The state transition matrix.
+
+        Raises:
+            NotFittedError: If the regressor is not fitted yet.
+        """
         check_is_fitted(self, "_state_matrix_")
         return self._state_matrix_
 
     @property
     def eigenvalues_(self):
+        """
+        The identified Koopman eigenvalues.
+
+        This method checks if the regressor is fitted before returning the eigenvalues.
+
+        Returns:
+            numpy.ndarray: The Koopman eigenvalues.
+
+        Raises:
+            NotFittedError: If the regressor is not fitted yet.
+        """
         check_is_fitted(self, "_eigenvalues_")
         return self._eigenvalues_
 
     @property
     def eigenvectors_(self):
+        """
+        The identified Koopman eigenvectors.
+
+        This method checks if the regressor is fitted before returning the eigenvectors.
+
+        Returns:
+            numpy.ndarray: The Koopman eigenvectors.
+
+        Raises:
+            NotFittedError: If the regressor is not fitted yet.
+        """
         check_is_fitted(self, "_eigenvectors_")
         return self._eigenvectors_
 
     @property
     def unnormalized_modes(self):
+        """
+        The raw DMD V with each column as one DMD mode.
+
+        This method checks if the regressor is fitted before returning the unnormalized
+            modes.
+
+        Returns:
+            numpy.ndarray: The unnormalized modes.
+
+        Raises:
+            NotFittedError: If the regressor is not fitted yet.
+        """
         check_is_fitted(self, "_unnormalized_modes")
         return self._unnormalized_modes
 
     @property
     def ur(self):
+        """
+        The left singular vectors 'U'.
+
+        This method checks if the regressor is fitted before returning 'U'.
+
+        Returns:
+            numpy.ndarray: The left singular vectors 'U'.
+
+        Raises:
+            NotFittedError: If the regressor is not fitted yet.
+        """
         check_is_fitted(self, "_ur")
         return self._ur

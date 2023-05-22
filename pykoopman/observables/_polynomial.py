@@ -18,29 +18,49 @@ from ._base import BaseObservables
 
 
 class Polynomial(PolynomialFeatures, BaseObservables):
-    """Polynomial observables.
+    """
+    Polynomial observables.
 
-    This is essentially just :code:`sklearn.preprocessing.PolynomialFeatures`
-    with support for complex numbers.
+    This is essentially the `sklearn.preprocessing.PolynomialFeatures` with support for
+    complex numbers.
 
-    Parameters
-    ----------
-    degree : int, optional (default 2)
-        The degree of the polynomial features.
-    interaction_only : boolean, optional (default False)
-        If true, only interaction features are produced: features that are
-        products of at most ``degree`` *distinct* input features (so not
-        ``x[1] ** 2``, ``x[0] * x[2] ** 3``, etc.).
-    include_bias : boolean, optional (default True)
-        If True (default), then include a bias column, the feature in which
-        all polynomial powers are zero (i.e. a column of ones - acts as an
-        intercept term in a linear model).
-    order : str in {'C', 'F'}, optional (default 'C')
-        Order of output array in the dense case. 'F' order is faster to
-        compute, but may slow down subsequent estimators.
+    Args:
+        degree (int, optional): The degree of the polynomial features. Default is 2.
+        interaction_only (bool, optional): If True, only interaction features are
+            produced: features that are products of at most ``degree`` *distinct*
+            input features (so not ``x[1] ** 2``, ``x[0] * x[2] ** 3``,
+            etc.). Default is False.
+        include_bias (bool, optional): If True, then include a bias column, the feature
+            in which all polynomial powers are zero (i.e., a column of ones - acts as an
+            intercept term in a linear model). Default is True.
+        order (str in {'C', 'F'}, optional): Order of output array in the dense case.
+            'F' order is faster to compute, but may slow down subsequent estimators.
+            Default is 'C'.
+
+    Raises:
+        ValueError: If degree is less than 1.
     """
 
     def __init__(self, degree=2, interaction_only=False, include_bias=True, order="C"):
+        """
+        Initialize the Polynomial object.
+
+        Args:
+            degree (int, optional): The degree of the polynomial features. Default is 2.
+            interaction_only (bool, optional): If True, only interaction features are
+                produced: features that are products of at most ``degree`` *distinct*
+                input features (so not ``x[1] ** 2``, ``x[0] * x[2] ** 3``,
+                etc.). Default is False.
+            include_bias (bool, optional): If True, then include a bias column, the
+                feature in which all polynomial powers are zero (i.e., a column of
+                ones - acts as an intercept term in a linear model). Default is True.
+            order (str in {'C', 'F'}, optional): Order of output array in the dense
+                case. 'F' order is faster to compute, but may slow down subsequent
+                estimators. Default is 'C'.
+
+        Raises:
+            ValueError: If degree is less than 1.
+        """
         if degree == 0:
             raise ValueError(
                 "degree must be at least 1, otherwise inverse cannot be " "computed"
@@ -57,16 +77,27 @@ class Polynomial(PolynomialFeatures, BaseObservables):
         """
         Compute number of output features.
 
-        Parameters
-        ----------
-        x : np.ndarray, shape (n_samples, n_features)
-            Measurement data.
+        This method fits the `Polynomial` instance to the input data `x`. It calls the
+        `fit` method of the superclass (`PolynomialFeatures` from
+        `sklearn.preprocessing`), which computes the number of output features based
+        on the degree of the polynomial and the interaction_only flag. It also sets
+        `n_input_features_` and `n_output_features_` attributes. Then, it initializes
+        `measurement_matrix_` as a zero matrix of size `n_input_features_` by
+        `n_output_features_` and sets the main diagonal to 1, depending on the
+        `include_bias` attribute. The input `y` is not used in this method; it is
+        only included to maintain compatibility with the usual interface of `fit`
+        methods in scikit-learn.
 
-        y : array-like, optional (default None)
-            Dummy input.
-        Returns
-        -------
-        self : fit :class:`pykoopman.observables.Polynomial` instance
+        Args:
+            x (np.ndarray): The measurement data to be fit, with shape (n_samples,
+                n_features).
+            y (array-like, optional): Dummy input. Defaults to None.
+
+        Returns:
+            self: A fit instance of `Polynomial`.
+
+        Raises:
+            ValueError: If the input data is not valid.
         """
         x = validate_input(x)
         self.n_consumed_samples = 0
@@ -82,29 +113,33 @@ class Polynomial(PolynomialFeatures, BaseObservables):
         return y_poly_out
 
     def transform(self, x):
-        """Transform data to polynomial features.
+        """
+        Transforms the data to polynomial features.
 
-        Parameters
-        ----------
-        x : array-like or CSR/CSC sparse matrix, shape (n_samples, n_features)
-            The data to transform, row by row.
-            Prefer CSR over CSC for sparse input (for speed), but CSC is
-            required if the degree is 4 or higher. If the degree is less than
-            4 and the input format is CSC, it will be converted to CSR, have
-            its polynomial features generated, then converted back to CSC.
-            If the degree is 2 or 3, the method described in "Leveraging
-            Sparsity to Speed Up Polynomial Feature Expansions of CSR Matrices
-            Using K-Simplex Numbers" by Andrew Nystrom and John Hughes is
-            used, which is much faster than the method used on CSC input. For
-            this reason, a CSC input will be converted to CSR, and the output
-            will be converted back to CSC prior to being returned, hence the
-            preference of CSR.
+        This method transforms the data `x` into polynomial features. It first checks if
+        the fit method has been called by checking the `n_input_features_` attribute,
+        then it validates the input `x`. If `x` is a CSR sparse matrix and the degree is
+        less than 4, it uses a method based on "Leveraging Sparsity to Speed Up
+        Polynomial Feature Expansions of CSR Matrices Using K-Simplex Numbers" by
+        Andrew Nystrom and John Hughes. If `x` is a CSC sparse matrix and the degree
+        is less than 4, it converts `x` to CSR, generates the polynomial features,
+        then converts back to CSC. For dense arrays or CSC sparse matrix with a
+        degree of 4 or more, it generates the polynomial features through a slower
+        process.
 
-        Returns
-        -------
-        xp : np.ndarray or CSR/CSC sparse matrix, shape (n_samples, n_output_features)
-            The matrix of features, where n_output_features is the number of polynomial
-            features generated from the combination of inputs.
+        Args:
+            x (array-like or CSR/CSC sparse matrix): The data to transform, row by row.
+            The shape should be (n_samples, n_features). Prefer CSR over CSC for
+            sparse input (for speed), but CSC is required if the degree is 4 or higher.
+
+        Returns:
+            xp (np.ndarray or CSR/CSC sparse matrix): The matrix of features, where
+            n_output_features is the number of polynomial features generated from the
+            combination of inputs. The shape is (n_samples, n_output_features).
+
+        Raises:
+            ValueError: If the input data is not valid or the shape of `x` does not
+            match training shape.
         """
         check_is_fitted(self, "n_input_features_")
 
@@ -169,6 +204,22 @@ class Polynomial(PolynomialFeatures, BaseObservables):
 
     @staticmethod
     def _combinations(n_features, degree, interaction_only, include_bias):
+        """
+        Generate combinations for polynomial features.
+
+        This static method generates combinations of features for the polynomial
+        transformation. The combinations depend on whether interaction_only is set
+        and whether a bias term should be included.
+
+        Args:
+            n_features (int): The number of features.
+            degree (int): The degree of the polynomial.
+            interaction_only (bool): If True, only interaction features are produced.
+            include_bias (bool): If True, a bias column is included.
+
+        Returns:
+            itertools.chain: An iterable over all combinations.
+        """
         comb = combinations if interaction_only else combinations_w_r
         start = int(not include_bias)
         return chain.from_iterable(
@@ -177,7 +228,22 @@ class Polynomial(PolynomialFeatures, BaseObservables):
 
     @property
     def powers_(self):
-        """Exponent for each of the inputs in the output."""
+        """
+        Get the exponent for each of the inputs in the output.
+
+        This property method returns the exponents for each input feature in the
+        polynomial output. It first checks whether the model has been fitted, then
+        uses the `_combinations` method to get the combinations of features, and
+        finally calculates the exponents for each input feature.
+
+        Returns:
+            np.ndarray: A 2D array where each row represents a feature and each
+            column represents an output of the polynomial transformation. The
+            values are the exponents of the input features.
+
+        Raises:
+            NotFittedError: If the model has not been fitted.
+        """
         check_is_fitted(self)
 
         combinations = self._combinations(

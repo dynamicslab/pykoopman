@@ -17,46 +17,46 @@ from ._base import BaseRegressor
 
 class HAVOK(BaseRegressor):
     """
-    Hankel Alternative View of Koopman (HAVOK) regressor.
+    HAVOK (Hankel Alternative View of Koopman) regressor.
 
-    Aims to determine the system matrices A,B
-    that satisfy d/dt v = Av + Bu, where v is the vector of the leading delay
-    coordinates and u is a low-energy delay coordinate acting as forcing.
-    A and B are the unknown system and control matrices, respectively.
-    The delay coordinates are obtained by computing the SVD from a Hankel matrix.
+    Aims to determine the system matrices A, B that satisfy d/dt v = Av + Bu,
+    where v is the vector of the leading delay coordinates and u is a low-energy
+    delay coordinate acting as forcing. A and B are the unknown system and control
+    matrices, respectively. The delay coordinates are obtained by computing the
+    SVD from a Hankel matrix.
 
-    The objective function,
-    :math:`\\|dV-AV-BU\\|_F`,
-    is minimized using least-squares regression.
+    The objective function, \\|dV-AV-BU\\|_F, is minimized using least-squares
+    regression.
 
     See the following reference for more details:
-
-        `Brunton, S.L., Brunton, B.W., Proctor, J.L., Kaiser, E. & Kutz, J.N.
+        Brunton, S.L., Brunton, B.W., Proctor, J.L., Kaiser, E. & Kutz, J.N.
         "Chaos as an intermittently forced linear system."
         Nature Communications, Vol. 8(19), 2017.
-        <https://www.nature.com/articles/s41467-017-00030-8>`_
+        <https://www.nature.com/articles/s41467-017-00030-8>
 
-    Parameters
-    ----------
+    Parameters:
+        svd_rank (int, optional):
+            Rank of the SVD used for model reduction. Defaults to None.
+        differentiator (Derivative, optional):
+            Differentiation method to compute the time derivative. Defaults to
+            Derivative(kind="finite_difference", k=1).
+        plot_sv (bool, optional):
+            Whether to plot the singular values. Defaults to False.
 
-    Attributed
-    ----------
-    coef_ : array, shape (n_input_features_, n_input_features_) or
-        (n_input_features_, n_input_features_ + n_control_features_)
-        Weight vectors of the regression problem. Corresponds to either [A] or [A,B]
-
-    state_matrix_ : array, shape (n_input_features_, n_input_features_)
-        Identified state transition matrix A of the underlying system.
-
-    control_matrix_ : array, shape (n_input_features_, n_control_features_)
-        Identified control matrix B of the underlying system.
-
-    projection_matrix_ : array, shape (n_input_features_+n_control_features_, svd_rank)
-        Projection matrix into low-dimensional subspace.
-
-    projection_matrix_output_ : array, shape (n_input_features_+n_control_features_,
-                                              svd_output_rank)
-        Projection matrix into low-dimensional subspace.
+    Attributes:
+        coef_ (array):
+            Weight vectors of the regression problem. Corresponds to either [A] or
+            [A,B].
+        state_matrix_ (array):
+            Identified state transition matrix A of the underlying system.
+        control_matrix_ (array):
+            Identified control matrix B of the underlying system.
+        projection_matrix_ (array):
+            Projection matrix into low-dimensional subspace of shape (n_input_features
+            +n_control_features, svd_rank).
+        projection_matrix_output_ (array):
+            Projection matrix into low-dimensional subspace of shape (n_input_features
+            +n_control_features, svd_output_rank).
     """
 
     def __init__(
@@ -65,25 +65,36 @@ class HAVOK(BaseRegressor):
         differentiator=Derivative(kind="finite_difference", k=1),
         plot_sv=False,
     ):
+        """
+        Initialize the HAVOK regressor.
+
+        Args:
+            svd_rank (int, optional):
+                Rank of the SVD used for model reduction. Defaults to None.
+            differentiator (Derivative, optional):
+                Differentiation method to compute the time derivative. Defaults to
+                Derivative(kind="finite_difference", k=1).
+            plot_sv (bool, optional):
+                Whether to plot the singular values. Defaults to False.
+        """
         self.svd_rank = svd_rank
         self.differentiator = differentiator
         self.plot_sv = plot_sv
 
     def fit(self, x, y=None, dt=None):
         """
-        Parameters
-        ----------
-        x: numpy ndarray, shape (n_samples, n_features)
-            Measurement data to be fit.
+        Fit the HAVOK regressor to the given data.
 
-        y: not used
+        Args:
+            x (numpy.ndarray):
+                Measurement data to be fit.
+            y (not used):
+                Time-shifted measurement data to be fit. Ignored.
+            dt (scalar):
+                Discrete time-step.
 
-        dt: scalar
-            Discrete time-step
-
-        Returns
-        -------
-        self: returns a fitted ``HAVOK`` instance
+        Returns:
+            self: Fitted HAVOK instance.
         """
 
         if y is not None:
@@ -158,26 +169,21 @@ class HAVOK(BaseRegressor):
 
     def predict(self, x, u, t):
         """
-        Parameters
-        ----------
-        x: numpy ndarray, shape (n_samples, n_features)
-            Measurement data upon which to base prediction.
+        Predict the output based on the input data.
 
-        u: numpy.ndarray, shape (n_samples, n_control_features), \
-                optional (default None)
-            Time series of external actuation/control, which is sampled at time
-            instances in t.
+        Args:
+            x (numpy.ndarray):
+                Measurement data upon which to base prediction.
+            u (numpy.ndarray):
+                Time series of external actuation/control, which is sampled at time
+                instances in `t`.
+            t (numpy.ndarray):
+                Time vector. Instances at which the solution vector shall be provided.
+                Note: The time vector must start at 0.
 
-        t: numpy.ndarray, shape (n_samples)
-            Time vector. Instances at which solution vector shall be provided.
-            Must start at 0.
-
-
-        Returns
-        -------
-        y: numpy ndarray, shape (n_samples, n_features)
-            Prediction of x at time instances provided in t.
-
+        Returns:
+            y (numpy.ndarray):
+                Prediction of `x` at the time instances provided in `t`.
         """
         # if t[0] != 0:
         #    raise ValueError("the time vector must start at 0.")
@@ -199,24 +205,35 @@ class HAVOK(BaseRegressor):
         return ypred
 
     def _compute_phi(self, x_col):
-        """Returns `phi(x)` given `x`"""
+        """
+        Compute the feature vector `phi(x)` given `x`.
+
+        Args:
+            x_col (numpy.ndarray):
+                Input data `x` for computing `phi(x)`.
+
+        Returns:
+            phi (numpy.ndarray):
+                Value of `phi(x)`.
+
+        """
         if x_col.ndim == 1:
             x_col = x_col.reshape(-1, 1)
         phi = self._ur.T @ x_col
         return phi
 
     def _compute_psi(self, x_col):
-        """Returns `psi(x)` given `x`
+        """
+        Compute the feature vector `psi(x)` given `x`.
 
-        Parameters
-        ----------
-        x : numpy.ndarray, shape (n_samples, n_features)
-            Measurement data upon which to compute psi values.
+        Args:
+            x_col (numpy.ndarray):
+                Input data `x` for computing `psi(x)`.
 
-        Returns
-        -------
-        phi : numpy.ndarray, shape (n_samples, n_input_features_)
-            value of Koopman psi at x
+        Returns:
+            psi (numpy.ndarray):
+                Value of `psi(x)`.
+
         """
         # compute psi - one column if x is a row
         if x_col.ndim == 1:
@@ -226,35 +243,85 @@ class HAVOK(BaseRegressor):
 
     @property
     def coef_(self):
+        """
+        Get the weight vectors of the regression problem.
+
+        Returns:
+            coef (numpy.ndarray):
+                Weight vectors of the regression problem. Corresponds to either [A]
+                or [A,B].
+        """
         check_is_fitted(self, "_coef_")
         return self._coef_
 
     @property
     def state_matrix_(self):
+        """
+        Get the identified state transition matrix A of the underlying system.
+
+        Returns:
+            state_matrix (numpy.ndarray):
+                Identified state transition matrix A.
+        """
         check_is_fitted(self, "_state_matrix_")
         return self._state_matrix_
 
     @property
     def control_matrix_(self):
+        """
+        Get the identified control matrix B of the underlying system.
+
+        Returns:
+            control_matrix (numpy.ndarray):
+                Identified control matrix B.
+        """
         check_is_fitted(self, "_control_matrix_")
         return self._control_matrix_
 
     @property
     def eigenvectors_(self):
+        """
+        Get the identified eigenvectors of the state matrix A.
+
+        Returns:
+            eigenvectors (numpy.ndarray):
+                Identified eigenvectors of the state matrix A.
+        """
         check_is_fitted(self, "_eigenvectors_")
         return self._eigenvectors_
 
     @property
     def eigenvalues_(self):
+        """
+        Get the identified eigenvalues of the state matrix A.
+
+        Returns:
+            eigenvalues (numpy.ndarray):
+                Identified eigenvalues of the state matrix A.
+        """
         check_is_fitted(self, "_eigenvalues_")
         return self._eigenvalues_
 
     @property
     def unnormalized_modes(self):
+        """
+        Get the identified unnormalized modes.
+
+        Returns:
+            unnormalized_modes (numpy.ndarray):
+                Identified unnormalized modes.
+        """
         check_is_fitted(self, "_unnormalized_modes")
         return self._unnormalized_modes
 
     @property
     def ur(self):
+        """
+        Get the matrix UR.
+
+        Returns:
+            ur (numpy.ndarray):
+                Matrix UR.
+        """
         check_is_fitted(self, "_ur")
         return self._ur

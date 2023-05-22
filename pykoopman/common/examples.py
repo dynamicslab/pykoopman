@@ -11,38 +11,28 @@ def drss(
     n=2, p=2, m=2, p_int_first=0.1, p_int_others=0.01, p_repeat=0.05, p_complex=0.5
 ):
     """
-    Create discrete-time, random, stable, linear state space model.
+    Create a discrete-time, random, stable, linear state space model.
 
-    :math:`x_{k+1} = Ax_k + Bu_k`
-    :math:`y_k = Cx_k`
+    Args:
+        n (int, optional): Number of states. Default is 2.
+        p (int, optional): Number of control inputs. Default is 2.
+        m (int, optional): Number of output measurements.
+            If m=0, C becomes the identity matrix, so that y=x. Default is 2.
+        p_int_first (float, optional): Probability of an integrator as the first pole.
+            Default is 0.1.
+        p_int_others (float, optional): Probability of other integrators beyond the
+            first. Default is 0.01.
+        p_repeat (float, optional): Probability of repeated roots. Default is 0.05.
+        p_complex (float, optional): Probability of complex roots. Default is 0.5.
 
-    Parameters
-    ----------
-    n : int (default=2)
-        Number of states.
-    p : int (default=2)
-        Number of control inputs.
-    m : int (default=2)
-        Number of output measurements.
-        If m=0, C becomes the identity matrix, so that y=x.
-    p_int_first : float (default=0.1)
-        Probability of an integrator
-    p_int_others : float (default=0.01)
-        Probability of other integrators beyond the first
-    p_repeat : float (default=0.05)
-        Probability of repeated roots
-    p_complex : float (default=0.5)
-        Probability of complex roots
+    Returns:
+        Tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray]: A tuple containing the
+        state transition matrix (A), control matrix (B), and measurement matrix (C).
 
-    Returns
-    -------
-    A : numpy.ndarray, shape (n, n)
-        State transition matrix.
-    B : numpy.ndarray, shape (n, p)
-        Control matrix.
-    C : numpy.ndarray, shape (m, n)
-        Measurement matrix.
-        If m = 0, C is identity matrix, so that output y = x.
+        A (numpy.ndarray): State transition matrix of shape (n, n).
+        B (numpy.ndarray): Control matrix of shape (n, p).
+        C (numpy.ndarray): Measurement matrix of shape (m, n). If m = 0, C is the
+            identity matrix.
 
     """
 
@@ -109,6 +99,29 @@ def drss(
 
 
 def advance_linear_system(x0, u, n, A=None, B=None, C=None):
+    """
+    Simulate the linear system dynamics for a given number of steps.
+
+    Args:
+        x0 (numpy.ndarray): Initial state vector of shape (n,).
+        u (numpy.ndarray): Control input array of shape (p,) or (p, n-1).
+            If 1-dimensional, it will be converted to a row vector.
+        n (int): Number of steps to simulate.
+        A (numpy.ndarray, optional): State transition matrix of shape (n, n).
+            If not provided, it defaults to None.
+        B (numpy.ndarray, optional): Control matrix of shape (n, p).
+            If not provided, it defaults to None.
+        C (numpy.ndarray, optional): Measurement matrix of shape (m, n).
+            If not provided, it defaults to None.
+
+    Returns:
+        Tuple[numpy.ndarray, numpy.ndarray]: A tuple containing the state trajectory
+        (x) and the output trajectory (y).
+
+        x (numpy.ndarray): State trajectory of shape (n, len(x0)).
+        y (numpy.ndarray): Output trajectory of shape (n, C.shape[0]).
+
+    """
     if C is None:
         C = np.identity(len(x0))
     if u.ndim == 1:
@@ -124,7 +137,19 @@ def advance_linear_system(x0, u, n, A=None, B=None, C=None):
     return x, y
 
 
-def vdp_osc(t, x, u):  # Dynamics of Van der Pol oscillator
+def vdp_osc(t, x, u):
+    """
+    Compute the dynamics of the Van der Pol oscillator.
+
+    Args:
+        t (float): Time.
+        x (numpy.ndarray): State vector of shape (2,).
+        u (float): Control input.
+
+    Returns:
+        numpy.ndarray: Updated state vector of shape (2,).
+
+    """
     y = np.zeros(x.shape)
     y[0, :] = 2 * x[1, :]
     y[1, :] = -0.8 * x[0, :] + 2 * x[1, :] - 10 * (x[0, :] ** 2) * x[1, :] + u
@@ -132,6 +157,20 @@ def vdp_osc(t, x, u):  # Dynamics of Van der Pol oscillator
 
 
 def rk4(t, x, u, _dt=0.01, func=vdp_osc):
+    """
+    Perform a 4th order Runge-Kutta integration.
+
+    Args:
+        t (float): Time.
+        x (numpy.ndarray): State vector of shape (2,).
+        u (float): Control input.
+        _dt (float, optional): Time step. Defaults to 0.01.
+        func (function, optional): Function defining the dynamics. Defaults to vdp_osc.
+
+    Returns:
+        numpy.ndarray: Updated state vector of shape (2,).
+
+    """
     # 4th order Runge-Kutta
     k1 = func(t, x, u)
     k2 = func(t, x + k1 * _dt / 2, u)
@@ -141,14 +180,48 @@ def rk4(t, x, u, _dt=0.01, func=vdp_osc):
 
 
 def square_wave(step):
+    """
+    Generate a square wave with a period of 60 time steps.
+
+    Args:
+        step (int): Current time step.
+
+    Returns:
+        float: Square wave value at the given time step.
+
+    """
     return (-1.0) ** (round(step / 30.0))
 
 
 def sine_wave(step):
+    """
+    Generate a sine wave with a period of 60 time steps.
+
+    Args:
+        step (int): Current time step.
+
+    Returns:
+        float: Sine wave value at the given time step.
+
+    """
     return np.sin(round(step / 30.0))
 
 
 def lorenz(x, t, sigma=10, beta=8 / 3, rho=28):
+    """
+    Compute the derivative of the Lorenz system at a given state.
+
+    Args:
+        x (list): Current state of the Lorenz system [x, y, z].
+        t (float): Current time.
+        sigma (float, optional): Parameter sigma. Default is 10.
+        beta (float, optional): Parameter beta. Default is 8/3.
+        rho (float, optional): Parameter rho. Default is 28.
+
+    Returns:
+        list: Derivative of the Lorenz system [dx/dt, dy/dt, dz/dt].
+
+    """
     return [
         sigma * (x[1] - x[0]),
         x[0] * (rho - x[2]) - x[1],
@@ -157,6 +230,19 @@ def lorenz(x, t, sigma=10, beta=8 / 3, rho=28):
 
 
 def rev_dvdp(t, x, u=0, dt=0.1):
+    """
+    Reverse dynamics of the Van der Pol oscillator.
+
+    Args:
+        t (float): Time.
+        x (numpy.ndarray): Current state of the system [x1, x2].
+        u (float, optional): Input. Default is 0.
+        dt (float, optional): Time step. Default is 0.1.
+
+    Returns:
+        numpy.ndarray: Updated state of the system [x1', x2'].
+
+    """
     return np.array(
         [
             x[0, :] - x[1, :] * dt,
@@ -167,12 +253,39 @@ def rev_dvdp(t, x, u=0, dt=0.1):
 
 class Linear2Ddynamics:
     def __init__(self):
+        """
+        Initializes a Linear2Ddynamics object.
+
+        """
         self.n_states = 2  # Number of states
 
     def linear_map(self, x):
+        """
+        Applies the linear mapping to the input state.
+
+        Args:
+            x (numpy.ndarray): Input state.
+
+        Returns:
+            numpy.ndarray: Resulting mapped state.
+
+        """
         return np.array([[0.8, -0.05], [0, 0.7]]) @ x
 
     def collect_data(self, x, n_int, n_traj):
+        """
+        Collects data by integrating the linear dynamics.
+
+        Args:
+            x (numpy.ndarray): Initial state.
+            n_int (int): Number of integration steps.
+            n_traj (int): Number of trajectories.
+
+        Returns:
+            numpy.ndarray: Input data.
+            numpy.ndarray: Output data.
+
+        """
         # Init
         X = np.zeros((self.n_states, n_int * n_traj))
         Y = np.zeros((self.n_states, n_int * n_traj))
@@ -187,6 +300,16 @@ class Linear2Ddynamics:
         return X, Y
 
     def visualize_modes(self, x, phi, eigvals, order=None):
+        """
+        Visualizes the modes of the linear dynamics.
+
+        Args:
+            x (numpy.ndarray): State data.
+            phi (numpy.ndarray): Eigenvectors.
+            eigvals (numpy.ndarray): Eigenvalues.
+            order (list, optional): Order of the modes to visualize. Default is None.
+
+        """
         n_modes = min(10, phi.shape[1])
         fig, axs = plt.subplots(2, n_modes, figsize=(3 * n_modes, 6))
         if order is None:
@@ -215,13 +338,64 @@ class Linear2Ddynamics:
 
 class torus_dynamics:
     """
-    Sparse dynamics in Fourier space on torus
-    sparsity: degree of sparsity
-    n_states : number of states
-    freq_max = 15
+    Sparse dynamics in Fourier space on torus.
+
+    Attributes:
+        n_states (int): Number of states.
+        sparsity (int): Degree of sparsity.
+        freq_max (int): Maximum frequency.
+        noisemag (float): Magnitude of noise.
+
+    Methods:
+        __init__(self, n_states=128, sparsity=5, freq_max=15, noisemag=0.0):
+            Initializes a torus_dynamics object.
+
+        setup(self):
+            Sets up the dynamics.
+
+        advance(self, n_samples, dt=1):
+            Advances the continuous-time dynamics without control.
+
+        advance_discrete_time(self, n_samples, dt, u=None):
+            Advances the discrete-time dynamics with or without control.
+
+        set_control_matrix_physical(self, B):
+            Sets the control matrix in physical space.
+
+        set_control_matrix_fourier(self, Bhat):
+            Sets the control matrix in Fourier space.
+
+        set_point_actuator(self, position=None):
+            Sets a single point actuator.
+
+        viz_setup(self):
+            Sets up the visualization.
+
+        viz_torus(self, ax, x):
+            Visualizes the torus dynamics.
+
+        viz_all_modes(self, modes=None):
+            Visualizes all modes.
+
+        modes(self):
+            Returns the modes of the dynamics.
+
+        B_effective(self):
+            Returns the effective control matrix.
+
     """
 
     def __init__(self, n_states=128, sparsity=5, freq_max=15, noisemag=0.0):
+        """
+        Initializes a torus_dynamics object.
+
+        Args:
+            n_states (int, optional): Number of states. Default is 128.
+            sparsity (int, optional): Degree of sparsity. Default is 5.
+            freq_max (int, optional): Maximum frequency. Default is 15.
+            noisemag (float, optional): Magnitude of noise. Default is 0.0.
+
+        """
         self.n_states = n_states
         self.sparsity = sparsity
         self.freq_max = freq_max
@@ -229,6 +403,10 @@ class torus_dynamics:
         self.setup()
 
     def setup(self):
+        """
+        Sets up the dynamics.
+
+        """
         # Initialization in the Fourier space
         xhat = np.zeros((self.n_states, self.n_states), complex)
         # Index of nonzero frequency components
@@ -265,6 +443,14 @@ class torus_dynamics:
         self.mask = mask
 
     def advance(self, n_samples, dt=1):
+        """
+        Advances the continuous-time dynamics without control.
+
+        Args:
+            n_samples (int): Number of samples to advance.
+            dt (float, optional): Time step. Default is 1.
+
+        """
         print("Evolving continuous-time dynamics without control.")
         self.n_samples = n_samples
         self.dt = dt
@@ -305,6 +491,15 @@ class torus_dynamics:
             self.X[:, step] = x.reshape(self.n_states**2)
 
     def advance_discrete_time(self, n_samples, dt, u=None):
+        """
+        Advances the discrete-time dynamics with or without control.
+
+        Args:
+            n_samples (int): Number of samples to advance.
+            dt (float): Time step.
+            u (array-like, optional): Control input. Default is None.
+
+        """
         print("Evolving discrete-time dynamics with or without control.")
         if u is None:
             self.n_control_features_ = 0
@@ -380,18 +575,39 @@ class torus_dynamics:
             self.X[:, step] = x.reshape(self.n_states**2)
 
     def set_control_matrix_physical(self, B):
+        """
+        Sets the control matrix in physical space.
+
+        Args:
+            B (array-like): Control matrix in physical space.
+
+        """
         if np.allclose(B.shape, np.array([self.n_states, self.n_states])) is False:
             raise TypeError("Control matrix B has wrong shape.")
         self.B = B
         self.Bhat = np.fft.fft2(B)
 
     def set_control_matrix_fourier(self, Bhat):
+        """
+        Sets the control matrix in Fourier space.
+
+        Args:
+            Bhat (array-like): Control matrix in Fourier space.
+
+        """
         if np.allclose(Bhat.shape, np.array([self.n_states, self.n_states])) is False:
             raise TypeError("Control matrix Bhat has wrong shape.")
         self.Bhat = Bhat
         self.B = np.real(np.fft.ifft2(self.Bhat))
 
     def set_point_actuator(self, position=None):
+        """
+        Sets a single point actuator.
+
+        Args:
+            position (array-like, optional): Position of the actuator. Default is None.
+
+        """
         if position is None:
             position = np.random.randint(0, self.n_states, 2)
         try:
@@ -412,6 +628,10 @@ class torus_dynamics:
         self.set_control_matrix_physical(B)
 
     def viz_setup(self):
+        """
+        Sets up the visualization.
+
+        """
         self.cmap_torus = plt.cm.jet  # bwr #plt.cm.RdYlBu
         self.n_colors = self.n_states
         r1 = 2
@@ -426,7 +646,17 @@ class torus_dynamics:
         self.Ygrid = R * np.sin(T1)
 
     def viz_torus(self, ax, x):
+        """
+        Visualizes the torus dynamics.
 
+        Args:
+            ax: Axes object for plotting.
+            x (array-like): Dynamics to be visualized.
+
+        Returns:
+            surface: Surface plot of the torus dynamics.
+
+        """
         if not hasattr(self, "viz"):
             self.viz_setup()
 
@@ -448,7 +678,16 @@ class torus_dynamics:
         return surface
 
     def viz_all_modes(self, modes=None):
+        """
+        Visualizes all modes.
 
+        Args:
+            modes (array-like, optional): Modes to be visualized. Default is None.
+
+        Returns:
+            fig: Figure object containing the visualizations.
+
+        """
         if modes is None:
             modes = self.modes
 
@@ -464,6 +703,13 @@ class torus_dynamics:
 
     @property
     def modes(self):
+        """
+        Returns the modes of the dynamics.
+
+        Returns:
+            modes (array-like): Modes of the dynamics.
+
+        """
         modes = np.zeros((self.n_states**2, self.sparsity))
 
         for k in range(self.sparsity):
@@ -477,6 +723,13 @@ class torus_dynamics:
 
     @property
     def B_effective(self):
+        """
+        Returns the effective control matrix.
+
+        Returns:
+            B_effective (array-like): Effective control matrix.
+
+        """
         Bhat_effective = np.zeros((self.n_states, self.n_states), complex)
         for k in range(self.sparsity):
             control_mode = np.zeros((self.n_states, self.n_states), complex)
@@ -490,6 +743,31 @@ class torus_dynamics:
 
 
 class slow_manifold:
+    """
+    Represents the slow manifold class.
+
+    Args:
+        mu (float, optional): Parameter mu. Default is -0.05.
+        la (float, optional): Parameter la. Default is -1.0.
+        dt (float, optional): Time step size. Default is 0.01.
+
+    Attributes:
+        mu (float): Parameter mu.
+        la (float): Parameter la.
+        b (float): Value computed from mu and la.
+        dt (float): Time step size.
+        n_states (int): Number of states.
+
+    Methods:
+        sys(t, x, u): Computes the system dynamics.
+        output(x): Computes the output based on the state.
+        simulate(x0, n_int): Simulates the system dynamics.
+        collect_data_continuous(x0): Collects data from continuous-time dynamics.
+        collect_data_discrete(x0, n_int): Collects data from discrete-time dynamics.
+        visualize_trajectories(t, X, n_traj): Visualizes the trajectories.
+        visualize_state_space(X, Y, n_traj): Visualizes the state space.
+    """
+
     def __init__(self, mu=-0.05, la=-1.0, dt=0.01):
         self.mu = mu
         self.la = la
@@ -498,12 +776,45 @@ class slow_manifold:
         self.n_states = 2
 
     def sys(self, t, x, u):
+        """
+        Computes the system dynamics.
+
+        Args:
+            t (float): Time.
+            x (array-like): State.
+            u (array-like): Control input.
+
+        Returns:
+            array-like: Computed system dynamics.
+
+        """
         return np.array([self.mu * x[0, :], self.la * (x[1, :] - x[0, :] ** 2)])
 
     def output(self, x):
+        """
+        Computes the output based on the state.
+
+        Args:
+            x (array-like): State.
+
+        Returns:
+            array-like: Computed output.
+
+        """
         return x[0, :] ** 2 + x[1, :]
 
     def simulate(self, x0, n_int):
+        """
+        Simulates the system dynamics.
+
+        Args:
+            x0 (array-like): Initial state.
+            n_int (int): Number of integration steps.
+
+        Returns:
+            array-like: Simulated trajectory.
+
+        """
         n_traj = x0.shape[1]
         x = x0
         u = np.zeros((n_int, 1))
@@ -515,6 +826,16 @@ class slow_manifold:
         return X
 
     def collect_data_continuous(self, x0):
+        """
+        Collects data from continuous-time dynamics.
+
+        Args:
+            x0 (array-like): Initial state.
+
+        Returns:
+            tuple: Collected data (X, Y).
+
+        """
         n_traj = x0.shape[1]
         u = np.zeros((1, n_traj))
         X = x0
@@ -522,6 +843,17 @@ class slow_manifold:
         return X, Y
 
     def collect_data_discrete(self, x0, n_int):
+        """
+        Collects data from discrete-time dynamics.
+
+        Args:
+            x0 (array-like): Initial state.
+            n_int (int): Number of integration steps.
+
+        Returns:
+            tuple: Collected data (X, Y).
+
+        """
         n_traj = x0.shape[1]
         x = x0
         u = np.zeros((n_int, n_traj))
@@ -535,6 +867,15 @@ class slow_manifold:
         return X, Y
 
     def visualize_trajectories(self, t, X, n_traj):
+        """
+        Visualizes the trajectories.
+
+        Args:
+            t (array-like): Time vector.
+            X (array-like): State trajectories.
+            n_traj (int): Number of trajectories.
+
+        """
         fig, axs = plt.subplots(1, 1, tight_layout=True, figsize=(12, 4))
         for traj_idx in range(n_traj):
             x = X[:, traj_idx::n_traj]
@@ -542,6 +883,15 @@ class slow_manifold:
         axs.set(ylabel=r"$x_2$", xlabel=r"$t$")
 
     def visualize_state_space(self, X, Y, n_traj):
+        """
+        Visualizes the state space.
+
+        Args:
+            X (array-like): State trajectories.
+            Y (array-like): Output trajectories.
+            n_traj (int): Number of trajectories.
+
+        """
         fig, axs = plt.subplots(1, 1, tight_layout=True, figsize=(4, 4))
         for traj_idx in range(n_traj):
             axs.plot(
@@ -565,6 +915,15 @@ class forced_duffing:
     """
 
     def __init__(self, dt, d, alpha, beta):
+        """
+        Initializes the Forced Duffing Oscillator.
+
+        Args:
+            dt (float): Time step.
+            d (float): Damping coefficient.
+            alpha (float): Coefficient of x1.
+            beta (float): Coefficient of x1^3.
+        """
         self.dt = dt
         self.d = d
         self.alpha = alpha
@@ -572,6 +931,17 @@ class forced_duffing:
         self.n_states = 2
 
     def sys(self, t, x, u):
+        """
+        Defines the system dynamics of the Forced Duffing Oscillator.
+
+        Args:
+            t (float): Time.
+            x (array-like): State vector.
+            u (array-like): Control input.
+
+        Returns:
+            array-like: Rate of change of the state vector.
+        """
         y = np.array(
             [
                 x[1, :],
@@ -581,9 +951,19 @@ class forced_duffing:
         return y
 
     def simulate(self, x0, n_int, u):
+        """
+        Simulates the Forced Duffing Oscillator.
+
+        Args:
+            x0 (array-like): Initial state vector.
+            n_int (int): Number of time steps.
+            u (array-like): Control inputs.
+
+        Returns:
+            array-like: State trajectories.
+        """
         n_traj = x0.shape[1]
         x = x0
-        # assert u.shape == (n_int, 1)
         X = np.zeros((self.n_states, n_int * n_traj))
         for step in range(n_int):
             y = rk4(0, x, u[step, :], self.dt, self.sys)
@@ -592,14 +972,34 @@ class forced_duffing:
         return X
 
     def collect_data_continuous(self, x0, u):
+        """
+        Collects continuous data for the Forced Duffing Oscillator.
+
+        Args:
+            x0 (array-like): Initial state vector.
+            u (array-like): Control inputs.
+
+        Returns:
+            tuple: State and output trajectories.
+        """
         X = x0
         Y = self.sys(0, x0, u)
         return X, Y
 
     def collect_data_discrete(self, x0, n_int, u):
+        """
+        Collects discrete-time data for the Forced Duffing Oscillator.
+
+        Args:
+            x0 (array-like): Initial state vector.
+            n_int (int): Number of time steps.
+            u (array-like): Control inputs.
+
+        Returns:
+            tuple: State and output trajectories.
+        """
         n_traj = x0.shape[1]
         x = x0
-        # u = np.zeros((n_int, n_traj))
         X = np.zeros((self.n_states, n_int * n_traj))
         Y = np.zeros((self.n_states, n_int * n_traj))
         for step in range(n_int):
@@ -610,6 +1010,14 @@ class forced_duffing:
         return X, Y
 
     def visualize_trajectories(self, t, X, n_traj):
+        """
+        Visualizes the state trajectories of the Forced Duffing Oscillator.
+
+        Args:
+            t (array-like): Time vector.
+            X (array-like): State trajectories.
+            n_traj (int): Number of trajectories to visualize.
+        """
         fig, axs = plt.subplots(1, 2, tight_layout=True, figsize=(12, 4))
         for traj_idx in range(n_traj):
             x = X[:, traj_idx::n_traj]
@@ -619,6 +1027,14 @@ class forced_duffing:
         axs[1].set(ylabel=r"$x_2$", xlabel=r"$t$")
 
     def visualize_state_space(self, X, Y, n_traj):
+        """
+        Visualizes the state space trajectories of the Forced Duffing Oscillator.
+
+        Args:
+            X (array-like): State trajectories.
+            Y (array-like): Output trajectories.
+            n_traj (int): Number of trajectories to visualize.
+        """
         fig, axs = plt.subplots(1, 1, tight_layout=True, figsize=(4, 4))
         for traj_idx in range(n_traj):
             axs.plot(
