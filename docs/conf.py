@@ -36,7 +36,7 @@ autodoc_default_options = {"members": True}
 autodoc_member_order = "bysource"
 autoclass_content = "init"
 
-language = None
+language = 'en'
 
 here = pathlib.Path(__file__).parent
 
