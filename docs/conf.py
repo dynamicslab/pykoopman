@@ -8,7 +8,7 @@ project = "pykoopman"  # package name
 
 # no need to edit below this line
 
-copyright = f"2022, {author}"
+copyright = f"2023, {author}"
 
 module = importlib.import_module(project)
 version = release = getattr(module, "__version__")
