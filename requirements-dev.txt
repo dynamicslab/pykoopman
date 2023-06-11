@@ -9,7 +9,7 @@ setuptools_scm
 setuptools_scm_git_archive
 jupyter
 notebook
-sphinx >= 2
+sphinx >= 2,<7.0.0
 sphinxcontrib-apidoc
 sphinx_rtd_theme
 pre-commit
