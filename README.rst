@@ -10,16 +10,16 @@ PyKoopman
 Data-driven approximation of Koopman operator
 ---------------------------------------------
 
-Given a nonlinear dynamical system, 
+Given a nonlinear dynamical system,
 
 .. code-block:: text
 
     x'(t) = f(x(t)),
 
-the Koopman operator governs the temporal evolution of the measurement function. 
-Unfortunately, it is an infinite-dimensional linear operator. Most of the time, one has to 
-project the Koopman operator onto a finite-dimensional subspace that is spanned by user-defined/data-adaptive functions. 
-If the system state is also contained in such subspace, then effectively, the nonlinear dynamical system is (approximately) 
+the Koopman operator governs the temporal evolution of the measurement function.
+Unfortunately, it is an infinite-dimensional linear operator. Most of the time, one has to
+project the Koopman operator onto a finite-dimensional subspace that is spanned by user-defined/data-adaptive functions.
+If the system state is also contained in such subspace, then effectively, the nonlinear dynamical system is (approximately)
 linearized in a global sense.
 
 Structure of PyKoopman
@@ -28,9 +28,9 @@ PyKoopman package is centered around the ``Koopman`` class and ``KoopmanContinuo
 
 * ``observables``: a set of observables functions, which spans the subspace for projection.
 
-* ``regressor``: the optimization algorithm to find the best `fit` for the projection of Koopman operator. 
+* ``regressor``: the optimization algorithm to find the best `fit` for the projection of Koopman operator.
 
-After ``Koopman``/``KoopmanContinuous`` object has been created, it must be fit to data, similar to a ``scikit-learn`` model. 
+After ``Koopman``/``KoopmanContinuous`` object has been created, it must be fit to data, similar to a ``scikit-learn`` model.
 We design ``PyKoopman`` such that it is compatible to ``scikit-learn`` objects and methods as much as possible.
 
 
