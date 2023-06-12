@@ -6,7 +6,6 @@
    :caption: User Guide
 
    API Documentation <api/pykoopman>
-   Examples <examples/index>
 
 .. toctree::
    :maxdepth: 1
