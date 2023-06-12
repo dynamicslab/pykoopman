@@ -8,6 +8,12 @@
    API Documentation <api/pykoopman>
 
 .. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+   examples/tutorial_compose_observables
+
+.. toctree::
    :maxdepth: 1
    :caption: Useful links
 
