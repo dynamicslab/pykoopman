@@ -1,4 +1,4 @@
-"""module for customized observables"""
+"""Module for customized observables"""
 from __future__ import annotations
 
 from itertools import combinations
@@ -14,43 +14,50 @@ from ._base import BaseObservables
 
 class CustomObservables(BaseObservables):
     """
-    Custom observable functions.
+    A class to map state variables using custom observables.
 
-    To ensure invertibility of the set of observables, the identity map is
-    automatically included along with user-specified observables.
+    This class allows the user to specify a list of functions that map state variables
+    to observables. The identity map is automatically included. It can be configured to
+    include or exclude self-interaction terms.
 
-    Parameters
-    ----------
-    observables: list of callable
-        A list of functions mapping from state variables to observables.
-        Univariate functions are applied to each state variable in turn and
-        multivariable functions are applied to each combination of state
-        variables.
-        Note that the identity map is automatically prepended to this list.
-
-    observable_names: list of callable, optional (default None)
-        A list of functions mapping from names of state variables to names
-        of observables. For example, the observable name
-        :code:`lambda x: f"{x}^2"` would correspond to the function :math:`x^2`.
-        If None, the names "f0(...)", "f1(...)", ... will be used.
-
-    interaction_only: bool, optional (default True)
-        Whether to omit self-interaction terms.
-        If True, function evaluations of the form :math:`f(x,x)` and :math:`f(x,y,x)`
-        will be omitted, but those of the form :math:`f(x,y)` and :math:`f(x,y,z)`
-        will be included.
-        If False, all combinations will be included.
-
-    Attributes
-    ----------
-    n_input_features_ : int
-        Number of input features.
-
-    n_output_features_ : int
-        Number of output features.
+    Attributes:
+        observables (list of callable): List of functions mapping state variables to
+            observables. Univariate functions are applied to each state variable,
+            and multivariable functions are applied to combinations of state
+            variables. The identity map is automatically included in this list.
+        observable_names (list of callable, optional): List of functions mapping from
+            names of state variables to names of observables. For example,
+            the observable name lambda x: f"{x}^2" would correspond to the function
+            x^2. If None, the names "f0(...)", "f1(...)", ... will be used. Default
+            is None.
+        interaction_only (bool, optional): If True, omits self-interaction terms.
+            Function evaluations of the form f(x,x) and f(x,y,x) will be omitted,
+            but those of the form f(x,y) and f(x,y,z) will be included. If False,
+            all combinations will be included. Default is True.
+        n_input_features_ (int): Number of input features.
+        n_output_features_ (int): Number of output features.
     """
 
     def __init__(self, observables, observable_names=None, interaction_only=True):
+        """
+        Initialize a CustomObservables instance.
+
+        Args:
+            observables (list of callable): List of functions mapping state variables
+                to observables. Univariate functions are applied to each state
+                variable, and multivariable functions are applied to combinations of
+                state variables. The identity map is automatically included in this
+                list.
+            observable_names (list of callable, optional): List of functions mapping
+                from names of state variables to names of observables. For example,
+                the observable name lambda x: f"{x}^2" would correspond to the
+                function x^2. If None, the names "f0(...)", "f1(...)", ... will
+                be used. Default is None.
+            interaction_only (bool, optional): If True, omits self-interaction terms.
+                Function evaluations of the form f(x,x) and f(x,y,x) will be omitted,
+                but those of the form f(x,y) and f(x,y,z) will be included. If False,
+                all combinations will be included. Default is True.
+        """
         super(CustomObservables, self).__init__()
         self.observables = [identity, *observables]
         if observable_names and (len(observables) != len(observable_names)):
@@ -62,22 +69,21 @@ class CustomObservables(BaseObservables):
         self.include_state = True
 
     def fit(self, x, y=None):
-        """Fit to measurement data.
+        """
+        Fit the model to the measurement data.
 
-        Determines the number of input and output features and creates
-        default values for :code:`observable_names` if necessary.
+        This method calculates the number of input and output features and generates
+        default values for 'observable_names' if necessary. It also prepares the
+        measurement matrix for data transformation.
 
-        Parameters
-        ----------
-        x: array-like, shape (n_samples, n_input_features)
-            Measurement data to be fit.
+        Args:
+            x (array-like, shape (n_samples, n_input_features)): Measurement data to be
+                fitted.
+            y (None): This is a dummy parameter added for compatibility with sklearn's
+                API. Default is None.
 
-        y: None
-            Dummy parameter retained for sklearn compatibility.
-
-        Returns
-        -------
-        self: a fit :class:`pykoopman.observables.CustomObservables` instance
+        Returns:
+            self (CustomObservables): This method returns the fitted instance.
         """
         x = validate_input(x)
         n_samples, n_features = x.shape
@@ -115,17 +121,19 @@ class CustomObservables(BaseObservables):
         return self
 
     def transform(self, x):
-        """Apply custom transformations to data, computing observables.
+        """
+        Apply custom transformations to data, computing observables.
 
-        Parameters
-        ----------
-        x: array-like, shape (n_samples, n_input_features)
-            Measurement data to be transformed.
+        This method applies the user-defined observables functions to the input data,
+        effectively transforming the state variables into observable ones.
 
-        Returns
-        -------
-        y: array-like, shape (n_samples, n_output_features)
-            Transformed data (observables).
+        Args:
+            x (array-like, shape (n_samples, n_input_features)): The measurement data
+                to be transformed.
+
+        Returns:
+            x_transformed (array-like, shape (n_samples, n_output_features)): The
+                transformed data, i.e., the computed observables.
         """
         check_is_fitted(self, "n_input_features_")
         check_is_fitted(self, "n_output_features_")
@@ -148,19 +156,22 @@ class CustomObservables(BaseObservables):
         return x_transformed
 
     def get_feature_names(self, input_features=None):
-        """Get the names of the output features.
+        """
+        Get the names of the output features.
 
-        Parameters
-        ----------
-        input_features: list of string, length n_input_features, \
-                optional (default None)
-            String names for input features, if available. By default,
-            the names "x0", "x1", ... ,"xn_input_features" are used.
+        This method returns the names of the output features as defined by the
+        observable functions. If names for the input features are provided, they are
+        used in the output feature names. Otherwise, default names ("x0", "x1", ...,
+        "xn_input_features") are used.
 
-        Returns
-        -------
-        output_feature_names: list of string, length n_ouput_features
-            Output feature names.
+        Args:
+            input_features (list of string, length n_input_features, optional):
+                String names for input features, if available. By default, the names
+                "x0", "x1", ... ,"xn_input_features" are used.
+
+        Returns:
+            output_feature_names (list of string, length n_output_features):
+                Output feature names.
         """
         check_is_fitted(self, "n_input_features_")
         if input_features is None:
@@ -189,7 +200,25 @@ class CustomObservables(BaseObservables):
 
     @staticmethod
     def _combinations(n_features, n_args, interaction_only):
-        """Get the combinations of features to be passed to observable functions."""
+        """
+        Get the combinations of features to be passed to observable functions.
+
+        This static method generates all possible combinations or combinations with
+        replacement (depending on the `interaction_only` flag) of features that are to
+        be passed to the observable functions. The combinations are represented as
+        tuples of indices.
+
+        Args:
+            n_features (int): The total number of features.
+            n_args (int): The number of arguments that the observable function accepts.
+            interaction_only (bool): If True, combinations of the same feature
+                (self-interactions) are omitted. If False, all combinations including
+                self-interactions are included.
+
+        Returns:
+            iterable of tuples: An iterable over all combinations of feature indices
+            to be passed to the observable functions.
+        """
         comb = combinations if interaction_only else combinations_with_replacement
         return comb(range(n_features), n_args)
 

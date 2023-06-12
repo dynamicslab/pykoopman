@@ -5,6 +5,40 @@ PyKoopman
 
 **PyKoopman** is a Python package for computing data-driven approximations to the Koopman operator.
 
+.. contents:: Table of contents
+
+Data-driven approximation of Koopman operator
+---------------------------------------------
+
+Given a nonlinear dynamical system,
+
+.. code-block:: text
+
+    x'(t) = f(x(t)),
+
+the Koopman operator governs the temporal evolution of the measurement function.
+Unfortunately, it is an infinite-dimensional linear operator. Most of the time, one has to
+project the Koopman operator onto a finite-dimensional subspace that is spanned by user-defined/data-adaptive functions.
+If the system state is also contained in such subspace, then effectively, the nonlinear dynamical system is (approximately)
+linearized in a global sense.
+
+Structure of PyKoopman
+^^^^^^^^^^^^^^^^^^^^^^
+PyKoopman package is centered around the ``Koopman`` class and ``KoopmanContinuous`` class. It consists of two key components
+
+* ``observables``: a set of observables functions, which spans the subspace for projection.
+
+* ``regressor``: the optimization algorithm to find the best `fit` for the projection of Koopman operator.
+
+After ``Koopman``/``KoopmanContinuous`` object has been created, it must be fit to data, similar to a ``scikit-learn`` model.
+We design ``PyKoopman`` such that it is compatible to ``scikit-learn`` objects and methods as much as possible.
+
+
+Example
+^^^^^^^
+
+* `Tutorial on how to compose observables <https://colab.research.google.com/github/dynamicslab/pykoopman/blob/master/examples/tutorial_compose_observables.ipynb>`_
+
 
 Installation
 -------------
@@ -83,34 +117,39 @@ References
 ------------
 
 -  Williams, Matthew O., Ioannis G. Kevrekidis, and Clarence W. Rowley.
-   "A data–driven approximation of the koopman operator: Extending dynamic mode decomposition."
-   Journal of Nonlinear Science 25, no. 6 (2015): 1307-1346.
+   *A data–driven approximation of the koopman operator: Extending dynamic mode
+   decomposition.* Journal of Nonlinear Science 25, no. 6 (2015): 1307-1346.
    `[DOI] <https://doi.org/10.1007/s00332-015-9258-5>`_
 
 -  Williams, Matthew O., Clarence W. Rowley, and Ioannis G. Kevrekidis.
-   "A kernel-based approach to data-driven Koopman spectral analysis." arXiv
+   *A kernel-based approach to data-driven Koopman spectral analysis.* arXiv
    preprint arXiv:1411.2260 (2014).
    `[DOI] <https://doi.org/10.48550/arXiv.1411.2260>`_
 
--  Brunton, Steven L., et al. "Chaos as an intermittently forced linear
-   system." Nature communications 8.1 (2017): 1-9.
+-  Brunton, Steven L., et al. *Chaos as an intermittently forced linear system.*
+   Nature communications 8.1 (2017): 1-9.
    `[DOI] <https://doi.org/10.1038/s41467-017-00030-8>`_
 
--  Kaiser, Eurika, J. Nathan Kutz, and Steven L. Brunton. "Data-driven discovery
-   of Koopman eigenfunctions for control." Machine Learning: Science and
-   Technology 2.3 (2021): 035023.
+-  Kaiser, Eurika, J. Nathan Kutz, and Steven L. Brunton.
+   *Data-driven discovery of Koopman eigenfunctions for control.*
+   Machine Learning: Science and Technology 2.3 (2021): 035023.
    `[DOI] <https://doi.org/10.1088/2632-2153/abf0f5>`_
 
+-  Lusch, Bethany, J. Nathan Kutz, and Steven L. Brunton.
+   *Deep learning for universal linear embeddings of nonlinear dynamics.* Nature
+   communications 9.1 (2018): 4950.
+   `[DOI] <https://doi.org/10.1038/s41467-018-07210-0>`_
+
+-  Otto, Samuel E., and Clarence W. Rowley. *Linearly recurrent autoencoder networks
+   for learning dynamics.* SIAM Journal on Applied Dynamical Systems 18.1 (2019):
+   558-593.
+   `[DOI] <https://doi.org/10.1137/18M1177846>`_
+
 -  Pan, Shaowu, Nicholas Arnold-Medabalimi, and Karthik Duraisamy.
-   "Sparsity-promoting algorithms for the discovery of informative
-   Koopman-invariant subspaces." Journal of Fluid Mechanics 917 (2021).
+   *Sparsity-promoting algorithms for the discovery of informative Koopman-invariant
+   subspaces.* Journal of Fluid Mechanics 917 (2021).
    `[DOI] <https://doi.org/10.1017/jfm.2021.271>`_
 
-TODO
-----
-- [ ] unit test for regressors
-- [ ] unit test for analytics
-- [ ] change docstring style except NNDMD
 
 .. |Build| image:: https://github.com/dynamicslab/pykoopman/workflows/Tests/badge.svg
     :target: https://github.com/dynamicslab/pykoopman/actions?query=workflow%3ATests

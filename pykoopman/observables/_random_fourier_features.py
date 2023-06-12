@@ -9,64 +9,49 @@ from ._base import BaseObservables
 
 
 class RandomFourierFeatures(BaseObservables):
-    """Random Fourier Features observables.
+    """
+    Random Fourier Features for observables.
 
-    Here we only consider the following kernel:
-        :math:`k(x,y) = exp(-gamma*\\|x-y\\|^2)`
+    This class applies the random Fourier features method for kernel approximation.
+    It can include the system state in the kernel function. It uses the
+    Gaussian kernel by default.
 
-    if one includes the system state:
-        :math:`k(x,y) = x.T * y + exp(-gamma*\\|x-y\\|^2)`
+    Args:
+        include_state (bool, optional): If True, includes the system state. Defaults to
+            True.
+        gamma (float, optional): The scale of the Gaussian kernel. Defaults to 1.0.
+        D (int, optional): The number of random samples in Monte Carlo approximation.
+            Defaults to 100.
+        random_state (int, None, optional): The seed of the random number for repeatable
+            experiments. Defaults to None.
 
-    See the following reference for more details:
-        `Rahimi, A., & Recht, B. (2007). "Random features for large-scale
-        kernel machines". Advances in neural information processing systems
-        , 20. <https://proceedings.neurips.cc/paper/2007/file/013a006f03dbc
-        5392effeb8f18fda755-Paper.pdf>`_
-
-    Parameters
-    ----------
-    include_state : bool
-        `True` if includes state
-
-    gamma : float
-        Scale of Gaussian kernel
-
-    D : int
-        Number of random samples in Monte Carlo approximation
-
-    random_state : int or NoneType, optional, default=None
-        Seed of random number. Useful for repeatable experiments
-
-    Attributes
-    ----------
-    include_state : bool
-        `True` if includes state
-
-    gamma : float
-        Scale of Gaussian kernel
-
-    D : int
-        Number of random samples in Monte Carlo approximation
-
-    random_state : int or NoneType, optional, default=None
-        Seed of random number. Useful for repeatable experiments
-
-    measurement_matrix_ : numpy.ndarray, shape (n_input_features_,
-    n_output_features_)
-        A row feature vector right multiply with `measurement_matrix_`
-        will return the system state
-
-    n_input_features_ : int
-        Dimension of input features, e.g., system state
-
-    n_output_features_ : int
-        Dimension of transformed/output features, e.g., observables
-
-    w : numpy.ndarray, shape (n_input_features_, D)
-        The frequencies randomly sampled for random fourier features
+    Attributes:
+        include_state (bool): If True, includes the system state.
+        gamma (float): The scale of the Gaussian kernel.
+        D (int): The number of random samples in Monte Carlo approximation.
+        random_state (int, None): The seed of the random number for repeatable
+            experiments.
+        measurement_matrix_ (numpy.ndarray): A row feature vector right multiply with
+            `measurement_matrix_` will return the system state.
+        n_input_features_ (int): Dimension of input features, e.g., system state.
+        n_output_features_ (int): Dimension of transformed/output features, e.g.,
+            observables.
+        w (numpy.ndarray): The frequencies randomly sampled for random fourier features.
     """
 
     def __init__(self, include_state=True, gamma=1.0, D=100, random_state=None):
+        """
+        Initialize the RandomFourierFeatures class with given parameters.
+
+        Args:
+            include_state (bool, optional): If True, includes the system state.
+                Defaults to True.
+            gamma (float, optional): The scale of the Gaussian kernel. Defaults to 1.0.
+            D (int, optional): The number of random samples in Monte Carlo
+                approximation. Defaults to 100.
+            random_state (int or None, optional): The seed of the random number
+                for repeatable experiments. Defaults to None.
+        """
         super(RandomFourierFeatures, self).__init__()
         self.include_state = include_state
         self.gamma = gamma
@@ -74,19 +59,17 @@ class RandomFourierFeatures(BaseObservables):
         self.random_state = random_state
 
     def fit(self, x, y=None):
-        """Set up observable
+        """
+        Set up observable.
 
-        Parameters
-        ----------
-        x : numpy.ndarray, shape (n_samples, n_input_features_)
-            Measurement data to be fit.
+        Args:
+            x (numpy.ndarray): Measurement data to be fit. Shape (n_samples,
+                n_input_features_).
+            y (numpy.ndarray, optional): Time-shifted measurement data to be fit.
+                Defaults to None.
 
-        y : numpy.ndarray, optional, default=None
-            Time-shifted measurement data to be fit
-
-        Returns
-        -------
-        self: returns a fitted ``RandomFourierFeatures`` instance
+        Returns:
+            self: Returns a fitted RandomFourierFeatures instance.
         """
         x = validate_input(x)
         np.random.seed(self.random_state)
@@ -124,17 +107,16 @@ class RandomFourierFeatures(BaseObservables):
         return self
 
     def transform(self, x):
-        """Evaluate observable at `x`
+        """
+        Evaluate observable at `x`.
 
-        Parameters
-        ----------
-        x : numpy.ndarray, shape (n_samples, n_input_features_)
-            Measurement data to be fit.
+        Args:
+            x (numpy.ndarray): Measurement data to be fit. Shape (n_samples,
+                n_input_features_).
 
-        Returns
-        -------
-        y: numpy.ndarray, shape (n_samples, n_output_features_)
-            Evaluation of observables at `X`
+        Returns:
+            y (numpy.ndarray): Evaluation of observables at `x`. Shape (n_samples,
+                n_output_features_).
         """
 
         check_is_fitted(self, "n_input_features_")
@@ -149,16 +131,16 @@ class RandomFourierFeatures(BaseObservables):
         return z
 
     def get_feature_names(self, input_features=None):
-        """Return names of observables
+        """
+        Return names of observables.
 
-        Parameters
-        ----------
-        input_features : list of string of length n_features, optional
-            Default list is "x0", "x1", ..., "xn", where n = n_features.
+        Args:
+            input_features (list of string of length n_features, optional):
+                Default list is "x0", "x1", ..., "xn", where n = n_features.
 
-        Returns
-        -------
-        output_feature_names : list of string of length n_output_features
+        Returns:
+            output_feature_names (list of string of length n_output_features):
+                Returns a list of observable names.
         """
 
         check_is_fitted(self, "n_input_features_")
@@ -184,20 +166,18 @@ class RandomFourierFeatures(BaseObservables):
         return output_features
 
     def _rff_lifting(self, x):
-        """Core algorithm that computes random fourier features
+        """
+        Core algorithm that computes random Fourier features.
 
-        Here we use the `cos` and `sin` transformations to get
-        random fourier features. Other is also possible though.
+        This method uses the `cos` and `sin` transformations to get random Fourier
+            features.
 
-        Parameters
-        ----------
-        x : numpy.ndarray
-            system state
+        Args:
+            x (numpy.ndarray): System state.
 
-        Returns
-        -------
-        z_rff : numpy.ndarray, shape (n_samples, n_output_features_)
-            Random fourier features evaluated on `x`
+        Returns:
+            z_rff (numpy.ndarray): Random Fourier features evaluated on `x`. Shape
+                (n_samples, n_output_features_).
         """
 
         # 2. get the feature vector z

@@ -11,72 +11,41 @@ from ._base import BaseObservables
 
 
 class RadialBasisFunction(BaseObservables):
-    r"""
-    Radial basis functions as observables. Observables formed as radial basis
-    functions of the state variables and interpreting them as new state
+    """
+    This class represents Radial Basis Functions (RBF) used as observables.
+    Observables are formed as RBFs of the state variables, interpreted as new state
     variables.
 
-    For example, the single state variables :math:`[x(t)]` could be
-    evaluated using multiple centers, yielding a new set of
-    observables:
+    For instance, a single state variable :math:`[x(t)]` could be evaluated using
+    multiple centers, yielding a new set of observables. This implementation supports
+    various types of RBFs including 'gauss', 'thinplate', 'invquad', 'invmultquad',
+    and 'polyharmonic'.
 
-    .. math::
-        [z_1(t), z_2(t), z_3(t)]
-    where, e.g., the Gaussian type rbf is used
-    .. math::
-        z_i = exp(-eps^2*(x(t)-c_i)^2)
+    Attributes:
+        rbf_type (str): The type of radial basis functions to be used.
+        n_centers (int): The number of centers to compute RBF with.
+        centers (numpy array): The centers to compute RBF with.
+        kernel_width (float): The kernel width for Gaussian RBFs.
+        polyharmonic_coeff (float): The polyharmonic coefficient for polyharmonic RBFs.
+        include_state (bool): Whether to include the input coordinates as additional
+            coordinates in the observable.
+        n_input_features_ (int): Number of input features.
+        n_output_features_ (int): Number of output features = Number of centers plus
+            number of input features.
 
-    This example corresponds to taking :code:`type =` :math:`gauss`
-    and :code:`n_centers = 3`.
-
-    See the following references for more information.
-
-        Williams, Matthew O and Kevrekidis, Ioannis G and Rowley,
-        Clarence W
-        "A data-driven approximation of the {K}oopman operator:
-        extending dynamic mode decomposition."
-        Journal of Nonlinear Science 6 (2015): 1307-1346
-
-        Williams, Matthew O and Rowley, Clarence W and Kevrekidis,
-        Ioannis G
-        "A Kernel Approach to Data-Driven {K}oopman Spectral Analysis."
-        Journal of Computational Dynamics 2.2 (2015): 247-265
-
-        Korda, Milan and Mezic, Igor
-        "Linear predictors for nonlinear dynamical systems:
-        Koopman operator meets model predictive control."
-        Automatica 93 (2018): 149-160
-
-    Parameters
-    ----------
-    rbf_type: string, optional (default 'gauss')
-        The type of radial basis functions to be used.
-        Options are: 'gauss', 'thinplate', 'invquad',
-                     'invmultquad', 'polyharmonic'
-
-    n_centers: nonnegative integer, optional (default 10)
-        The number of centers to compute rbf with.
-
-    centers: numpy array, optional (default uniformly distributed over input data)
-        The centers to compute rbf with.
-
-    kernel_width: float, optional (default 1.0)
-        The kernel width for Gaussian rbfs.
-
-    polyharmonic_coeff: float, optional (default 1.0)
-        The polyharmonic coefficient for polyharmonic rbfs.
-
-    include_state: bool, optional (default True)
-        Includes the input coordinates as additional coordinates in the observable.
-
-    Attributes
-    ----------
-    n_input_features_ : int
-        Number of input features.
-
-    n_output_features_ : int
-        Number of output features = Number of centers plus number of input features.
-
+    Note:
+        The implementation is based on the following references:
+        - Williams, Matthew O and Kevrekidis, Ioannis G and Rowley, Clarence W
+          "A data-driven approximation of the {K}oopman operator: extending dynamic
+          mode decomposition."
+          Journal of Nonlinear Science 6 (2015): 1307-1346
+        - Williams, Matthew O and Rowley, Clarence W and Kevrekidis, Ioannis G
+          "A Kernel Approach to Data-Driven {K}oopman Spectral Analysis."
+          Journal of Computational Dynamics 2.2 (2015): 247-265
+        - Korda, Milan and Mezic, Igor
+          "Linear predictors for nonlinear dynamical systems: Koopman operator meets
+          model predictive control."
+          Automatica 93 (2018): 149-160
     """
 
     def __init__(
@@ -125,19 +94,31 @@ class RadialBasisFunction(BaseObservables):
 
     def fit(self, x, y=None):
         """
-        Fit to measurement data.
+        Initializes the RadialBasisFunction with specified parameters.
 
-        Parameters
-        ----------
-        x: array-like, shape (n_samples, n_input_features)
-            Measurement data to be fit.
+        Args:
+            rbf_type (str, optional): The type of radial basis functions to be used.
+                Options are: 'gauss', 'thinplate', 'invquad', 'invmultquad',
+                'polyharmonic'. Defaults to 'gauss'.
+            n_centers (int, optional): The number of centers to compute RBF with.
+                Must be a non-negative integer. Defaults to 10.
+            centers (numpy array, optional): The centers to compute RBF with.
+                If provided, it should have a shape of (n_input_features, n_centers).
+                Defaults to None, in which case the centers are uniformly distributed
+                over input data.
+            kernel_width (float, optional): The kernel width for Gaussian RBFs.
+                Must be a non-negative float. Defaults to 1.0.
+            polyharmonic_coeff (float, optional): The polyharmonic coefficient for
+                polyharmonic RBFs. Must be a non-negative float. Defaults to 1.0.
+            include_state (bool, optional): Whether to include the input coordinates
+                as additional coordinates in the observable. Defaults to True.
 
-        y: None
-            Dummy parameter retained for sklearn compatibility.
-
-        Returns
-        -------
-        self: returns a fit :class:`pykoopman.observables.RadialBasisFunction` instance
+        Raises:
+            TypeError: If rbf_type is not a string, n_centers is not an int, or
+                include_state is not a bool.
+            ValueError: If n_centers, kernel_width or polyharmonic_coeff is negative,
+                rbf_type is not of available type, or centers is provided but
+                n_centers is not equal to centers.shape[1].
         """
         x = validate_input(x)
         n_samples, n_features = x.shape
@@ -185,17 +166,19 @@ class RadialBasisFunction(BaseObservables):
         """
         Apply radial basis function transformation to the data.
 
-        Parameters
-        ----------
-        x: array-like, shape (n_samples, n_input_features)
-            Measurement data to be transformed.
-            It is assumed that rows correspond to examples, which are not required to
-            be equi-spaced in time or in sequential order.
+        Args:
+            x (array-like): Measurement data to be transformed, with shape (n_samples,
+                n_input_features). It is assumed that rows correspond to examples,
+                which are not required to be equi-spaced in time or in sequential order.
 
-        Returns
-        -------
-        y: array-like, shape (n_samples, n_output_features)
-            Transformed data.
+        Returns:
+            array-like: Transformed data, with shape (n_samples, n_output_features).
+
+        Raises:
+            NotFittedError: If the 'fit' method has not been called before the
+                'transform' method.
+            ValueError: If the number of features in 'x' does not match the number of
+                input features expected by the transformer.
         """
         check_is_fitted(self, ["n_input_features_", "centers"])
         x = validate_input(x)
@@ -214,18 +197,21 @@ class RadialBasisFunction(BaseObservables):
         """
         Get the names of the output features.
 
-        Parameters
-        ----------
-        input_features: list of string, length n_input_features,\
-         optional (default None)
-            String names for input features, if available. By default,
-            the names "x0", "x1", ... ,"xn_input_features" are used.
+        Args:
+            input_features (list of str, optional): String names for input features,
+                if available. By default, the names "x0", "x1", ... ,
+                "xn_input_features" are used.
 
-        Returns
-        -------
-        output_feature_names: list of string, length n_ouput_features
-            Output feature names.
+        Returns:
+            list of str: Output feature names.
+
+        Raises:
+            NotFittedError: If the 'fit' method has not been called before the
+                'get_feature_names' method.
+            ValueError: If the length of 'input_features' does not match the number of
+                input features expected by the transformer.
         """
+
         check_is_fitted(self, "n_input_features_")
         if input_features is None:
             input_features = [f"x{i}" for i in range(self.n_input_features_)]
@@ -243,6 +229,22 @@ class RadialBasisFunction(BaseObservables):
         return output_features
 
     def _rbf_lifting(self, x):
+        """
+        Internal method that performs Radial Basis Function (RBF) transformation.
+
+        Args:
+            x (numpy.ndarray): Input data of shape (n_samples, n_input_features)
+
+        Returns:
+            y (numpy.ndarray): Transformed data of shape (n_samples, n_output_features)
+
+        Raises:
+            ValueError: If 'rbf_type' is not one of the available types.
+
+        Notes:
+            This method should not be called directly. It is used internally by the
+            'transform' method.
+        """
         n_samples = x.shape[0]
         y = empty(
             (n_samples, self.n_output_features_),

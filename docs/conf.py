@@ -8,7 +8,7 @@ project = "pykoopman"  # package name
 
 # no need to edit below this line
 
-copyright = f"2022, {author}"
+copyright = f"2023, {author}"
 
 module = importlib.import_module(project)
 version = release = getattr(module, "__version__")
@@ -26,6 +26,7 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx_nbexamples",
     "sphinx.ext.intersphinx",
+    "nbsphinx",
 ]
 
 apidoc_module_dir = f"../{project}"
@@ -36,7 +37,7 @@ autodoc_default_options = {"members": True}
 autodoc_member_order = "bysource"
 autoclass_content = "init"
 
-language = None
+language = "en"
 
 here = pathlib.Path(__file__).parent
 

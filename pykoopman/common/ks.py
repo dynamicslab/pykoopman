@@ -11,11 +11,11 @@ from scipy.fft import ifft
 
 class ks:
     """
-    solving 1D KS equation
+    Solving 1D KS equation
 
     u_t = -u*u_x + u_{xx} + nu*u_{xxxx}
 
-    periodic B.C. between 0 and 2*pi. This PDE is solved
+    Periodic B.C. between 0 and 2*pi. This PDE is solved
     using spectral methods.
     """
 

@@ -15,71 +15,55 @@ from ._base import BaseRegressor
 class EDMD(BaseRegressor):
     """Extended DMD (EDMD) regressor.
 
-    Aims to determine the system matrices A,C
-    that satisfy y' = Ay and x = Cy, where y' is the time-shifted
-    observable with y0 = phi(x0). C is the measurement matrix that maps back to the
-    state.
+    Aims to determine the system matrices A,C that satisfy y' = Ay and x = Cy,
+    where y' is the time-shifted observable with y0 = phi(x0). C is the measurement
+    matrix that maps back to the state.
 
-    The objective functions,
-    :math:`\\|Y'-AY\\|_F`,
-    are minimized using least-squares regression and singular value
-    decomposition.
+    The objective functions, \\|Y'-AY\\|_F, are minimized using least-squares regression
+    and singular value decomposition.
 
     See the following reference for more details:
-        `M.O. Williams , I.G. Kevrekidis, C.W. Rowley
+        `M.O. Williams, I.G. Kevrekidis, C.W. Rowley
         "A Data–Driven Approximation of the Koopman Operator:
         Extending Dynamic Mode Decomposition."
         Journal of Nonlinear Science, Vol. 25, 1307-1346, 2015.
         <https://link.springer.com/article/10.1007/s00332-015-9258-5>`_
 
-    Attributes
-    ----------
-    _coef_ : numpy.ndarray, shape (n_input_features_, n_input_features_) or
-        (n_input_features_, n_input_features_ + n_control_features_)
-        Weight vectors of the regression problem. Corresponds to either [A] or [A,B]
-
-    _state_matrix_ : numpy.ndarray, shape (n_input_features_, n_input_features_)
-        Identified state transition matrix A of the underlying system.
-
-    _eigenvalues_ : numpy.ndarray, shape (n_input_features_,)
-        Identified Koopman lamda
-
-    eigenvectors_ : numpy.ndarray, shape (n_input_features_, n_input_features_)
-        Identified Koopman eigenvectors
-
-    _unnormalized_modes_ : numpy.ndarray, shape (n_input_features_, n_input_features_)
-        Identified Koopman eigenvectors
-
-    n_samples_ : int
-        Number of samples
-
-    n_input_features_ : int
-        Number of input features
-
-    C : numpy.ndarray, shape (n_input_features_, n_input_features_)
-        Matrix that maps psi to the input features
+    Attributes:
+        _coef_ (numpy.ndarray): Weight vectors of the regression problem. Corresponds
+            to either [A] or [A,B].
+        _state_matrix_ (numpy.ndarray): Identified state transition matrix A of the
+            underlying system.
+        _eigenvalues_ (numpy.ndarray): Identified Koopman lambda.
+        _eigenvectors_ (numpy.ndarray): Identified Koopman eigenvectors.
+        _unnormalized_modes_ (numpy.ndarray): Identified Koopman eigenvectors.
+        n_samples_ (int): Number of samples.
+        n_input_features_ (int): Number of input features.
+        C (numpy.ndarray): Matrix that maps psi to the input features.
     """
 
     def __init__(self, svd_rank=1.0, tlsq_rank=0):
+        """Initialize the EDMD regressor.
+
+        Args:
+            svd_rank (float): Rank parameter for singular value decomposition.
+                Default is 1.0.
+            tlsq_rank (int): Rank parameter for total least squares. Default is 0.
+        """
         self.svd_rank = svd_rank
         self.tlsq_rank = tlsq_rank
 
     def fit(self, x, y=None, dt=None):
-        """
-        Parameters
-        ----------
-        x : numpy.ndarray, shape (n_samples, n_features)
-            Measurement data to be fit.
+        """Fit the EDMD regressor to the given data.
 
-        y : numpy.ndarray, shape (n_samples, n_features)
-            Time-shifted measurement data to be fit
+        Args:
+            x (numpy.ndarray): Measurement data to be fit.
+            y (numpy.ndarray, optional): Time-shifted measurement data to be fit.
+                Defaults to None.
+            dt (scalar, optional): Discrete time-step. Defaults to None.
 
-        dt : scalar
-            Discrete time-step
-
-        Returns
-        -------
-        self: returns a fitted ``EDMD`` instance
+        Returns:
+            self: Fitted EDMD instance.
         """
         self.n_samples_, self.n_input_features_ = x.shape
 
@@ -110,41 +94,40 @@ class EDMD(BaseRegressor):
         return self
 
     def predict(self, x):
-        """
-        Parameters
-        ----------
-        x: numpy.ndarray, shape (n_samples, n_features)
-            Measurement data upon which to base prediction.
+        """Predict the next timestep based on the given data.
 
-        Returns
-        -------
-        y: numpy.ndarray, shape (n_samples, n_features)
-            Prediction of x one timestep in the future.
+        Args:
+            x (numpy.ndarray): Measurement data upon which to base prediction.
 
+        Returns:
+            y (numpy.ndarray): Prediction of x one timestep in the future.
         """
         check_is_fitted(self, "coef_")
         y = x @ self.ur.conj() @ self.state_matrix_.T @ self.ur.T
         return y
 
     def _compute_phi(self, x_col):
-        """Returns `phi(x)` given `x`"""
+        """Compute phi(x) given x.
+
+        Args:
+            x_col (numpy.ndarray): Input data x.
+
+        Returns:
+            phi (numpy.ndarray): Value of phi(x).
+        """
         if x_col.ndim == 1:
             x_col = x_col.reshape(-1, 1)
         phi = self._ur.conj().T @ x_col
         return phi
 
     def _compute_psi(self, x_col):
-        """Returns `psi(x)` given `x`
+        """Compute psi(x) given x.
 
-        Parameters
-        ----------
-        x : numpy.ndarray, shape (n_samples, n_features)
-            Measurement data upon which to compute psi values.
+        Args:
+            x_col (numpy.ndarray): Input data x.
 
-        Returns
-        -------
-        phi : numpy.ndarray, shape (n_samples, n_input_features_)
-            value of Koopman psi at x
+        Returns:
+            psi (numpy.ndarray): Value of psi(x).
         """
         # compute psi - one column if x is a row
         if x_col.ndim == 1:
@@ -153,13 +136,10 @@ class EDMD(BaseRegressor):
         return psi
 
     def _set_initial_time_dictionary(self, time_dict):
-        """Set the initial values for the class fields `time_dict` and
-        `original_time`. This is usually called in `fit()` and never again.
+        """Set the initial values for the class fields time_dict and original_time.
 
-        Parameters
-        ----------
-        time_dict : dict
-            Initial time dictionary for this DMD instance.
+        Args:
+            time_dict (dict): Initial time dictionary for this DMD instance.
         """
         if not ("t0" in time_dict and "tend" in time_dict and "dt" in time_dict):
             raise ValueError('time_dict must contain the keys "t0", "tend" and "dt".')
@@ -173,30 +153,92 @@ class EDMD(BaseRegressor):
 
     @property
     def coef_(self):
+        """
+        Weight vectors of the regression problem. Corresponds to either [A] or
+        [A,B].
+
+        """
         check_is_fitted(self, "_coef_")
         return self._coef_
 
     @property
     def state_matrix_(self):
+        """
+        The EDMD state transition matrix.
+
+        This method checks if the regressor is fitted before returning the state matrix.
+
+        Returns:
+            numpy.ndarray: The state transition matrix.
+
+        Raises:
+            NotFittedError: If the regressor is not fitted yet.
+        """
         check_is_fitted(self, "_state_matrix_")
         return self._state_matrix_
 
     @property
     def eigenvalues_(self):
+        """
+        The identified Koopman eigenvalues.
+
+        This method checks if the regressor is fitted before returning the eigenvalues.
+
+        Returns:
+            numpy.ndarray: The Koopman eigenvalues.
+
+        Raises:
+            NotFittedError: If the regressor is not fitted yet.
+        """
         check_is_fitted(self, "_eigenvalues_")
         return self._eigenvalues_
 
     @property
     def eigenvectors_(self):
+        """
+        The identified Koopman eigenvectors.
+
+        This method checks if the regressor is fitted before returning the eigenvectors.
+
+        Returns:
+            numpy.ndarray: The Koopman eigenvectors.
+
+        Raises:
+            NotFittedError: If the regressor is not fitted yet.
+        """
         check_is_fitted(self, "_eigenvectors_")
         return self._eigenvectors_
 
     @property
     def unnormalized_modes(self):
+        """
+        The raw EDMD V with each column as one EDMD mode.
+
+        This method checks if the regressor is fitted before returning the unnormalized
+            modes. Note that this will combined with the measurement matrix from the
+            observer to give you the true Koopman modes
+
+        Returns:
+            numpy.ndarray: The unnormalized modes.
+
+        Raises:
+            NotFittedError: If the regressor is not fitted yet.
+        """
         check_is_fitted(self, "_unnormalized_modes")
         return self._unnormalized_modes
 
     @property
     def ur(self):
+        """
+        The left singular vectors 'U'.
+
+        This method checks if the regressor is fitted before returning 'U'.
+
+        Returns:
+            numpy.ndarray: The left singular vectors 'U'.
+
+        Raises:
+            NotFittedError: If the regressor is not fitted yet.
+        """
         check_is_fitted(self, "_ur")
         return self._ur

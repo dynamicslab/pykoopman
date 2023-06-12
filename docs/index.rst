@@ -6,7 +6,12 @@
    :caption: User Guide
 
    API Documentation <api/pykoopman>
-   Examples <examples/index>
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+   examples/tutorial_compose_observables
 
 .. toctree::
    :maxdepth: 1
