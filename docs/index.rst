@@ -11,7 +11,7 @@
    :maxdepth: 2
    :caption: Contents:
 
-   examples/tutorial_compose_observables
+   ../examples/tutorial_compose_observables
 
 .. toctree::
    :maxdepth: 1
