@@ -8,10 +8,10 @@
    API Documentation <api/pykoopman>
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 3
+   :glob:
 
-   ../examples/tutorial_compose_observables
+   ../examples/*
 
 .. toctree::
    :maxdepth: 1
