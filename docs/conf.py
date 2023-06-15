@@ -18,6 +18,8 @@ version = release = getattr(module, "__version__")
 master_doc = "index"
 
 extensions = [
+    "nbsphinx",
+    "sphinx_codeautolink",
     "sphinxcontrib.apidoc",
     "sphinx.ext.autodoc",
     "sphinx.ext.viewcode",
@@ -26,7 +28,6 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx_nbexamples",
     "sphinx.ext.intersphinx",
-    "nbsphinx",
 ]
 
 apidoc_module_dir = f"../{project}"
@@ -68,7 +69,9 @@ example_gallery_config = dict(
     examples_dirs=["../examples"],
     gallery_dirs=["examples"],
     pattern=".+.ipynb",
+    urls="https://github.com/dynamicslab/pykoopman/blob/master/examples",
 )
+
 
 intersphinx_mapping = {
     "derivative": ("https://derivative.readthedocs.io/en/latest/", None)

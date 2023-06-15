@@ -19,4 +19,5 @@ __all__ = [
     "differentiation",
     "observables",
     "regression",
+    "analytics",
 ]

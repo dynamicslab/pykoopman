@@ -5,16 +5,14 @@ PyKoopman
 
 **PyKoopman** is a Python package for computing data-driven approximations to the Koopman operator.
 
-.. contents:: Table of contents
-
 Data-driven approximation of Koopman operator
 ---------------------------------------------
 
 Given a nonlinear dynamical system,
 
-.. code-block:: text
+.. math::
 
-    x'(t) = f(x(t)),
+   x'(t) = f(x(t)),
 
 the Koopman operator governs the temporal evolution of the measurement function.
 Unfortunately, it is an infinite-dimensional linear operator. Most of the time, one has to
@@ -37,7 +35,6 @@ We design ``PyKoopman`` such that it is compatible to ``scikit-learn`` objects a
 Example
 ^^^^^^^
 
-* `Tutorial on how to compose observables <https://colab.research.google.com/github/dynamicslab/pykoopman/blob/master/examples/tutorial_compose_observables.ipynb>`_
 
 
 Installation
