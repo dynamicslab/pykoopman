@@ -2,15 +2,21 @@
 
 
 .. toctree::
-   :maxdepth: 1
-   :caption: User Guide
+    :maxdepth: 4
+    :caption: User Guide
 
-   API Documentation <api/pykoopman>
-   auto_examples/index
+    API Documentation <api/pykoopman>
 
 .. toctree::
-   :maxdepth: 1
-   :caption: Useful links
+    :maxdepth: 4
+    :glob:
 
-   PyKoopman @ PyPI <https://pypi.org/project/pykoopman/>
-   Issue Tracker <https://github.com/dynamicslab/pykoopman/issues>
+    tutorial_compose_observables
+
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Useful links
+
+    PyKoopman @ PyPI <https://pypi.org/project/pykoopman/>
+    Issue Tracker <https://github.com/dynamicslab/pykoopman/issues>
