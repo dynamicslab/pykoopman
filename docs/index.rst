@@ -11,7 +11,7 @@
    :maxdepth: 3
    :glob:
 
-   ../examples/*
+   tutorial_compose_observables.ipynb
 
 .. toctree::
    :maxdepth: 1
