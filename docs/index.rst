@@ -8,12 +8,12 @@
     API Documentation <api/pykoopman>
 
 .. toctree::
-    :maxdepth: 4
+    :maxdepth: 2
     :caption: Tutorials
     :glob:
 
-    tutorial_compose_observables.ipynb
-    examples/*
+    tutorial_compose_observables
+    tutorial_compute_differentiation
 
 .. toctree::
     :maxdepth: 1
