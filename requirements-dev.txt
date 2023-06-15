@@ -10,6 +10,7 @@ setuptools_scm_git_archive
 jupyter
 notebook
 nbsphinx
+sphinx-codeautolink
 sphinx >= 2,<7.0.0
 sphinxcontrib-apidoc
 sphinx_rtd_theme
