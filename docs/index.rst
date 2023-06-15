@@ -12,6 +12,7 @@
     :caption: Tutorials
     :glob:
 
+    tutorial_compose_observables.ipynb
     ./examples/tutorial_compose_observables.ipynb
     asdf <./examples/tutorial_compute_differentiation.ipynb>
 
