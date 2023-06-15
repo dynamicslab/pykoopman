@@ -42,13 +42,15 @@ Example
 2. `Learning how to compute time derivatives <https://pykoopman.readthedocs
 .io/en/master/tutorial_compute_differentiation.html>`__
 
-3. `Dynamic mode decomposition on two mixed spatial signals <https://pykoopman.readthedocs.io/en/master/tutorial_dmd_separating_two_mixed_signals_400d_system.html>`__
+3. `Dynamic mode decomposition on two mixed spatial signals <https://pykoopman.
+readthedocs.io/en/master/tutorial_dmd_separating_two_mixed_signals_400d_system.html>`__
 
 4. `Dynamic mode decomposition with control on a 2D linear system <https://pykoopman
 .readthedocs.io/en/master/tutorial_dmd_with_control_2d_system
 .html>`__
 
-5. `Dynamic mode decomposition with control (DMDc) for a 128D system <https://pykoopman.readthedocs.io/en/master/tutorial_dmd_with_control_128d_system.html>`__
+5. `Dynamic mode decomposition with control (DMDc) for a 128D system <https://pykoopman
+.readthedocs.io/en/master/tutorial_dmd_with_control_128d_system.html>`__
 
 6. `Dynamic mode decomposition with control on a high-dimensional linear system
 <https://pykoopman.readthedocs.io/en/master/tutorial_linear_random_control_system
@@ -58,7 +60,8 @@ Example
 <https://pykoopman.readthedocs.io/en/master/tutorial_dmd_succeeds_pde_examples
 .html>`__
 
-8. `Unsuccessful examples of using Dynamic mode decomposition on PDE system <https://pykoopman.readthedocs.io/en/master/tutorial_dmd_failed_for_pde_examples.html>`__
+8. `Unsuccessful examples of using Dynamic mode decomposition on PDE system <https://
+pykoopman.readthedocs.io/en/master/tutorial_dmd_failed_for_pde_examples.html>`__
 
 9. `Extended DMD for Van Der Pol System <https://pykoopman.readthedocs
 .io/en/master/tutorial_koopman_edmd_with_rbf.html>`__
@@ -69,12 +72,14 @@ Example
 11. `Comparing DMD and KDMD for Slow manifold dynamics <https://pykoopman.readthedocs
 .io/en/master/tutorial_koopman_kdmd_on_slow_manifold.html>`__
 
-12. `Extended DMD with control for chaotic duffing oscillator <https://pykoopman.readthedocs.io/en/master/tutorial_koopman_edmdc_for_chaotic_duffing_oscillator.html>`__
+12. `Extended DMD with control for chaotic duffing oscillator <https://pykoopman.
+readthedocs.io/en/master/tutorial_koopman_edmdc_for_chaotic_duffing_oscillator.html>`__
 
 13. `Extended DMD with control for Van der Pol oscillator <https://pykoopman.readthedocs
 .io/en/master/tutorial_koopman_edmdc_for_vdp_system.html>`__
 
-14. `Hankel Alternative View of Koopman Operator for Lorenz System <https://pykoopman.readthedocs.io/en/master/tutorial_koopman_havok_3d_lorenz.html>`__
+14. `Hankel Alternative View of Koopman Operator for Lorenz System <https://pykoopman.
+readthedocs.io/en/master/tutorial_koopman_havok_3d_lorenz.html>`__
 
 15. `Hankel DMD with control for Van der Pol Oscillator <https://pykoopman.readthedocs
 .io/en/master/tutorial_koopman_hankel_dmdc_for_vdp_system.html>`__
