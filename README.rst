@@ -35,7 +35,60 @@ We design ``PyKoopman`` such that it is compatible to ``scikit-learn`` objects a
 Example
 ^^^^^^^
 
+1. `Learning how to create observables <https://pykoopman.readthedocs
+.io/en/master/tutorial_compose_observables
+.html>`__
 
+2. `Learning how to compute time derivatives <https://pykoopman.readthedocs
+.io/en/master/tutorial_compute_differentiation.html>`__
+
+3. `Dynamic mode decomposition on two mixed spatial signals <https://pykoopman.readthedocs.io/en/master/tutorial_dmd_separating_two_mixed_signals_400d_system.html>`__
+
+4. `Dynamic mode decomposition with control on a 2D linear system <https://pykoopman
+.readthedocs.io/en/master/tutorial_dmd_with_control_2d_system
+.html>`__
+
+5. `Dynamic mode decomposition with control (DMDc) for a 128D system <https://pykoopman.readthedocs.io/en/master/tutorial_dmd_with_control_128d_system.html>`__
+
+6. `Dynamic mode decomposition with control on a high-dimensional linear system
+<https://pykoopman.readthedocs.io/en/master/tutorial_linear_random_control_system
+.html>`__
+
+7. `Successful examples of using Dynamic mode decomposition on PDE system
+<https://pykoopman.readthedocs.io/en/master/tutorial_dmd_succeeds_pde_examples
+.html>`__
+
+8. `Unsuccessful examples of using Dynamic mode decomposition on PDE system <https://pykoopman.readthedocs.io/en/master/tutorial_dmd_failed_for_pde_examples.html>`__
+
+9. `Extended DMD for Van Der Pol System <https://pykoopman.readthedocs
+.io/en/master/tutorial_koopman_edmd_with_rbf.html>`__
+
+10. `Learning Koopman eigenfunctions on Slow manifold <https://pykoopman.readthedocs
+.io/en/master/tutorial_koopman_eigenfunction_model_slow_manifold.html>`__
+
+11. `Comparing DMD and KDMD for Slow manifold dynamics <https://pykoopman.readthedocs
+.io/en/master/tutorial_koopman_kdmd_on_slow_manifold.html>`__
+
+12. `Extended DMD with control for chaotic duffing oscillator <https://pykoopman.readthedocs.io/en/master/tutorial_koopman_edmdc_for_chaotic_duffing_oscillator.html>`__
+
+13. `Extended DMD with control for Van der Pol oscillator <https://pykoopman.readthedocs
+.io/en/master/tutorial_koopman_edmdc_for_vdp_system.html>`__
+
+14. `Hankel Alternative View of Koopman Operator for Lorenz System <https://pykoopman.readthedocs.io/en/master/tutorial_koopman_havok_3d_lorenz.html>`__
+
+15. `Hankel DMD with control for Van der Pol Oscillator <https://pykoopman.readthedocs
+.io/en/master/tutorial_koopman_hankel_dmdc_for_vdp_system.html>`__
+
+16. `Neural Network DMD on Slow Manifold <https://pykoopman.readthedocs
+.io/en/master/tutorial_koopman_nndmd_examples
+.html>`__
+
+17. `EDMD and NNDMD for a simple linear system <https://pykoopman.readthedocs
+.io/en/master/tutorial_linear_system_koopman_eigenfunctions_with_edmd_and_nndmd.html>`__
+
+18. `Sparisfying a minimal Koopman invariant subspace from EDMD for a simple linear
+system <https://pykoopman.readthedocs
+.io/en/master/tutorial_sparse_modes_selection_2d_linear_system.html>`__
 
 Installation
 -------------
