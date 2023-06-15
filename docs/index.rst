@@ -8,7 +8,7 @@
     API Documentation <api/pykoopman>
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
     :caption: Tutorials
     :glob:
 
