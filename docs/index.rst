@@ -1,12 +1,5 @@
 .. include:: ../README.rst
 
-
-.. toctree::
-    :maxdepth: 4
-    :caption: User Guide
-
-    API Documentation <api/pykoopman>
-
 .. toctree::
     :maxdepth: 1
     :caption: Tutorials
@@ -30,6 +23,12 @@
     tutorial_koopman_nndmd_examples
     tutorial_linear_system_koopman_eigenfunctions_with_edmd_and_nndmd
     tutorial_sparse_modes_selection_2d_linear_system
+
+.. toctree::
+    :maxdepth: 4
+    :caption: User Guide
+
+    API Documentation <api/pykoopman>
 
 .. toctree::
     :maxdepth: 1

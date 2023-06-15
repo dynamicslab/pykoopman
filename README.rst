@@ -5,8 +5,6 @@ PyKoopman
 
 **PyKoopman** is a Python package for computing data-driven approximations to the Koopman operator.
 
-.. contents:: Table of contents
-
 Data-driven approximation of Koopman operator
 ---------------------------------------------
 
