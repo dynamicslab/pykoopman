@@ -3,7 +3,8 @@ derivative
 scikit-learn < 1.2
 numpy
 scipy
-pydmd @ git+https://github.com/mathLab/PyDMD@c98ede0#egg=pydmd
+# pydmd @ git+https://github.com/mathLab/PyDMD@c98ede0#egg=pydmd
+pydmd
 optht
 scipy
 prettytable
