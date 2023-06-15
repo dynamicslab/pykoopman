@@ -12,8 +12,8 @@
     :caption: Tutorials
     :glob:
 
-    ./examples/tutorial_compose_observables
-    ./examples/tutorial_compute_differentiation
+    ./examples/tutorial_compose_observables.ipynb
+    asdf <./examples/tutorial_compute_differentiation.ipynb>
 
 .. toctree::
     :maxdepth: 1
