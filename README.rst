@@ -35,7 +35,7 @@ We design ``PyKoopman`` such that it is compatible to ``scikit-learn`` objects a
 Example
 ^^^^^^^
 
--
+
 
 Installation
 -------------
