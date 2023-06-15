@@ -19,7 +19,7 @@ master_doc = "index"
 
 extensions = [
     "nbsphinx",
-    'sphinx_codeautolink',
+    "sphinx_codeautolink",
     "sphinxcontrib.apidoc",
     "sphinx.ext.autodoc",
     "sphinx.ext.viewcode",
@@ -27,7 +27,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.mathjax",
     "sphinx_nbexamples",
-    "sphinx.ext.intersphinx"
+    "sphinx.ext.intersphinx",
 ]
 
 apidoc_module_dir = f"../{project}"
