@@ -11,7 +11,7 @@
     :maxdepth: 4
     :glob:
 
-    tutorial_compose_observables
+    ../examples/tutorial_compose_observables
 
 
 .. toctree::
