@@ -37,8 +37,7 @@ We design ``PyKoopman`` such that it is compatible to ``scikit-learn`` objects a
 Example
 ^^^^^^^
 
-* `Tutorial on how to compose observables <https://colab.research.google.com/github/dynamicslab/pykoopman/blob/master/examples/tutorial_compose_observables.ipynb>`_
-
+-
 
 Installation
 -------------
