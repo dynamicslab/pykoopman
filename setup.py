@@ -30,7 +30,7 @@ with open("requirements.txt", "r") as f:
 
 setup(
     name=name,  # Replace with your own username
-    use_scm_version=True,
+    version='1.0.0',
     setup_requires=["setuptools_scm", "setuptools_scm_git_archive"],
     author=author,
     author_email=email,
