@@ -72,9 +72,9 @@ class PyDMDRegressor(BaseRegressor):
             raise ValueError("regressor must be a subclass of DMDBase from pydmd.")
         self.regressor = regressor
         # super(PyDMDRegressor, self).__init__(regressor)
-        self.tlsq_rank = regressor.tlsq_rank
-        self.svd_rank = regressor.svd_rank
-        self.forward_backward = regressor.forward_backward
+        self.tlsq_rank = regressor._tlsq_rank
+        self.svd_rank = regressor._Atilde._svd_rank
+        self.forward_backward = regressor._Atilde._forward_backward
         self.tikhonov_regularization = tikhonov_regularization
         self.flag_xy = False
         self._ur = None
