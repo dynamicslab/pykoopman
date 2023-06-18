@@ -8,6 +8,8 @@ PyKoopman
 Data-driven approximation of Koopman operator
 ---------------------------------------------
 
+.. figure:: https://github.com/dynamicslab/pykoopman/blob/master/docs/JOSS/Fig1.png
+
 Given a nonlinear dynamical system,
 
 .. math::
@@ -23,10 +25,6 @@ project the Koopman operator onto a finite-dimensional subspace that is spanned 
 
 If the system state is also contained in such subspace, then effectively, the nonlinear dynamical system is (approximately)
 linearized in a global sense.
-
-.. figure:: https://github.com/dynamicslab/pykoopman/blob/master/docs/JOSS/Fig1.png
-
-    Schematic of data-driven approximation of Koopman operator
 
 The goal of data-driven approximation of Koopman
 operator is to find such a set of functions that span such lifted space and the
