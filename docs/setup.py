@@ -22,10 +22,10 @@ classifiers = [
 ]
 
 
-with open("README.rst", "r") as f:
+with open("../README.rst", "r") as f:
     long_description = f.read()
 
-with open("requirements.txt", "r") as f:
+with open("../requirements.txt", "r") as f:
     requirements = f.readlines()
 
 setup(
