@@ -24,7 +24,7 @@ project the Koopman operator onto a finite-dimensional subspace that is spanned 
 If the system state is also contained in such subspace, then effectively, the nonlinear dynamical system is (approximately)
 linearized in a global sense.
 
-.. figure:: ./docs/JOSS/Fig1.png
+.. figure:: https://github.com/dynamicslab/pykoopman/blob/master/docs/JOSS/Fig1.png
 
     Schematic of data-driven approximation of Koopman operator
 
@@ -35,7 +35,7 @@ transition matrix associated with the lifted system.
 Structure of PyKoopman
 ^^^^^^^^^^^^^^^^^^^^^^
 
-.. figure:: ./docs/JOSS/Fig2.png
+.. figure:: https://github.com/dynamicslab/pykoopman/blob/master/docs/JOSS/Fig2.png
 
 PyKoopman package is centered around the ``Koopman`` class and ``KoopmanContinuous`` class. It consists of two key components
 
