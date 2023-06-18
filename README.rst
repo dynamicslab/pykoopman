@@ -17,8 +17,16 @@ Given a nonlinear dynamical system,
 the Koopman operator governs the temporal evolution of the measurement function.
 Unfortunately, it is an infinite-dimensional linear operator. Most of the time, one has to
 project the Koopman operator onto a finite-dimensional subspace that is spanned by user-defined/data-adaptive functions.
+
+.. math::
+    z = \Phi(x).
+
 If the system state is also contained in such subspace, then effectively, the nonlinear dynamical system is (approximately)
 linearized in a global sense.
+
+The goal of data-driven approximation of Koopman
+operator is to find such a set of functions that span such lifted space and the
+transition matrix associated with the lifted system.
 
 Structure of PyKoopman
 ^^^^^^^^^^^^^^^^^^^^^^
