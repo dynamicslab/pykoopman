@@ -24,12 +24,19 @@ project the Koopman operator onto a finite-dimensional subspace that is spanned 
 If the system state is also contained in such subspace, then effectively, the nonlinear dynamical system is (approximately)
 linearized in a global sense.
 
+.. figure:: ./docs/JOSS/Fig1.png
+
+    Schematic of data-driven approximation of Koopman operator
+
 The goal of data-driven approximation of Koopman
 operator is to find such a set of functions that span such lifted space and the
 transition matrix associated with the lifted system.
 
 Structure of PyKoopman
 ^^^^^^^^^^^^^^^^^^^^^^
+
+.. figure:: ./docs/JOSS/Fig2.png
+
 PyKoopman package is centered around the ``Koopman`` class and ``KoopmanContinuous`` class. It consists of two key components
 
 * ``observables``: a set of observables functions, which spans the subspace for projection.
@@ -38,6 +45,8 @@ PyKoopman package is centered around the ``Koopman`` class and ``KoopmanContinuo
 
 After ``Koopman``/``KoopmanContinuous`` object has been created, it must be fit to data, similar to a ``scikit-learn`` model.
 We design ``PyKoopman`` such that it is compatible to ``scikit-learn`` objects and methods as much as possible.
+
+
 
 
 Example
