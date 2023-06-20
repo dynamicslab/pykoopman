@@ -183,36 +183,6 @@ Reporting issues or bugs
 ^^^^^^^^^^^^^^^^^^^^^^^^
 If you find a bug in the code or want to request a new feature, please open an issue.
 
-References
-------------
-
--  Williams, Matthew O., Ioannis G. Kevrekidis, and Clarence W. Rowley.
-   *A data–driven approximation of the koopman operator: Extending dynamic mode
-   decomposition.* Journal of Nonlinear Science 25, no. 6 (2015): 1307-1346.
-
--  Williams, Matthew O., Clarence W. Rowley, and Ioannis G. Kevrekidis.
-   *A kernel-based approach to data-driven Koopman spectral analysis.* arXiv
-   preprint arXiv:1411.2260 (2014).
-
--  Brunton, Steven L., et al. *Chaos as an intermittently forced linear system.*
-   Nature communications 8.1 (2017): 1-9.
-
--  Kaiser, Eurika, J. Nathan Kutz, and Steven L. Brunton.
-   *Data-driven discovery of Koopman eigenfunctions for control.*
-   Machine Learning: Science and Technology 2.3 (2021): 035023.
-
--  Lusch, Bethany, J. Nathan Kutz, and Steven L. Brunton.
-   *Deep learning for universal linear embeddings of nonlinear dynamics.* Nature
-   communications 9.1 (2018): 4950.
-
--  Otto, Samuel E., and Clarence W. Rowley. *Linearly recurrent autoencoder networks
-   for learning dynamics.* SIAM Journal on Applied Dynamical Systems 18.1 (2019):
-   558-593.
-
--  Pan, Shaowu, Nicholas Arnold-Medabalimi, and Karthik Duraisamy.
-   *Sparsity-promoting algorithms for the discovery of informative Koopman-invariant
-   subspaces.* Journal of Fluid Mechanics 917 (2021).
-
 .. |Build| image:: https://github.com/dynamicslab/pykoopman/workflows/Tests/badge.svg
     :target: https://github.com/dynamicslab/pykoopman/actions?query=workflow%3ATests
 
