@@ -209,5 +209,5 @@ Related packages
 .. |Codecov| image:: https://codecov.io/github/dynamicslab/pykoopman/coverage.svg
     :target: https://app.codecov.io/gh/dynamicslab/pykoopman
 
-.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.8041854.svg
-   :target: https://doi.org/10.5281/zenodo.8041854
+.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.8060893.svg
+   :target: https://doi.org/10.5281/zenodo.8060893
