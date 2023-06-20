@@ -9,7 +9,7 @@ tags:
   - neural networks
 authors:
   - name: Shaowu Pan
-    affiliation: 1,3
+    affiliation: "1, 3"
   - name: Eurika Kaiser
     affiliation: 2
   - name: Brian M. de Silva
