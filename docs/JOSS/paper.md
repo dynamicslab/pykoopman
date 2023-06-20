@@ -9,14 +9,19 @@ tags:
   - neural networks
 authors:
   - name: Shaowu Pan
+    orcid: 0000-0002-2462-362X
     affiliation: "1, 3"
   - name: Eurika Kaiser
+    orcid: 0000-0001-6049-0812
     affiliation: 2
   - name: Brian M. de Silva
+    orcid: 0000-0003-0944-900X
     affiliation: 1
   - name: J. Nathan Kutz
+    orcid: 0000-0002-6004-2275
     affiliation: 1
   - name: Steven L. Brunton
+    orcid: 0000-0002-6565-5118
     affiliation: 2
 affiliations:
  - name: Department of Applied Mathematics, University of Washington
@@ -25,8 +30,7 @@ affiliations:
    index: 2
  - name: Department of Mechanical, Aerospace, and Nuclear Engineering, Rensselaer Polytechnic Institute
    index: 3
-date: 07 May 2023
-output: bookdown::html_document2
+date: 20 June 2023
 bibliography: paper.bib
 ---
 

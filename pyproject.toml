@@ -6,11 +6,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pykoopman"
-version = "1.0.3"
+version = "1.0.4"
 authors = [
     { name="Shaowu Pan", email="shawnpan@uw.edu" },
     { name="Eurika Kaiser", email="eurika@uw.edu" },
-    { name="Brian de Silva", email="bdesilva@uw.edu" }
+    { name="Brian de Silva", email="bdesilva@uw.edu" },
+    { name="J. Nathan Kutz", email="kutz@uw.edu" },
+    { name="Steven L. Brunton", email="sbrunton@uw.edu" },
 ]
 description = "Python package for data-driven approximations to the Koopman operator."
 readme = "README.rst"
