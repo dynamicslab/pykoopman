@@ -187,7 +187,7 @@ If you find a bug in the code or want to request a new feature, please open an i
     :target: https://github.com/dynamicslab/pykoopman/actions?query=workflow%3ATests
 
 .. |Docs| image:: https://readthedocs.org/projects/pykoopman/badge/?version=latest
-    :target: https://pykoopman.readthedocs.io/en/latest/?badge=latest
+    :target: https://pykoopman.readthedocs.io/en/master/badge/?version=latest
     :alt: Documentation Status
 
 .. |PyPI| image:: https://badge.fury.io/py/pykoopman.svg
