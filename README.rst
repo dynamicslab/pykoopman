@@ -1,7 +1,7 @@
 PyKoopman
 =========
 
-|Build| |Docs| |PyPI| |Codecov|
+|Build| |Docs| |PyPI| |Codecov| |DOI|
 
 **PyKoopman** is a Python package for computing data-driven approximations to the Koopman operator.
 
@@ -47,8 +47,8 @@ We design ``PyKoopman`` such that it is compatible to ``scikit-learn`` objects a
 
 
 
-Example
-^^^^^^^
+Examples
+^^^^^^^^
 
 1. `Learning how to create observables <https://pykoopman.readthedocs
 .io/en/master/tutorial_compose_observables
@@ -183,11 +183,24 @@ Reporting issues or bugs
 ^^^^^^^^^^^^^^^^^^^^^^^^
 If you find a bug in the code or want to request a new feature, please open an issue.
 
+Citing PySINDy
+--------------
+
+(To be filled)
+
+Related packages
+----------------
+* `PySINDy <https://github.com/dynamicslab/pysindy/>`_ - A Python libray for the Sparse Identification of Nonlinear Dynamical
+  systems (SINDy) method introduced in Brunton et al. (2016a).
+* `Deeptime <https://github.com/deeptime-ml/deeptime>`_ - A Python library for the analysis of time series data with methods for dimension reduction, clustering, and Markov model estimation.
+* `PyDMD <https://github.com/mathLab/PyDMD/>`_ - A Python package using the Dynamic Mode Decomposition (DMD) for a data-driven model simplification based on spatiotemporal coherent structures. DMD is a great alternative to SINDy.
+
+
 .. |Build| image:: https://github.com/dynamicslab/pykoopman/workflows/Tests/badge.svg
     :target: https://github.com/dynamicslab/pykoopman/actions?query=workflow%3ATests
 
-.. |Docs| image:: https://readthedocs.org/projects/pykoopman/badge/?version=latest
-    :target: https://pykoopman.readthedocs.io/en/master/badge/?version=latest
+.. |Docs| image:: https://readthedocs.org/projects/pykoopman/badge/?version=master
+    :target: https://pykoopman.readthedocs.io/en/master/?badge=master
     :alt: Documentation Status
 
 .. |PyPI| image:: https://badge.fury.io/py/pykoopman.svg
@@ -195,3 +208,6 @@ If you find a bug in the code or want to request a new feature, please open an i
 
 .. |Codecov| image:: https://codecov.io/github/dynamicslab/pykoopman/coverage.svg
     :target: https://app.codecov.io/gh/dynamicslab/pykoopman
+
+.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.8041854.svg
+   :target: https://doi.org/10.5281/zenodo.8041854
