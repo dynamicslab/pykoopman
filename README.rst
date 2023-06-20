@@ -194,6 +194,7 @@ Related packages
   systems (SINDy) method introduced in Brunton et al. (2016a).
 * `Deeptime <https://github.com/deeptime-ml/deeptime>`_ - A Python library for the analysis of time series data with methods for dimension reduction, clustering, and Markov model estimation.
 * `PyDMD <https://github.com/mathLab/PyDMD/>`_ - A Python package using the Dynamic Mode Decomposition (DMD) for a data-driven model simplification based on spatiotemporal coherent structures. DMD is a great alternative to SINDy.
+* `pykoop <https://github.com/decargroup/pykoop>`_ - a Koopman operator identification library written in Python
 
 
 .. |Build| image:: https://github.com/dynamicslab/pykoopman/workflows/Tests/badge.svg
