@@ -39,37 +39,41 @@ PyKoopman package is centered around the ``Koopman`` class and ``KoopmanContinuo
 
 * ``observables``: a set of observables functions, which spans the subspace for projection.
 
-* ``regressor``: the optimization algorithm to find the best `fit` for the projection of Koopman operator.
+* ``regressor``: the optimization algorithm to find the best ``fit`` for the
+  projection of Koopman operator.
 
 After ``Koopman``/``KoopmanContinuous`` object has been created, it must be fit to data, similar to a ``scikit-learn`` model.
 We design ``PyKoopman`` such that it is compatible to ``scikit-learn`` objects and methods as much as possible.
 
-A list of features implemented:
+
+Features implemented
+^^^^^^^^^^^^^^^^^^^^
 
 - Observable library for lifting the state $\mathbf{x}$ into the observable space
 
-  - Identity (for DMD/DMDc or in case users want to compute observables themselves): `Identity`
-  - Multivariate polynomials: `Polynomial`
-  - Time delay coordinates: `TimeDelay`
-  - Radial basis functions: `RadialBasisFunctions`
-  - Random Fourier features: `RandomFourierFeatures`
-  - Custom library (defined by user-supplied functions): `CustomObservables`
-  - Concatenation of observables: `ConcatObservables`
+  - Identity (for DMD/DMDc or in case users want to compute observables themselves):
+``Identity``
+  - Multivariate polynomials: ```Polynomial``
+  - Time delay coordinates: ``TimeDelay```
+  - Radial basis functions: ``RadialBasisFunctions``
+  - Random Fourier features: ``RandomFourierFeatures``
+  - Custom library (defined by user-supplied functions): ``CustomObservables``
+  - Concatenation of observables: ``ConcatObservables``
 
 
 - System identification method for performing regression
 
-  - Dynamic mode decomposition: `PyDMDRegressor`
-  - Dynamic mode decomposition with control: `DMDc`
-  - Extended dynamic mode decomposition: `EDMD`
-  - Extended dynamic mode decomposition with control: `EDMDc`
-  - Kernel dynamic mode decomposition: `KDMD`
-  - Hankel DMD: `HDMD`
-  - Hankel DMD with control: `HDMDc`
-  - Neural Network DMD: `NNDMD`
+  - Dynamic mode decomposition: ``PyDMDRegressor``
+  - Dynamic mode decomposition with control: ``DMDc``
+  - Extended dynamic mode decomposition: ``EDMD``
+  - Extended dynamic mode decomposition with control: ``EDMDc``
+  - Kernel dynamic mode decomposition: ``KDMD``
+  - Hankel DMD: ``HDMD``
+  - Hankel DMD with control: ``HDMDc``
+  - Neural Network DMD: ``NNDMD``
 
 - Sparse construction of Koopman invariant subspace
-  - Multi-task learning based on linearity consistency: `ModesSelectionPAD21`
+  - Multi-task learning based on linearity consistency
 
 
 Examples
