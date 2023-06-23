@@ -49,7 +49,7 @@ We design ``PyKoopman`` such that it is compatible to ``scikit-learn`` objects a
 Features implemented
 ^^^^^^^^^^^^^^^^^^^^
 
-- Observable library for lifting the state :math:`\mathbf{x}` into the observable space
+- Observable library for lifting the state into the observable space
 
   - Identity (for DMD/DMDc or in case users want to compute observables themselves):
     ``Identity``
