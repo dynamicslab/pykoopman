@@ -52,7 +52,7 @@ Features implemented
 - Observable library for lifting the state $\mathbf{x}$ into the observable space
 
   - Identity (for DMD/DMDc or in case users want to compute observables themselves):
-``Identity``
+    ``Identity``
   - Multivariate polynomials: ```Polynomial``
   - Time delay coordinates: ``TimeDelay```
   - Radial basis functions: ``RadialBasisFunctions``
