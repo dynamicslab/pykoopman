@@ -73,6 +73,7 @@ Features implemented
   - Neural Network DMD: ``NNDMD``
 
 - Sparse construction of Koopman invariant subspace
+
   - Multi-task learning based on linearity consistency
 
 
