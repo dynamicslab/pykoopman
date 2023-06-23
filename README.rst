@@ -183,10 +183,19 @@ Reporting issues or bugs
 ^^^^^^^^^^^^^^^^^^^^^^^^
 If you find a bug in the code or want to request a new feature, please open an issue.
 
-Citing PySINDy
+Citing PyKoopman
 --------------
 
-(To be filled)
+.. code-block:: text
+
+    @misc{pan2023pykoopman,
+          title={PyKoopman: A Python Package for Data-Driven Approximation of the Koopman Operator},
+          author={Shaowu Pan and Eurika Kaiser and Brian M. de Silva and J. Nathan Kutz and Steven L. Brunton},
+          year={2023},
+          eprint={2306.12962},
+          archivePrefix={arXiv},
+          primaryClass={eess.SY}
+    }
 
 Related packages
 ----------------
@@ -195,7 +204,8 @@ Related packages
 * `Deeptime <https://github.com/deeptime-ml/deeptime>`_ - A Python library for the analysis of time series data with methods for dimension reduction, clustering, and Markov model estimation.
 * `PyDMD <https://github.com/mathLab/PyDMD/>`_ - A Python package using the Dynamic Mode Decomposition (DMD) for a data-driven model simplification based on spatiotemporal coherent structures. DMD is a great alternative to SINDy.
 * `pykoop <https://github.com/decargroup/pykoop>`_ - a Koopman operator identification library written in Python
-
+* `DLKoopman <https://github.com/GaloisInc/dlkoopman>`_ - a deep learning library for
+  Koopman operator
 
 .. |Build| image:: https://github.com/dynamicslab/pykoopman/workflows/Tests/badge.svg
     :target: https://github.com/dynamicslab/pykoopman/actions?query=workflow%3ATests
