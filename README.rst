@@ -26,9 +26,9 @@ project the Koopman operator onto a finite-dimensional subspace that is spanned 
 If the system state is also contained in such subspace, then effectively, the nonlinear dynamical system is (approximately)
 linearized in a global sense.
 
-The goal of data-driven approximation of Koopman
-operator is to find such a set of functions that span such lifted space and the
-transition matrix associated with the lifted system.
+The goal of data-driven approximation of Koopman operator is to find such a set of
+functions that span such lifted space and the transition matrix associated with the
+lifted system.
 
 Structure of PyKoopman
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -44,7 +44,32 @@ PyKoopman package is centered around the ``Koopman`` class and ``KoopmanContinuo
 After ``Koopman``/``KoopmanContinuous`` object has been created, it must be fit to data, similar to a ``scikit-learn`` model.
 We design ``PyKoopman`` such that it is compatible to ``scikit-learn`` objects and methods as much as possible.
 
+A list of features implemented:
 
+- Observable library for lifting the state $\mathbf{x}$ into the observable space
+
+  - Identity (for DMD/DMDc or in case users want to compute observables themselves): `Identity`
+  - Multivariate polynomials: `Polynomial`
+  - Time delay coordinates: `TimeDelay`
+  - Radial basis functions: `RadialBasisFunctions`
+  - Random Fourier features: `RandomFourierFeatures`
+  - Custom library (defined by user-supplied functions): `CustomObservables`
+  - Concatenation of observables: `ConcatObservables`
+
+
+- System identification method for performing regression
+
+  - Dynamic mode decomposition: `PyDMDRegressor`
+  - Dynamic mode decomposition with control: `DMDc`
+  - Extended dynamic mode decomposition: `EDMD`
+  - Extended dynamic mode decomposition with control: `EDMDc`
+  - Kernel dynamic mode decomposition: `KDMD`
+  - Hankel DMD: `HDMD`
+  - Hankel DMD with control: `HDMDc`
+  - Neural Network DMD: `NNDMD`
+
+- Sparse construction of Koopman invariant subspace
+  - Multi-task learning based on linearity consistency: `ModesSelectionPAD21`
 
 
 Examples
