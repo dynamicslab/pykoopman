@@ -8,7 +8,7 @@ PyKoopman
 Data-driven approximation of Koopman operator
 ---------------------------------------------
 
-.. figure:: https://github.com/dynamicslab/pykoopman/blob/master/docs/JOSS/Fig1.png
+.. figure:: docs/JOSS/Fig1.png
 
 Given a nonlinear dynamical system,
 
@@ -33,7 +33,7 @@ transition matrix associated with the lifted system.
 Structure of PyKoopman
 ^^^^^^^^^^^^^^^^^^^^^^
 
-.. figure:: https://github.com/dynamicslab/pykoopman/blob/master/docs/JOSS/Fig2.png
+.. figure:: docs/JOSS/Fig2.png
 
 PyKoopman package is centered around the ``Koopman`` class and ``KoopmanContinuous`` class. It consists of two key components
 
