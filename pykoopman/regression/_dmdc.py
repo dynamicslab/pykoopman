@@ -136,11 +136,14 @@ class DMDc(BaseRegressor):
 
         if self.svd_rank is None:
             self.svd_rank = self.n_input_features_ + self.n_control_features_
-        r = self.svd_rank
+            if self.svd_output_rank is None:
+                self.svd_output_rank = self.n_input_features_
+        else:
+            if self.svd_output_rank is None:
+                self.svd_output_rank = self.svd_rank
 
-        if self.svd_output_rank is None:
-            self.svd_output_rank = self.n_input_features_
         rout = self.svd_output_rank
+        r = self.svd_rank
 
         if self._input_control_matrix is None:
             self._fit_unknown_B(X1, X2, C, r, rout)
