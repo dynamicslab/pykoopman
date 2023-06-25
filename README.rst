@@ -54,7 +54,7 @@ Features implemented
   - Identity (for DMD/DMDc or in case users want to compute observables themselves):
     ``Identity``
   - Multivariate polynomials: ``Polynomial``
-  - Time delay coordinates: ``TimeDelay```
+  - Time delay coordinates: ``TimeDelay``
   - Radial basis functions: ``RadialBasisFunctions``
   - Random Fourier features: ``RandomFourierFeatures``
   - Custom library (defined by user-supplied functions): ``CustomObservables``
