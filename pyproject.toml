@@ -29,3 +29,5 @@ classifiers = [
 [project.urls]
 "Homepage" = "https://github.com/dynamicslab/pykoopman"
 "Bug Tracker" = "https://github.com/dynamicslab/pykoopman/issues"
+
+[tool.setuptools_scm]

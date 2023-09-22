@@ -214,7 +214,7 @@ Reporting issues or bugs
 If you find a bug in the code or want to request a new feature, please open an issue.
 
 Citing PyKoopman
---------------
+----------------
 
 .. code-block:: text
 
