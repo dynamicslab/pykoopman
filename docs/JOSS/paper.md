@@ -135,8 +135,8 @@ At the time of writing, we have the following features implemented:
 # Example
 
 
-The `PyKoopman` [GitHub repository](https://github.com/dynamicslab/pykoopman) provides 
-several helpful Jupyter notebook tutorials. Here, we briefly demonstrate a typical workflow 
+The `PyKoopman` [GitHub repository](https://github.com/dynamicslab/pykoopman) provides
+several helpful Jupyter notebook tutorials. Here, we briefly demonstrate a typical workflow
 using the `PyKoopman` package to approximate Koopman operator of a 2D
 nonlinear system.
 
@@ -157,8 +157,8 @@ def slow_manifold(x, t):
     ]
 ```
 
-To prepare training data, we draw 100 random number within $[-1,1]^2$ as initial 
-conditions and then collect the corresponding trajectories by integrating 
+To prepare training data, we draw 100 random number within $[-1,1]^2$ as initial
+conditions and then collect the corresponding trajectories by integrating
 the nonlinear system forward in time:
 ```python
 import numpy as np
@@ -181,15 +181,15 @@ Xnext = np.vstack(Xnext)
 ```
 
 ![Example of learning Koopman operator for a 2D nonlinear system. Left: distribution
-of training data consists of multiple trajectories. 
-Right: prediction on unseen test trajectories. \label{fig:example-edmd}](Fig0.png){ 
+of training data consists of multiple trajectories.
+Right: prediction on unseen test trajectories. \label{fig:example-edmd}](Fig0.png){
 width=90% }
 
 
-We plot `X` in Fig. \ref{fig:example-edmd}, while `Xnext` is omitted for brevity. 
-Almost all `PyKoopman` objects support this "one-step ahead" format of data, 
-except when time delay is explicitly required, such as in `HAVOK` [@Brunton2017natcomm]. 
-Furthermore, `NNDMD` not only supports the standard "one-step" ahead 
+We plot `X` in Fig. \ref{fig:example-edmd}, while `Xnext` is omitted for brevity.
+Almost all `PyKoopman` objects support this "one-step ahead" format of data,
+except when time delay is explicitly required, such as in `HAVOK` [@Brunton2017natcomm].
+Furthermore, `NNDMD` not only supports the standard "one-step" ahead
 format but also accommodates data with multiple-step trajectories.
 
 
