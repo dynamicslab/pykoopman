@@ -59,11 +59,11 @@ Specifically, `PyKoopman` offers tools for designing the observables (i.e., func
 
 The core component of the PyKoopman package is the Koopman model class. The external package dependencies are depicted in Fig. \ref{fig:package-structure-dependency}. Below are justifications for each dependency:
 
-- `sklearn`: Scikit-learn is an open-source machine learning library that supports various functionalities throughout the standard machine learning pipeline, including learning algorithms, data preprocessing, model evaluation, and model selection. Firstly, as a standard, user-friendly infrastructure for machine learning, integrating sklearn ensures that our `pykoopman` package reaches a wider audience. Secondly, common utilities (e.g., kernel functions) from sklearn facilitate the abstraction of kernel-based methods. Consequently, the classes within `pykoopman`.regression are implemented as scikit-learn estimators, specifically, sklearn.base.BaseEstimator. Moreover, users can create intricate pipelines for hyperparameter tuning and model selection by synergizing `pykoopman` with scikit-learn.
+- `sklearn`: Scikit-learn is an open-source machine learning library that supports various functionalities throughout the standard machine learning pipeline, including learning algorithms, data preprocessing, model evaluation, and model selection. Firstly, as a standard, user-friendly infrastructure for machine learning, integrating sklearn ensures that our `pykoopman` package reaches a wider audience. Secondly, common utilities (e.g., kernel functions) from sklearn facilitate the abstraction of kernel-based methods. Consequently, the classes within `pykoopman`.regression are implemented as scikit-learn estimators, specifically, `sklearn.base.BaseEstimator`. Moreover, users can create intricate pipelines for hyperparameter tuning and model selection by synergizing `pykoopman` with scikit-learn.
 
-- `torch`: Relying solely on sklearn restricts us from developing more versatile and advanced algorithms for the Koopman operator. Thus, we have implemented neural network-based methods using PyTorch (`torch`` [@paszke2019pytorch]), an open-source library tailored for neural network-based deep learning models, all the while adhering to the sklearn framework. Additionally, we incorporate lightning to streamline the process for users to leverage local AI accelerators (e.g., GPU, TPU) without delving into intricate implementation details.
+- `torch`: Relying solely on sklearn restricts us from developing more versatile and advanced algorithms for the Koopman operator. Thus, we have implemented neural network-based methods using PyTorch (`torch`[@paszke2019pytorch]), an open-source library tailored for neural network-based deep learning models, all the while adhering to the sklearn framework. Additionally, we incorporate lightning to streamline the process for users to leverage local AI accelerators (e.g., GPU, TPU) without delving into intricate implementation details.
 
-- `pydmd`: PyDMD (`pydmd` [@demo2018pydmd]) is a Python package crafted for DMD. As many Koopman algorithms mirror DMD steps, it's advantageous to repurpose existing implementations. However, PyDMD supports data predominantly in the form of single trajectories, typical in fluid dynamics, and not uniform samples in phase space or multiple trajectories, which are more prevalent in robotics. To cater to both sectors, we have extended support beyond single trajectories while also integrating the use of pydmd within `pykoopman`.
+- `pydmd`: PyDMD (`pydmd` [@demo2018pydmd]) is a Python package crafted for DMD. As many Koopman algorithms mirror DMD steps, it's advantageous to repurpose existing implementations. However, PyDMD supports data predominantly in the form of single trajectories, typical in fluid dynamics, and not uniform samples in phase space or multiple trajectories, which are more prevalent in robotics. To cater to both sectors, we have extended support beyond single trajectories while also integrating the use of `pydmd`` within `pykoopman`.
 
 - `derivative`: The `derivative`` package [@kaptanoglu2022pysindy] is tailored for differentiating noisy data in Python. We utilize this package to discern the Koopman generator from data.
 
@@ -131,6 +131,66 @@ At the time of writing, we have the following features implemented:
   - Viscous Burgers equation: `vbe`
 
 - Validation routines for consistency checks
+
+# Example
+
+
+The `PyKoopman` [GitHub repository](https://github.com/dynamicslab/pykoopman) provides 
+several helpful Jupyter notebook tutorials. Here, we briefly demonstrate a typical workflow 
+using the `PyKoopman` package to approximate Koopman operator of a 2D
+nonlinear system.
+
+First, consider the dynamical system
+$$
+  \begin{aligned}
+    \dot x_1 &= -0.05x_1 \\
+    \dot x_2 &= -x_2 + x_1^2.
+  \end{aligned}
+$$
+
+In Python, the right-hand side of the above can be expressed as follows:
+```python
+def slow_manifold(x, t):
+    return [
+        -0.05 * x[0],
+        -x[1] + x[0]**2
+    ]
+```
+
+To prepare training data, we draw 100 random number within $[-1,1]^2$ as initial 
+conditions and then collect the corresponding trajectories by integrating 
+the nonlinear system forward in time:
+```python
+import numpy as np
+from scipy.integrate import odeint
+
+dt = 0.02
+t = np.arange(0, 50, dt)
+
+X = []
+Xnext = []
+for x0_0 in np.linspace(-1, 1, 10):
+    for x0_1 in np.linspace(-1, 1, 10):
+        x0 = np.array([x0_0, x0_1])
+        x_tmp = odeint(slow_manifold, x0, t)
+        X.append(x_tmp[:-1,:])
+        Xnext.append(x_tmp[1:,:])
+
+X = np.vstack(X)
+Xnext = np.vstack(Xnext)
+```
+
+![Example of learning Koopman operator for a 2D nonlinear system. Left: distribution
+of training data consists of multiple trajectories. 
+Right: prediction on unseen test trajectories. \label{fig:example-edmd}](Fig0.png){ 
+width=90% }
+
+
+We plot `X` in Fig. \ref{fig:example-edmd}, while `Xnext` is omitted for brevity. 
+Almost all `PyKoopman` objects support this "one-step ahead" format of data, 
+except when time delay is explicitly required, such as in `HAVOK` [@Brunton2017natcomm]. 
+Furthermore, `NNDMD` not only supports the standard "one-step" ahead 
+format but also accommodates data with multiple-step trajectories.
 
 
 # Conclusion
