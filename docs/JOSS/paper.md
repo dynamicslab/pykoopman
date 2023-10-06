@@ -184,7 +184,7 @@ We plot `X` in Fig. \ref{fig:example-edmd}, while `Xnext` is omitted for brevity
 Now we start using `pykoopman` to learn Koopman operator from the above system.
 To begin with, we can create an observable function and an appropriate regressor.
 These two objects will then serve as input for the `pykoopman.Koopman` class.
-For instance, we can employ EDMD to approximate the slow manifold dynamics as shown in Fig. \ref{eq:example-edmd}.
+For instance, we can employ EDMD to approximate the slow manifold dynamics as shown in Fig. \ref{fig:example-edmd}.
 
 ```python
 from pykoopman import Koopman
@@ -213,7 +213,7 @@ plt.ylabel(r'$x_2$')
 ```
 
 
-Fig. \ref{fig:example} displays the excellent agreement between ground truth and the EDMD prediction from the aforementioned `Koopman`` model on randomly generated unseen test data.
+Fig. \ref{fig:example-edmd} displays the excellent agreement between ground truth and the EDMD prediction from the aforementioned `Koopman`` model on randomly generated unseen test data.
 
 
 ![Example of learning Koopman operator for a 2D nonlinear system. Left: distribution
