@@ -43,12 +43,12 @@ bibliography: paper.bib
 Engineers have long relied on linearization to bridge the gap between simplified, descriptions where powerful analytical tools exist, and the intricate complexities of nonlinear dynamics where analytical solutions are elusive [@ljung2010arc;@wright1999numerical]. Local linearization, implemented via first-order Taylor series approximation, has been widely used in system identification [@ljung2010arc], optimization [@wright1999numerical], and many other fields to make problems tractable. However, many real-world systems are fundamentally nonlinear and require solutions outside of the local neighborhood where linearization is valid. Rapid progress in machine learning and big data methods are driving advances in the data-driven modeling of such nonlinear systems in science and engineering [@Brunton2019book].
 As shown in Fig. \ref{fig:LinearizingTransformation}, Koopman operator theory in particular is a principled approach to embed nonlinear dynamics in a linear framework that goes beyond simple linearization [@brunton2022modern].
 
-![Lifting of the state $\mathbf{x}$ of the continuous autonomous dynamical system into a new coordinate system, in which the original nonlinear dynamics become linear and are easier to handle. One can also linearly reconstruct the state $\mathbf{x}$ from the new coordinate system. This is facilitated with `PyKoopman` in a data-driven manner.\label{fig:LinearizingTransformation}](Fig1.png){ width=90% }
+![Illustration of Koopman operator for a 2D nonlinear system. This system can be linearized into a 3D linear system with the nonlinear transform $\mathbf{\Phi}(\mathbf{x})$. In `PyKoopman`, searching such $\mathbf{\Phi}(\mathbf{x})$ is facilitated in a data-driven manner.\label{fig:LinearizingTransformation}](Fig1.png){ width=90% }
 
 In the diverse landscape of data-driven modeling approaches, Koopman operator theory has received considerable attention in recent years [@Budivsic2012chaos;@Mezic2013arfm;@Williams2015jnls;@klus2017data;@Li2017chaos;@Brunton2017natcomm]. These strategies encompass not only linear methodologies [@Nelles2013book;@ljung2010arc] and dynamic mode decomposition (DMD) [@schmid2010jfm;@rowley2009spectral;@Kutz2016book], but also more advanced techniques such as nonlinear autoregressive algorithms [@Akaike1969annals;@Billings2013book], neural networks [@long2017pde;@yang2020physics;@Wehmeyer2018jcp;@Mardt2018natcomm;@vlachas2018data;@pathak2018model;@lu2019deepxde;@Raissi2019jcp;@Champion2019pnas;@raissi2020science], Gaussian process regression [@raissi2017parametric], operator inference, and reduced-order modeling [@Benner2015siamreview,@peherstorfer2016data,@qian2020lift], among others [@Giannakis2012pnas;@Yair2017pnas;@bongard_automated_2007;@schmidt_distilling_2009;@Daniels2015naturecomm;@brunton2016pnas;@Rudy2017sciadv]. The Koopman operator perspective is unique within data-driven modeling techniques due to its distinct aim of learning a coordinate system in which the nonlinear dynamics become linear.  This methodology enables the application of closed-form, convergence-guaranteed methods from linear system theory to general nonlinear dynamics. To fully leverage the potential of data-driven Koopman theory across a diverse range of scientific and engineering disciplines, it is critical to have a central toolkit to automate state-of-the-art Koopman operator algorithms.
 
-As a result, the `PyKoopman` is developed as a Python package for approximating the Koopman operator associated with natural and actuated dynamical systems from measurement data.
-Compared to implementation of DMD (e.g., `PyDMD` [@demo2018pydmd]) which can be viewed as a linear projection of Koopman operator, `PyKoopman` offers a comprehensive set of _nonlinear_ projection methods (e.g., polynomial basis or kernel trick, neural network [@pan2020physics]) together with sparsity promoting algorithms for _nonlinear_ projection methods optimal modes selection [@pan2021sparsity].
+As a result, `PyKoopman` is developed as a Python package for approximating the Koopman operator associated with natural and actuated dynamical systems from measurement data.
+Compared to implementation of DMD (e.g., `PyDMD` [@demo2018pydmd]) which can be viewed as a linear projection of Koopman operator, `PyKoopman` offers a comprehensive set of _nonlinear_ projection methods.
 Specifically, `PyKoopman` offers tools for designing the observables (i.e., functions of the system state) and inferring a finite-dimensional linear operator that governs the dynamic evolution of these observables in time. These steps can either be performed sequentially [@Williams2015jcd;@Williams2015jnls] or combined, as demonstrated in more recent neural network models [@lusch2018deep;@otto2019linearly;@Mardt2018natcomm;@Takeishi2017nips]. Besides, we also support data from multiple trajectories. Once a linear embedding is discovered from the data, the linearity of the transformed dynamical system can be leveraged for enhanced interpretability [@pan2021sparsity] or for designing near-optimal observers  [@surana2016linear] or controllers for the original nonlinear system [@korda2020optimal;@mauroy2020koopman;@kaiser2021data;@peitz2019koopman;@peitz2020data].
 
 
@@ -61,11 +61,11 @@ The core component of the PyKoopman package is the Koopman model class. The exte
 
 - `sklearn`: Scikit-learn is an open-source machine learning library that supports various functionalities throughout the standard machine learning pipeline, including learning algorithms, data preprocessing, model evaluation, and model selection. Firstly, as a standard, user-friendly infrastructure for machine learning, integrating sklearn ensures that our `pykoopman` package reaches a wider audience. Secondly, common utilities (e.g., kernel functions) from sklearn facilitate the abstraction of kernel-based methods. Consequently, the classes within `pykoopman`.regression are implemented as scikit-learn estimators, specifically, `sklearn.base.BaseEstimator`. Moreover, users can create intricate pipelines for hyperparameter tuning and model selection by synergizing `pykoopman` with scikit-learn.
 
-- `torch`: Relying solely on sklearn restricts us from developing more versatile and advanced algorithms for the Koopman operator. Thus, we have implemented neural network-based methods using PyTorch (`torch`[@paszke2019pytorch]), an open-source library tailored for neural network-based deep learning models, all the while adhering to the sklearn framework. Additionally, we incorporate lightning to streamline the process for users to leverage local AI accelerators (e.g., GPU, TPU) without delving into intricate implementation details.
+- `torch`: Relying solely on sklearn restricts us from developing more versatile and advanced algorithms for the Koopman operator. Thus, we have implemented neural network-based methods using PyTorch (`torch`[@paszke2019pytorch]), an open-source library tailored for neural network-based deep learning models, all the while adhering to the sklearn framework. Additionally, we incorporate `lightning` to streamline the process for users to leverage local AI accelerators (e.g., GPU, TPU) without delving into intricate implementation details.
 
 - `pydmd`: PyDMD (`pydmd` [@demo2018pydmd]) is a Python package crafted for DMD. As many Koopman algorithms mirror DMD steps, it's advantageous to repurpose existing implementations. However, PyDMD supports data predominantly in the form of single trajectories, typical in fluid dynamics, and not uniform samples in phase space or multiple trajectories, which are more prevalent in robotics. To cater to both sectors, we have extended support beyond single trajectories while also integrating the use of `pydmd`` within `pykoopman`.
 
-- `derivative`: The `derivative`` package [@kaptanoglu2022pysindy] is tailored for differentiating noisy data in Python. We utilize this package to discern the Koopman generator from data.
+- `derivative`: The `derivative` package [@kaptanoglu2022pysindy] is tailored for differentiating noisy data in Python. We utilize this package to discern the Koopman generator from data.
 
 
 <!-- <img src="Fig2.png" alt="External package dependencies of PyKoopman.\label{fig:package-structure-dependency}" style="width:200px;"/> -->
@@ -179,18 +179,46 @@ for x0_0 in np.linspace(-1, 1, 10):
 X = np.vstack(X)
 Xnext = np.vstack(Xnext)
 ```
+We plot `X` in Fig. \ref{fig:example-edmd}, while `Xnext` is omitted for brevity.
+
+Now we start using `pykoopman` to learn Koopman operator from the above system. To begin with, we can create an observable function and an appropriate regressor. These two objects will then serve as input for the `pykoopman.Koopman` class. For instance, we can employ EDMD to approximate the slow manifold dynamics as shown in Fig. \ref{eq:slow_manifold}.
+
+```python
+from pykoopman import Koopman
+from pykoopman.observables import Polynomial
+from pykoopman.regression import EDMD
+
+model = Koopman(observables=Polynomial(2),regressor=EDMD())
+model.fit(X,Xnext)
+```
+
+Once the `Koopman` object `model` has been fit, we can use the `model.simulate` method to make predictions over an arbitrary time horizon. For example, the following code demonstrates the usage of `model.simulate`` to make predictions for 50 unseen initial conditions sampled on the unit circle.
+
+```python
+plt.figure(figsize=(4,4))
+theta = np.random.rand(1, 50)*2*np.pi
+x0_test_array = np.stack((np.cos(theta), np.sin(theta)),axis=0).T
+for x0_test in x0_test_array:
+    xtest_true = odeint(slow_manifold, x0_test.flatten(), t)
+    xtest_pred = model.simulate(x0_test,n_steps=t.size-1)
+    xtest_pred = np.vstack([xtest_true[0], xtest_pred])
+
+    plt.plot(xtest_true[:,0], xtest_true[:,1],'k')
+    plt.plot(xtest_pred[:,0], xtest_pred[:,1],'r--')
+plt.xlabel(r'$x_1$')
+plt.ylabel(r'$x_2$')
+```
+
+
+Fig. \ref{fig:example} displays the excellent agreement between ground truth and the EDMD prediction from the aforementioned `Koopman`` model on randomly generated unseen test data.
+
 
 ![Example of learning Koopman operator for a 2D nonlinear system. Left: distribution
 of training data consists of multiple trajectories.
-Right: prediction on unseen test trajectories. \label{fig:example-edmd}](Fig0.png){
-width=90% }
+Right: prediction on unseen test trajectories. \label{fig:example-edmd}](Fig0.png){ width=90% }
 
 
-We plot `X` in Fig. \ref{fig:example-edmd}, while `Xnext` is omitted for brevity.
-Almost all `PyKoopman` objects support this "one-step ahead" format of data,
-except when time delay is explicitly required, such as in `HAVOK` [@Brunton2017natcomm].
-Furthermore, `NNDMD` not only supports the standard "one-step" ahead
-format but also accommodates data with multiple-step trajectories.
+
 
 
 # Conclusion
