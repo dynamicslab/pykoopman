@@ -181,7 +181,10 @@ Xnext = np.vstack(Xnext)
 ```
 We plot `X` in Fig. \ref{fig:example-edmd}, while `Xnext` is omitted for brevity.
 
-Now we start using `pykoopman` to learn Koopman operator from the above system. To begin with, we can create an observable function and an appropriate regressor. These two objects will then serve as input for the `pykoopman.Koopman` class. For instance, we can employ EDMD to approximate the slow manifold dynamics as shown in Fig. \ref{eq:slow_manifold}.
+Now we start using `pykoopman` to learn Koopman operator from the above system.
+To begin with, we can create an observable function and an appropriate regressor.
+These two objects will then serve as input for the `pykoopman.Koopman` class.
+For instance, we can employ EDMD to approximate the slow manifold dynamics as shown in Fig. \ref{eq:example-edmd}.
 
 ```python
 from pykoopman import Koopman
