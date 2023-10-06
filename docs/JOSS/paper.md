@@ -73,7 +73,7 @@ The core component of the PyKoopman package is the Koopman model class. The exte
 
 As illustrated in Fig. \ref{fig:koopman-formalism}, `PyKoopman` is designed to lift nonlinear dynamics into a linear system with linear actuation. Specifically, our `PyKoopman` implementation involves two major steps:
 
-![{Broad categorization of model types that can be identified with current `PyKoopman`. While the dotted parts (marked with ``$\cdot$'') can be simultaneously discovered within the framework, they are typically ignored for control purposes.\label{fig:koopman-formalism}](Fig3.png){ width=40% }
+![Broad categorization of model types that can be identified with current `PyKoopman`. While the dotted parts (marked with ``$\cdot$'') can be simultaneously discovered within the framework, they are typically ignored for control purposes.\label{fig:koopman-formalism}](Fig3.png){ width=40% }
 
 - `observables`: the nonlinear observables used to lift $\mathbf{x}$ to $\mathbf{z}$, and reconstruct $\mathbf{x}$ from $\mathbf{z}$;
 - `regression`: the regression used to find the optimal $\mathbf{A}$.
