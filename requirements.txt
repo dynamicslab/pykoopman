@@ -1,3 +1,4 @@
+-e .
 -r requirements-torch.txt --extra-index-url https://download.pytorch.org/whl/cu118/
 matplotlib == 3.5.0
 derivative

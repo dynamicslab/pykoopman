@@ -1,5 +1,6 @@
 -e .
 -r requirements.txt
+-r requirements-torch.txt --extra-index-url https://download.pytorch.org/whl/cu118/
 pytest
 pytest-cov
 pytest-lazy-fixture
