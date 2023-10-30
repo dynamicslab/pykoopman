@@ -1,5 +1,10 @@
+[build-system]
+requires = [
+    "setuptools>=61.0",
+    "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
-dynamic = ["dependencies"]
 name = "pykoopman"
 version = "1.0.5"
 authors = [
@@ -21,9 +26,9 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Mathematics",
 ]
 dependencies = [
-    "matplotlib == 3.5.0",
+    "matplotlib~=3.5.0",
     "derivative",
-    "scikit-learn < 1.2",
+    "scikit-learn<1.2",
     "numpy",
     "scipy",
     "pydmd",
@@ -32,7 +37,7 @@ dependencies = [
     "prettytable",
     "torch",
     "torchvision",
-    "lightning"
+    "lightning",
 ]
 
 [project.optional-dependencies]
@@ -56,15 +61,11 @@ dev = [
     "osqp",
 ]
 
-[build-system]
-requires = [
-    "setuptools>=61.0",
-    "wheel"]
-build-backend = "setuptools.build_meta"
+
 
 [project.urls]
 "Homepage" = "https://github.com/dynamicslab/pykoopman"
 "Bug Tracker" = "https://github.com/dynamicslab/pykoopman/issues"
 
-[tool.setuptools.dynamic]
-dependencies = { file = ["requirements.txt"] }
+#[tool.setuptools.dynamic]
+#dependencies = { file = ["requirements.txt"] }
