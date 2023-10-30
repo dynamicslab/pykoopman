@@ -5,6 +5,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
+dynamic = ["dependencies"]
 name = "pykoopman"
 version = "1.0.5"
 authors = [
@@ -30,4 +31,5 @@ classifiers = [
 "Homepage" = "https://github.com/dynamicslab/pykoopman"
 "Bug Tracker" = "https://github.com/dynamicslab/pykoopman/issues"
 
-[tool.setuptools_scm]
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
