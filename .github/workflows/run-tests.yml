@@ -44,9 +44,10 @@ jobs:
         pytest --cov=./ --cov-report=xml
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
-    - uses: actions/cache@v1
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements-dev.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+
+#    - uses: actions/cache@v1
+#      with:
+#        path: ~/.cache/pip
+#        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements-dev.txt') }}
+#        restore-keys: |
+#          ${{ runner.os }}-pip-
