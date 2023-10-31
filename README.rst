@@ -159,6 +159,19 @@ First clone this repository:
 
   git clone https://github.com/dynamicslab/pykoopman
 
+Second, it is highly recommended to use `venv` to get a local python environment
+
+.. code-block:: bash
+
+  python -m venv venv
+  source ./venv/bin/activate
+
+In windows, you activate virtual environment in a different way
+
+.. code-block:: bash
+
+  .\venv\Scripts\activate
+
 Then, to install the package, run
 
 .. code-block:: bash
