@@ -101,8 +101,7 @@ At the time of writing, we have the following features implemented:
   - Extended dynamic mode decomposition [@Williams2015jnls]: `EDMD`
   - Extended dynamic mode decomposition with control [@korda2020optimal]: `EDMDc`
   - Kernel dynamic mode decomposition [@Williams2015jcd]: `KDMD`
-  - Hankel DMD [@brunton2016pnas]: `HDMD`
-  - Hankel DMD with control: `HDMDc`
+  - Hankel Alternative View of Koopman Analysis [@brunton2016pnas]: `HAVOK`
   - Neural Network DMD [@pan2020physics;@otto2019linearly;@lusch2018deep]: `NNDMD`
 
 - Sparse construction of Koopman invariant subspace

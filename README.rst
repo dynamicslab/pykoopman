@@ -68,8 +68,7 @@ Features implemented
   - Extended dynamic mode decomposition: ``EDMD``
   - Extended dynamic mode decomposition with control: ``EDMDc``
   - Kernel dynamic mode decomposition: ``KDMD``
-  - Hankel DMD: ``HDMD``
-  - Hankel DMD with control: ``HDMDc``
+  - Hankel Alternative View of Koopman Analysis: ``HAVOK``
   - Neural Network DMD: ``NNDMD``
 
 - Sparse construction of Koopman invariant subspace
