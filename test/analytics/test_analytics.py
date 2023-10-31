@@ -2,9 +2,8 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
-
 import pykoopman as pk
+import pytest
 from pykoopman.analytics import ModesSelectionPAD21
 from pykoopman.common import Linear2Ddynamics
 

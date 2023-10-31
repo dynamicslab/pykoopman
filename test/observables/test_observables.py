@@ -8,15 +8,14 @@ from numpy import linspace
 from numpy import stack
 from numpy.testing import assert_allclose
 from numpy.testing import assert_array_equal
-from sklearn.exceptions import NotFittedError
-from sklearn.utils.validation import check_is_fitted
-
 from pykoopman.observables import CustomObservables
 from pykoopman.observables import Identity
 from pykoopman.observables import Polynomial
 from pykoopman.observables import RadialBasisFunction
 from pykoopman.observables import RandomFourierFeatures
 from pykoopman.observables import TimeDelay
+from sklearn.exceptions import NotFittedError
+from sklearn.utils.validation import check_is_fitted
 
 
 @pytest.fixture

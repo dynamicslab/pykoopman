@@ -4,12 +4,11 @@ from __future__ import annotations
 import pytest
 from numpy.testing import assert_allclose
 from pydmd import DMD
-from sklearn.utils.validation import check_is_fitted
-
 from pykoopman import KoopmanContinuous
 from pykoopman import observables
 from pykoopman import regression
 from pykoopman.differentiation import Derivative
+from sklearn.utils.validation import check_is_fitted
 
 
 @pytest.mark.parametrize(

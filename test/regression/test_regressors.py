@@ -4,13 +4,12 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from pydmd import DMD
-from sklearn.gaussian_process.kernels import RBF
-
 from pykoopman.regression import BaseRegressor
 from pykoopman.regression import EDMD
 from pykoopman.regression import KDMD
 from pykoopman.regression import NNDMD
 from pykoopman.regression import PyDMDRegressor
+from sklearn.gaussian_process.kernels import RBF
 
 
 class RegressorWithoutFit:

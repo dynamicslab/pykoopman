@@ -10,7 +10,6 @@ import os.path
 import numpy as np
 import pytest
 import scipy
-
 from pykoopman.common import advance_linear_system
 from pykoopman.common import drss
 from pykoopman.common import lorenz

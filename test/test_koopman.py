@@ -9,11 +9,6 @@ from pydmd import DMD
 from pydmd import FbDMD
 from pydmd import HODMD
 from pydmd import SpDMD
-from sklearn.exceptions import NotFittedError
-from sklearn.gaussian_process.kernels import DotProduct
-from sklearn.gaussian_process.kernels import RBF
-from sklearn.utils.validation import check_is_fitted
-
 from pykoopman import Koopman
 from pykoopman import observables
 from pykoopman import regression
@@ -29,6 +24,10 @@ from pykoopman.regression import EDMD
 from pykoopman.regression import KDMD
 from pykoopman.regression import NNDMD
 from pykoopman.regression import PyDMDRegressor
+from sklearn.exceptions import NotFittedError
+from sklearn.gaussian_process.kernels import DotProduct
+from sklearn.gaussian_process.kernels import RBF
+from sklearn.utils.validation import check_is_fitted
 
 
 def test_default_fit(data_random):
