@@ -164,13 +164,7 @@ Then, to install the package, run
 
 .. code-block:: bash
 
-  pip install .
-
-If you do not have pip you can instead use
-
-.. code-block:: bash
-
-  python setup.py install
+  python -m pip install -e .
 
 If you do not have root access, you should add the ``--user`` option to the above lines.
 
@@ -183,11 +177,13 @@ Community guidelines
 
 Contributing code
 ^^^^^^^^^^^^^^^^^
-We welcome contributions to PyKoopman. To contribute a new feature please submit a pull request. To get started we recommend installing the packages in ``requirements-dev.txt`` via
+We welcome contributions to PyKoopman. To contribute a new feature please submit a
+pull request. To get started we recommend installing the packages in "developer mode"
+via
 
 .. code-block:: bash
 
-    pip install -r requirements-dev.txt
+    python -m pip install -e .[dev]
 
 This will allow you to run unit tests and automatically format your code. To be accepted your code should conform to PEP8 and pass all unit tests. Code can be tested by invoking
 
