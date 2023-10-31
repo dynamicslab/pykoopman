@@ -29,3 +29,7 @@ sphinx:
 #    - requirements: requirements-dev.txt
 #    - method: pip
 #      path: .
+python:
+   install:
+    - method: pip
+      path: .[dev]
