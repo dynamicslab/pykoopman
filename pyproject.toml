@@ -34,10 +34,10 @@ dependencies = [
     "pydmd >0.4, <= 0.4.1",
     "optht ~= 0.2.0",
     "prettytable >3.0.0, <= 3.9.0",
-    "torch > 2.0, <= 2.1.0",
-    "torchvision > 0.14, <= 0.16.0",
-    "torchaudio > 2.0, <= 2.1.0",
-    "lightning > 2.0, <= 2.0.9",
+    "torch ~= 2.1.0",
+    "torchvision ~= 0.16.0",
+    "torchaudio ~= 2.1.0",
+    "lightning ~= 2.0.9",
 ]
 
 [project.optional-dependencies]
