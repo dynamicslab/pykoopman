@@ -245,7 +245,7 @@ Related packages
 * `DLKoopman <https://github.com/GaloisInc/dlkoopman>`_ - a deep learning library for
   Koopman operator
 
-.. |Build| image:: https://github.com/dynamicslab/pykoopman/workflows/Tests/badge.svg
+.. |Build| image:: https://github.com/dynamicslab/pykoopman/actions/workflows/run-tests.yml/badge.svg
     :target: https://github.com/dynamicslab/pykoopman/actions?query=workflow%3ATests
 
 .. |Docs| image:: https://readthedocs.org/projects/pykoopman/badge/?version=master
