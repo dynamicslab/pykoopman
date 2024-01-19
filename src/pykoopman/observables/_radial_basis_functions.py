@@ -79,7 +79,7 @@ class RadialBasisFunction(BaseObservables):
         if type(include_state) != bool:
             raise TypeError("include_states must be a boolean")
         if centers is not None:
-            if int(n_centers) not in centers.shape():
+            if int(n_centers) not in centers.shape:
                 raise ValueError(
                     "n_centers is not equal to centers.shape[1]. "
                     "centers must be of shape (n_input_features, "
