@@ -7,11 +7,17 @@ T_DEFAULT = object()
 
 
 def validate_input(x, t=T_DEFAULT):
-    if not isinstance(x, np.ndarray):
-        raise ValueError("x must be array-like")
+    if not isinstance(x, np.ndarray) and not isinstance(x, list):
+        raise ValueError("x must be array-like OR a list of array-like")
+    elif isinstance(x, list):
+        for i in range(len(x)):
+            x[i] = validate_input(x[i], t)
+        return x
     elif x.ndim == 1:
         x = x.reshape(-1, 1)
     x = check_array(x)
+
+    # add another case if x is a list of trajectory
 
     if t is not T_DEFAULT:
         if t is None:

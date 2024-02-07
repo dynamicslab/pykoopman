@@ -7,7 +7,6 @@ from warnings import warn
 
 import numpy as np
 from numpy import empty
-from numpy import vstack
 from pydmd import DMD
 from pydmd import DMDBase
 from sklearn.base import BaseEstimator
@@ -186,7 +185,9 @@ class Koopman(BaseEstimator):
             self.n_control_features_ = self._pipeline.steps[1][1].n_control_features_
 
         # compute amplitudes
-        if y is None:
+        if isinstance(x, list):
+            self._amplitudes = None
+        elif y is None:
             if hasattr(self.observables, "n_consumed_samples"):
                 # g0 = self.observables.transform(
                 #     x[0 : 1 + self.observables.n_consumed_samples]
@@ -196,6 +197,7 @@ class Koopman(BaseEstimator):
                 )
             else:
                 # g0 = self.observables.transform(x[0:1])
+
                 self._amplitudes = np.abs(self.psi(x[0:1].T))
         else:
             self._amplitudes = None
@@ -221,12 +223,13 @@ class Koopman(BaseEstimator):
                 Time series of external actuation/control.
 
         Returns:
-            y: numpy.ndarray, shape (n_samples, n_input_features)
+            x_next: numpy.ndarray, shape (n_samples, n_input_features)
                 Predicted state one timestep in the future.
         """
 
         check_is_fitted(self, "n_output_features_")
-        return self.observables.inverse(self._step(x, u))
+        x_next = self.observables.inverse(self._step(x, u))
+        return x_next
 
     def simulate(self, x0, u=None, n_steps=1):
         """Simulate an initial state forward in time with the learned Koopman model.
@@ -247,44 +250,46 @@ class Koopman(BaseEstimator):
                 Number of forward steps to be simulated.
 
         Returns:
-            y: numpy.ndarray, shape (n_steps, n_input_features)
+            x: numpy.ndarray, shape (n_steps, n_input_features)
                 Simulated states.
-                Note that `y[0, :]` is one timestep ahead of `x0`.
+                Note that `x[0, :]` is one timestep ahead of `x0`.
         """
         check_is_fitted(self, "n_output_features_")
         # Could have an option to only return the end state and not all
         # intermediate states to save memory.
 
-        y = empty((n_steps, self.n_input_features_), dtype=self.A.dtype)
+        if x0.ndim == 1:  # handle non-time delay input but 1D accidently
+            x0 = x0.reshape(-1, 1)
+        elif x0.ndim == 2 and x0.shape[0] > 1:  # handle time delay input
+            x0 = x0.T
+        else:
+            raise TypeError("Check your initial condition shape!")
+
+        # x = empty((n_steps, self.n_input_features_), dtype=self.A.dtype)
+        y = empty((n_steps, self.A.shape[0]), dtype=self.W.dtype)
+
         if u is None:
-            y[0] = self.predict(x0)
+            # lifted eigen space and move 1 step forward
+            y[0] = self.lamda @ self.psi(x0).flatten()
+
+            # iterate in the lifted space
+            for k in range(n_steps - 1):
+                # tmp = self.W @ self.lamda**(k+1) @ y[0].reshape(-1,1)
+                y[k + 1] = self.lamda @ y[k]
+            x = np.transpose(self.W @ y.T)
+            x = x.astype(self.A.dtype)
         else:
-            y[0] = self.predict(x0, u[0])
+            # lifted space (not eigen)
+            y[0] = self.A @ self.phi(x0).flatten() + self.B @ u[0]
 
-        if isinstance(self.observables, TimeDelay):
-            n_consumed_samples = self.observables.n_consumed_samples
-            if u is None:
-                for k in range(n_consumed_samples):
-                    y[k + 1] = self.predict(vstack((x0[k + 1 :], y[: k + 1])))
-                for k in range(n_consumed_samples, n_steps - 1):
-                    y[k + 1] = self.predict(y[k - n_consumed_samples : k + 1])
-            else:
-                for k in range(n_consumed_samples):
-                    y[k + 1] = self.predict(vstack((x0[k + 1 :], y[: k + 1])), u[k + 1])
-                for k in range(n_consumed_samples, n_steps - 1):
-                    y[k + 1] = self.predict(y[k - n_consumed_samples : k + 1], u[k + 1])
+            # iterate in the lifted space
+            for k in range(n_steps - 1):
+                tmp = self.A @ y[k].reshape(-1, 1) + self.B @ u[k + 1].reshape(-1, 1)
+                y[k + 1] = tmp.flatten()
+            x = np.transpose(self.C @ y.T)
+            x = x.astype(self.A.dtype)
 
-        else:
-            if u is None:
-                for k in range(n_steps - 1):
-                    y[k + 1] = self.predict(y[k].reshape(1, -1))
-            else:
-                for k in range(n_steps - 1):
-                    y[k + 1] = self.predict(
-                        y[k].reshape(1, -1), u[k + 1].reshape(1, -1)
-                    )
-
-        return y
+        return x
 
     def get_feature_names(self, input_features=None):
         """Get the names of the individual features constituting the observables.

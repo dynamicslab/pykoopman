@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pykoopman"
-version = "1.0.8"
+version = "1.0.9"
 authors = [
     { name = "Shaowu Pan", email = "shawnpan@uw.edu" },
     { name = "Eurika Kaiser", email = "eurika@uw.edu" },
