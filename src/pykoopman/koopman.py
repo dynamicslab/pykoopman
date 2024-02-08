@@ -22,6 +22,7 @@ from .regression import DMDc
 from .regression import EDMDc
 from .regression import EnsembleBaseRegressor
 from .regression import PyDMDRegressor
+from .regression import NNDMD
 
 
 class Koopman(BaseEstimator):
@@ -146,13 +147,24 @@ class Koopman(BaseEstimator):
         if y is None:  # or isinstance(self.regressor, PyDMDRegressor):
             # if there is only 1 trajectory OR regressor is PyDMD
             regressor = self.regressor
+        elif isinstance(self.regressor, NNDMD):
+            regressor = self.regressor
         else:
-            # multiple trajectories
+            # multiple 1-step-trajectories
             regressor = EnsembleBaseRegressor(
                 regressor=self.regressor,
                 func=self.observables.transform,
                 inverse_func=self.observables.inverse,
             )
+            # if x is a list, we need to further change trajectories into 1-step-traj
+            if isinstance(x, list):
+                x_tmp = []
+                y_tmp = []
+                for traj_dat in x:
+                    x_tmp.append(traj_dat[:-1])
+                    y_tmp.append(traj_dat[1:])
+                x = np.hstack(x_tmp)
+                y = np.hstack(y_tmp)
 
         steps = [
             ("observables", self.observables),

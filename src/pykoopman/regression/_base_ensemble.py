@@ -4,6 +4,7 @@ Manual changes are made to add support to complex numeric data
 """
 from __future__ import annotations
 
+import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.base import clone
 from sklearn.base import TransformerMixin
@@ -77,10 +78,14 @@ class EnsembleBaseRegressor(TransformedTargetRegressor):
             functions.
         """
 
-        # store the number of dimension of the target to predict an array of
-        # similar shape at predict
+        # if (
+        #         isinstance(X, np.ndarray)
+        #         and isinstance(y, np.ndarray)
+        #         and X.ndim == 2
+        #         and y.ndim == 2
+        # ):
+        # case 2: x, y are 2D np.ndarray, must be 1-step, no validation
         self._training_dim = y.ndim
-
         # transformers are designed to modify X which is 2d dimensional, we
         # need to modify y accordingly.
         if y.ndim == 1:
@@ -99,12 +104,17 @@ class EnsembleBaseRegressor(TransformedTargetRegressor):
 
         if self.regressor is None:
             from sklearn.linear_model import LinearRegression
-
             self.regressor_ = LinearRegression()
         else:
             self.regressor_ = clone(self.regressor)
 
         self.regressor_.fit(X, y_trans, **fit_params)
+        # elif isinstance(X, list) and isinstance(y, list):
+        #     # case 4: x, y are two lists of trajectories, we have validation data
+        #     for
+        #
+        # else:
+        #     raise ValueError("check `x` and `y` for `self.fit`")
 
         if hasattr(self.regressor_, "feature_names_in_"):
             self.feature_names_in_ = self.regressor_.feature_names_in_
