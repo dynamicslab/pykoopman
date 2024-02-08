@@ -142,6 +142,11 @@ system <https://pykoopman.readthedocs
 Installation
 -------------
 
+Language
+^^^^^^^^^^^^^^^^^^^^
+- Python == 3.10
+
+
 Installing with pip
 ^^^^^^^^^^^^^^^^^^^
 
@@ -170,7 +175,7 @@ In windows, you activate virtual environment in a different way
 
 .. code-block:: bash
 
-  .\venv\Scripts\activate
+  .\venv\Scripts\activate.ps1
 
 Then, to install the package, run
 
@@ -179,6 +184,16 @@ Then, to install the package, run
   python -m pip install -e .
 
 If you do not have root access, you should add the ``--user`` option to the above lines.
+
+
+Installing with GPU support
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+After you download the Github package, go to the directory, type
+
+.. code-block:: bash
+
+  python -m pip install -r requirements-dev.txt
 
 Documentation
 -------------
@@ -220,6 +235,10 @@ Note that you will then need to re-stage any changes ``pre-commit`` made to your
 Reporting issues or bugs
 ^^^^^^^^^^^^^^^^^^^^^^^^
 If you find a bug in the code or want to request a new feature, please open an issue.
+
+Known issues:
+
+- Python 3.12 might cause unexpected problems.
 
 Citing PyKoopman
 ----------------
