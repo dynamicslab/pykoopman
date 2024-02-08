@@ -91,7 +91,9 @@ class FFNN(nn.Module):
         layers (nn.ModuleList): A list of the neural network layers.
     """
 
-    def __init__(self, input_size, hidden_sizes, output_size, activations):
+    def __init__(
+        self, input_size, hidden_sizes, output_size, activations, include_state=False
+    ):
         super(FFNN, self).__init__()
 
         activations_dict = {
@@ -103,6 +105,12 @@ class FFNN(nn.Module):
             "mish": nn.Mish(),
             "linear": nn.Identity(),
         }
+        # whether to directly encode state in observables
+        self.include_state = include_state
+        if self.include_state:
+            output_size_ = output_size - input_size
+        else:
+            output_size_ = output_size
 
         # Define the activation
         act = activations_dict[activations]
@@ -117,7 +125,8 @@ class FFNN(nn.Module):
             bias = True
 
         if len(hidden_sizes) == 0:
-            self.layers.append(nn.Linear(input_size, output_size, bias))
+            # if no hidden layer, then entire NN is just a linear one
+            self.layers.append(nn.Linear(input_size, output_size_, bias))
         else:
             self.layers.append(nn.Linear(input_size, hidden_sizes[0], bias))
             if activations != "linear":
@@ -132,8 +141,7 @@ class FFNN(nn.Module):
                     self.layers.append(act)
 
             # Define the last output layer
-            bias_last = False  # True  # last layer with bias
-            self.layers.append(nn.Linear(hidden_sizes[-1], output_size, bias_last))
+            self.layers.append(nn.Linear(hidden_sizes[-1], output_size_, bias=False))
 
     def forward(self, x):
         """Performs a forward pass through the neural network.
@@ -144,9 +152,22 @@ class FFNN(nn.Module):
         Returns:
             torch.Tensor: The output tensor of the neural network.
         """
+        in_x = x
         for layer in self.layers:
             x = layer(x)
+
+        if self.include_state:
+            x = torch.cat((in_x, x), 1)
         return x
+
+
+class HardCodedLinearLayer(nn.Module):
+    def __init__(self, input_size, output_size):
+
+        pass
+
+    def forward(self, x):
+        pass
 
 
 class BaseKoopmanOperator(nn.Module):
@@ -185,6 +206,8 @@ class BaseKoopmanOperator(nn.Module):
     def forward(self, x):
         """
         Computes the forward pass of the `BaseKoopmanOperator`.
+
+        Given `x` as a row vector, return `x @ K.T`
 
         Args:
             x (torch.Tensor): The input tensor.
@@ -362,6 +385,7 @@ class DLKoopmanRegressor(L.LightningModule):
         config_decoder=dict(),
         lbfgs=False,
         std_koopman=1e-1,
+        include_state=False,
     ):
         super(DLKoopmanRegressor, self).__init__()
 
@@ -373,6 +397,7 @@ class DLKoopmanRegressor(L.LightningModule):
             hidden_sizes=config_encoder["hidden_sizes"],
             output_size=config_encoder["output_size"],
             activations=config_encoder["activations"],
+            include_state=include_state,
         )
 
         self._decoder = FFNN(
@@ -1076,6 +1101,7 @@ class NNDMD(BaseRegressor):
         normalize_mode="equal",
         normalize_std_factor=2.0,
         std_koopman=1e-1,
+        include_state=False,
         trainer_kwargs={},
     ):
         """Initializes the NNDMD model."""
@@ -1091,6 +1117,7 @@ class NNDMD(BaseRegressor):
         self.normalize_std_factor = normalize_std_factor
         self.batch_size = batch_size
         self.std_koopman = std_koopman
+        self.include_state = include_state
 
         # build DLK regressor
         self._regressor = DLKoopmanRegressor(

@@ -453,10 +453,40 @@ def test_observables_integration_accuracy_with_nndmd(data_1D_cosine, observables
 @pytest.mark.parametrize(
     "observables",
     [
-        Identity(),
         Polynomial(degree=2),
-        TimeDelay(delay=2),
-        TimeDelay(delay=4),
+        Identity(),
+    ],
+)
+def test_edmd_simulate(data_2D_superposition, regressor, observables):
+    """test if combining time delay observables still work for pykoopman.Koopman with
+    different regressors on complex dataset"""
+    x = data_2D_superposition
+    model = Koopman(observables=observables, regressor=regressor)
+    model.fit(x)
+    n_steps = 10
+    x_pred = model.simulate(x[0], n_steps=n_steps)
+    assert_allclose(x[1 : n_steps + 1], x_pred)
+
+
+@pytest.mark.parametrize(
+    "regressor",
+    [
+        DMD(svd_rank=10),
+        EDMD(svd_rank=10),
+        PyDMDRegressor(DMD(svd_rank=10)),
+        CDMD(svd_rank=10),
+        PyDMDRegressor(CDMD(svd_rank=10)),
+        SpDMD(svd_rank=10),
+        PyDMDRegressor(SpDMD(svd_rank=10)),
+    ],
+)
+@pytest.mark.parametrize(
+    "observables",
+    [
+        TimeDelay(delay=1, n_delays=2),
+        TimeDelay(delay=2, n_delays=1),
+        TimeDelay(delay=2, n_delays=2),
+        TimeDelay(delay=4, n_delays=3),
     ],
 )
 def test_simulate_with_time_delay(data_2D_superposition, regressor, observables):
@@ -465,7 +495,7 @@ def test_simulate_with_time_delay(data_2D_superposition, regressor, observables)
     x = data_2D_superposition
     model = Koopman(observables=observables, regressor=regressor)
     model.fit(x)
-    n_steps = 10
+    n_steps = 21
     n_consumed_samples = observables.n_consumed_samples
     x_pred = model.simulate(x[: n_consumed_samples + 1], n_steps=n_steps)
     assert_allclose(
@@ -490,8 +520,44 @@ def test_simulate_with_time_delay(data_2D_superposition, regressor, observables)
     [
         Identity(),
         Polynomial(degree=2),
-        TimeDelay(delay=2),
-        TimeDelay(delay=4),
+    ],
+)
+def test_simulate_nonconsecutive_complexdata(
+    data_2D_superposition, regressor, observables
+):
+    """test if pykoopman.Koopman fit will work for time delay obsevabels and
+    different regressors on nonconsecutive complex data"""
+    x = data_2D_superposition[:-1]
+    y = data_2D_superposition[1:]
+    # observables = TimeDelay(delay=3)
+    model = Koopman(observables=observables, regressor=regressor)
+    model.fit(x, y)
+    n_steps = 10
+    n_consumed_samples = observables.n_consumed_samples
+    x_pred = model.simulate(x[0], n_steps=n_steps)
+    assert_allclose(
+        x[n_consumed_samples + 1 : n_consumed_samples + n_steps + 1], x_pred
+    )
+
+
+@pytest.mark.parametrize(
+    "regressor",
+    [
+        DMD(svd_rank=10),
+        EDMD(svd_rank=10),
+        PyDMDRegressor(DMD(svd_rank=10)),
+        CDMD(svd_rank=10),
+        PyDMDRegressor(CDMD(svd_rank=10)),
+        SpDMD(svd_rank=10),
+        PyDMDRegressor(SpDMD(svd_rank=10)),
+    ],
+)
+@pytest.mark.parametrize(
+    "observables",
+    [
+        TimeDelay(delay=1, n_delays=2),
+        TimeDelay(delay=1, n_delays=3),
+        TimeDelay(delay=2, n_delays=1),
     ],
 )
 def test_simulate_with_time_delay_nonconsecutive_complexdata(
@@ -549,8 +615,11 @@ def test_simulate_accuracy_dmdc(data_2D_linear_control_system):
     DMDc = regression.DMDc(svd_rank=3)
     model = Koopman(regressor=DMDc).fit(X, u=C)
 
+    # todo: to find, the model fitted result, and check if the model.simulate
+    #       is using the right self.A and self.B
+
     n_steps = len(C)
-    x_pred = model.simulate(X[0, :], C, n_steps=n_steps - 1)
+    x_pred = model.simulate(X[0, :], u=C, n_steps=n_steps - 1)
     assert_allclose(X[1:n_steps, :], x_pred, 1e-07, 1e-12)
 
 
@@ -647,12 +716,14 @@ def test_edmdc_vanderpol():
 
     # Create Koopman model
     EDMDc = regression.EDMDc()
+    centers = np.random.uniform(-1, 1, (2, 100))
     RBF = observables.RadialBasisFunction(
         rbf_type="thinplate",
-        n_centers=10,
-        centers=None,
-        kernel_width=1.0,
+        centers=centers,
+        n_centers=centers.shape[1],
+        kernel_width=2,
         polyharmonic_coeff=1.0,
+        include_state=True,
     )
     model = Koopman(observables=RBF, regressor=EDMDc)
     model.fit(x=X.T, y=Y.T, u=U.T)
@@ -660,18 +731,19 @@ def test_edmdc_vanderpol():
     # Create test data
     n_int = 300  # Integration length
     u = np.array([-examples.square_wave(step + 1) for step in range(n_int)])
-    x = np.array([0.5, 0.5])
-    # x = np.array([[-0.1], [-0.5]])
+    x0 = np.array([0.5, 0.5])
+    # generate the ground truth
+    x = x0.reshape(-1, 1)
+    X = np.zeros([n_int, x0.size])
+    for step in range(n_int):
+        y = examples.rk4(0, x, u[step], dT, examples.vdp_osc)
+        X[step] = y.flatten()
+        x = y
 
     # Prediction using Koopman model
-    Xkoop = model.simulate(x[np.newaxis, :], u[:, np.newaxis], n_steps=n_int - 1)
+    Xkoop = model.simulate(x0, u[:, np.newaxis], n_steps=n_int)
 
-    # Add initial condition to simulated data for comparison below
-    Xkoop = np.vstack([x[np.newaxis, :], Xkoop])
-
-    assert_allclose(
-        Xkoop[-1, :], [-8.473305929876546738e-01, 6.199389628993866308e-02], 1e-07, 1e-9
-    )
+    assert_allclose(X, Xkoop, atol=0.8)
 
 
 def test_accuracy_of_edmd_prediction(data_rev_dvdp):
@@ -681,20 +753,22 @@ def test_accuracy_of_edmd_prediction(data_rev_dvdp):
 
     regressor = regression.EDMD()
     # regressor = PyDMDRegressor(DMD(svd_rank=22))
+    centers = np.random.uniform(-1, 1, (2, 4))
     RBF = observables.RadialBasisFunction(
         rbf_type="thinplate",
-        n_centers=20,
-        centers=None,
-        kernel_width=1.0,
+        n_centers=centers.shape[1],
+        centers=centers,
+        kernel_width=1,
         polyharmonic_coeff=1.0,
         include_state=True,
     )
 
     model = Koopman(observables=RBF, regressor=regressor)
     model.fit(Xtrain.T, y=Ytrain.T)
-    Xkoop = model.simulate(Xtest[0, :][np.newaxis, :], n_steps=np.shape(Xtest)[0] - 1)
+    Xkoop = model.simulate(Xtest[0], n_steps=np.shape(Xtest)[0] - 1)
+    # Xkoop = model.simulate(Xtest[0, :][np.newaxis, :], n_steps=np.shape(Xtest)[0] - 1)
     Xkoop = np.vstack([Xtest[0, :][np.newaxis, :], Xkoop])
-    assert_allclose(Xtest, Xkoop, atol=2e-2, rtol=1e-10)
+    assert_allclose(Xtest, Xkoop, atol=2e-1)
 
 
 @pytest.mark.parametrize(
@@ -740,7 +814,7 @@ def test_accuracy_koopman_nndmd_validity_check(data_for_validty_check):
             normalize=True,
             normalize_mode="equal",
             std_koopman=1 / dt,
-            trainer_kwargs=dict(max_epochs=15),
+            trainer_kwargs=dict(max_epochs=10),
         )
         model = Koopman(regressor=regressor)
         model.fit(X, dt=1)

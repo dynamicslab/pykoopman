@@ -62,7 +62,8 @@ class TimeDelay(BaseObservables):
         Initialize the TimeDelay class with given parameters.
 
         Args:
-            delay (int, optional): The length of each delay. Defaults to 1.
+            delay (int, optional): The length of each delay. Defaults to 1. Or
+                we say this is the "stride of delay".
             n_delays (int, optional): The number of delays to compute for each
                 variable. Defaults to 2.
 

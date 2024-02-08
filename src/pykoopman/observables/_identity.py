@@ -34,12 +34,20 @@ class Identity(BaseObservables):
 
         Returns:
             self: Returns a fit instance of the class `pykoopman.observables.Identity`.
+
+        Note:
+            only identity mapping is supported for list of arb trajectories
         """
         x = validate_input(x)
-        self.n_input_features_ = self.n_output_features_ = x.shape[1]
+        if not isinstance(x, list):
+            self.n_input_features_ = self.n_output_features_ = x.shape[1]
+            self.measurement_matrix_ = np.eye(x.shape[1]).T
+        else:
+            self.n_input_features_ = self.n_output_features_ = x[0].shape[1]
+            self.measurement_matrix_ = np.eye(x[0].shape[1]).T
+
         self.n_consumed_samples = 0
 
-        self.measurement_matrix_ = np.eye(x.shape[1]).T
         return self
 
     def transform(self, x):
