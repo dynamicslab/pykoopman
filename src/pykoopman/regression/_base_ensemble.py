@@ -77,12 +77,10 @@ class EnsembleBaseRegressor(TransformedTargetRegressor):
             functions.
         """
 
-        # store the number of dimension of the target to predict an array of
-        # similar shape at predict
-        self._training_dim = y.ndim
-
         # transformers are designed to modify X which is 2d dimensional, we
         # need to modify y accordingly.
+
+        self._training_dim = y.ndim
         if y.ndim == 1:
             y_2d = y.reshape(-1, 1)
         else:
