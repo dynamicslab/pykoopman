@@ -21,8 +21,8 @@ from .regression import BaseRegressor
 from .regression import DMDc
 from .regression import EDMDc
 from .regression import EnsembleBaseRegressor
-from .regression import PyDMDRegressor
 from .regression import NNDMD
+from .regression import PyDMDRegressor
 
 
 class Koopman(BaseEstimator):

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pykoopman as pk
 import pytest
 from pydmd import DMD
 from pykoopman.regression import BaseRegressor
@@ -10,7 +11,6 @@ from pykoopman.regression import KDMD
 from pykoopman.regression import NNDMD
 from pykoopman.regression import PyDMDRegressor
 from sklearn.gaussian_process.kernels import RBF
-import pykoopman as pk
 
 
 class RegressorWithoutFit:
@@ -71,26 +71,23 @@ def test_fit_regressors(data_xy, regressor):
     [
         # case 1,2 only work for pykoopman class
         # case 1: single step single traj, no validation
-        (
-                np.random.rand(200, 3),
-                None
-        ),
+        (np.random.rand(200, 3), None),
         # case 2: single step multiple traj, no validation
         (
-                np.random.rand(200, 3),
-                np.random.rand(200, 3) # because "x" is not a list, so we think this
-                                       # is single step
+            np.random.rand(200, 3),
+            np.random.rand(200, 3)  # because "x" is not a list, so we think this
+            # is single step
         ),
         # case 3,4 works for regressor directly
         # case 3: multiple traj, no validation
         (
-                [np.random.rand(200, 3), np.random.rand(100, 3)],  # this is training
-                None  # no validation
+            [np.random.rand(200, 3), np.random.rand(100, 3)],  # this is training
+            None,  # no validation
         ),
         # case 4: multiple traj, with validation
         (
-            [np.random.rand(100, 3), np.random.rand(100, 3)], # this is training
-            [np.random.rand(300, 3), np.random.rand(400, 3)], # this is validation
+            [np.random.rand(100, 3), np.random.rand(100, 3)],  # this is training
+            [np.random.rand(300, 3), np.random.rand(400, 3)],  # this is validation
         ),
     ],
 )
@@ -119,6 +116,7 @@ def test_fit_nndmd_regressor(data_xy, regressor):
     x, y = data_xy
     regressor.fit(x, y)
 
+
 @pytest.mark.parametrize(
     "data_xy",
     [
@@ -142,8 +140,8 @@ def test_fit_nndmd_regressor(data_xy, regressor):
         # ),
         # case 4: multiple traj, with validation
         (
-            [np.random.rand(100, 3), np.random.rand(100, 3)], # this is training
-            [np.random.rand(300, 3), np.random.rand(400, 3)], # this is validation
+            [np.random.rand(100, 3), np.random.rand(100, 3)],  # this is training
+            [np.random.rand(300, 3), np.random.rand(400, 3)],  # this is validation
         ),
     ],
 )
@@ -170,4 +168,4 @@ def test_fit_nndmd_regressor(data_xy, regressor):
 def test_fit_dlkoopman(data_xy, regressor):
     """test if using NNDMD regressor work inside pykoopman"""
     model_d = pk.Koopman(regressor=regressor)
-    model_d.fit(data_xy[0],data_xy[1], dt=1)
+    model_d.fit(data_xy[0], data_xy[1], dt=1)
