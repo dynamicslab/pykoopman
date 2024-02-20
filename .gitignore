@@ -37,3 +37,5 @@ lightning_logs
 Pipfile
 Pipfile.lock
 /htmlcov/
+
+*~
