@@ -1,0 +1,37 @@
+
+{
+    "creators": [
+        {
+            "orcid": "0000-0002-2462-362X",
+            "affiliation": "Rensselaer Polytechnic Institute",
+            "name": "Pan, Shaowu"
+        },
+        {
+            "orcid": "0000-0001-6049-0812",
+            "affiliation": "University of Washington",
+            "name": "Kaiser, Eurika"
+        }
+        ,
+        {
+            "orcid": "0000-0003-0944-900X",
+            "affiliation": "University of Washington",
+            "name": "de Silva, Brian M."
+        }
+        ,
+        {
+            "orcid": "0000-0002-6004-2275",
+            "affiliation": "University of Washington",
+            "name": "Kutz, J. Nathan"
+        }
+        ,
+        {
+            "orcid": "0000-0002-6565-5118",
+            "affiliation": "University of Washington",
+            "name": "Brunton, Steven"
+        }
+    ],
+
+    "license": "Creative Commons Attribution 4.0 International",
+
+    "title": "PyKoopman: A Python Package for Data-Driven Approximation of the Koopman Operator"
+}
