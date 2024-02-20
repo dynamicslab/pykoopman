@@ -65,7 +65,7 @@ Specifically, `PyKoopman` offers tools for designing the observables (i.e., func
 
 ![External package dependencies of PyKoopman.\label{fig:package-structure-dependency}](./Fig2.png){ width=80% }
 
-The core component of the PyKoopman package is the Koopman model class. We used several base classes from `sklearn` to build the machine learning pipeline. We used `torch` and `lightning` for implementing deep learning methods for Koopman operator. We also used `pydmd` to incorporate some existing implementation for regression after nonlinear observables are chosen. Finally, we used `derivative` to obtain time derivative to deal with non-uniformly sampled data. To summarize, the external package dependencies are depicted in Fig. \ref{fig:package-structure-dependency}.
+The core component of the PyKoopman package is the Koopman model class. We used several base classes from `scikit-learn` [@pedregosa2011scikit] to build the machine learning pipeline. We used `pytorch` [@paszke2019pytorch] and `lightning` [@Falcon_PyTorch_Lightning_2019] for implementing deep learning methods for Koopman operator. We also used `PyDMD` [@demo2018pydmd] to incorporate some existing implementation for regression after nonlinear observables are chosen. Finally, we used `derivative` [@kaptanoglu2022pysindy] to obtain time derivative to deal with non-uniformly sampled data. To summarize, the external package dependencies are depicted in Fig. \ref{fig:package-structure-dependency}.
 
 <!-- Below are justifications for each dependency:
 
@@ -96,10 +96,10 @@ At the time of writing, we have the following features implemented:
 - Observable library for lifting the state $\mathbf{x}$ into the observable space
 
   - Identity (for DMD/DMDc or in case users want to compute observables themselves): `Identity`
-  - Multivariate polynomials: `Polynomial` [@Williams2015jnls]
-  - Time delay coordinates: `TimeDelay` [@mezic2004comparison;@Brunton2017natcomm]
-  - Radial basis functions: `RadialBasisFunctions` [@Williams2015jnls]
-  - Random Fourier features: `RandomFourierFeatures` [@degennaro2019scalable]
+  - Multivariate polynomials [@Williams2015jnls]: `Polynomial`
+  - Time delay coordinates [@mezic2004comparison;@Brunton2017natcomm]: `TimeDelay`
+  - Radial basis functions [@Williams2015jnls]: `RadialBasisFunctions`
+  - Random Fourier features [@degennaro2019scalable]: `RandomFourierFeatures`
   - Custom library (defined by user-supplied functions): `CustomObservables`
   - Concatenation of observables: `ConcatObservables`
 
@@ -144,10 +144,7 @@ At the time of writing, we have the following features implemented:
 # Example
 
 
-The `PyKoopman` [GitHub repository](https://github.com/dynamicslab/pykoopman) provides
-several helpful Jupyter notebook tutorials. Here, we briefly demonstrate a typical workflow
-using the `PyKoopman` package to approximate Koopman operator of a 2D
-nonlinear system.
+The `PyKoopman` [GitHub repository](https://github.com/dynamicslab/pykoopman) provides several helpful Jupyter notebook tutorials. Here, we briefly demonstrate a typical workflow using the `PyKoopman` package to approximate Koopman operator of a 2D nonlinear system.
 
 First, consider the dynamical system
 $$
@@ -206,7 +203,7 @@ model = Koopman(observables=Polynomial(2),regressor=EDMD())
 model.fit(X,Xnext)
 ```
 
-Once the `Koopman` object `model` has been fit, we can use the `model.simulate` method to make predictions over an arbitrary time horizon. Fig. \ref{fig:example-edmd} displays the excellent agreement between ground truth and the EDMD prediction from the aforementioned `Koopman`` model on randomly generated unseen test data.
+Once the `Koopman` object `model` has been fit, we can use the `model.simulate` method to make predictions over an arbitrary time horizon. Fig. \ref{fig:example-edmd} displays the excellent agreement between ground truth and the EDMD prediction from the aforementioned `Koopman` model on randomly generated unseen test data.
 
 <!-- For example, the following code demonstrates the usage of `model.simulate`` to make predictions for 50 unseen initial conditions sampled on the unit circle.
 
