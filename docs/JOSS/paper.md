@@ -24,11 +24,11 @@ authors:
     orcid: 0000-0002-6565-5118
     affiliation: 2
 affiliations:
- - name: Department of Applied Mathematics, University of Washington
+ - name: Department of Applied Mathematics, University of Washington, Seattle, WA 98195, United States
    index: 1
- - name: Department of Mechanical Engineering, University of Washington
+ - name: Department of Mechanical Engineering, University of Washington, Seattle, WA 98195, United States
    index: 2
- - name: Department of Mechanical, Aerospace, and Nuclear Engineering, Rensselaer Polytechnic Institute
+ - name: Department of Mechanical, Aerospace, and Nuclear Engineering, Rensselaer Polytechnic Institute, Troy, NY 12180, United States
    index: 3
 date: 20 June 2023
 bibliography: paper.bib
