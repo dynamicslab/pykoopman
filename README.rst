@@ -278,7 +278,7 @@ Related packages
     :target: https://app.codecov.io/gh/dynamicslab/pykoopman
 
 .. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.8060893.svg
-   :target: https://doi.org/10.5281/zenodo.8060893
+    :target: https://doi.org/10.5281/zenodo.8060893
 
 .. |JOSS| image:: https://joss.theoj.org/papers/10.21105/joss.05881/status.svg
-   :target: https://doi.org/10.21105/joss.05881
+    :target: https://doi.org/10.21105/joss.05881
