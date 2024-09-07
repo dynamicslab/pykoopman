@@ -250,7 +250,7 @@ class ConcatObservables(BaseObservables):
             ].measurement_matrix_
         else:
             g = self.transform(X)
-            tmp = np.linalg.lstsq(g, X)[0].T
+            tmp = np.linalg.lstsq(g, X, rcond=None)[0].T
             assert tmp.shape == self.measurement_matrix_.shape
             self.measurement_matrix_ = tmp
 

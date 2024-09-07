@@ -66,7 +66,7 @@ class PrunedKoopman:
 
         # pruned V
         selected_eigenphi = self.psi(x.T).T
-        result = np.linalg.lstsq(selected_eigenphi, x)
+        result = np.linalg.lstsq(selected_eigenphi, x, rcond=None)
         # print('refit residual = {}'.format(result[1]))
         self.W_ = result[0].T
 
