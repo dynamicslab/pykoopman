@@ -63,7 +63,7 @@ def test_fit_koopman_nndmd(data_xy):
             lbfgs=True,
             normalize=False,
             normalize_mode="max",
-            trainer_kwargs=dict(max_epochs=1),
+            trainer_kwargs=dict(max_epochs=1, accelerator="cpu"),
         )
     )
     model.fit(x, y)
@@ -92,7 +92,7 @@ def test_fit_koopman_nndmd(data_xy):
             lbfgs=True,
             normalize=False,
             normalize_mode="max",
-            trainer_kwargs=dict(max_epochs=1),
+            trainer_kwargs=dict(max_epochs=1,accelerator="cpu"),
         ),
     ],
 )
@@ -176,7 +176,7 @@ def test_dmd_on_nonconsecutive_data_accuracy(data_2D_linear_real_system, regress
             lbfgs=True,
             normalize=False,
             normalize_mode="max",
-            trainer_kwargs=dict(max_epochs=1),
+            trainer_kwargs=dict(max_epochs=1,accelerator="cpu"),
         ),
     ],
 )
@@ -351,7 +351,7 @@ def test_observables_integration_with_nndmd(data_random, observables):
         lbfgs=True,
         normalize=False,
         normalize_mode="max",
-        trainer_kwargs=dict(max_epochs=1),
+        trainer_kwargs=dict(max_epochs=1,accelerator="cpu"),
     )
     model = Koopman(observables=observables, regressor=regressor).fit(x)
     check_is_fitted(model)
@@ -432,7 +432,7 @@ def test_observables_integration_accuracy_with_nndmd(data_1D_cosine, observables
         lbfgs=True,
         normalize=False,
         normalize_mode="max",
-        trainer_kwargs=dict(max_epochs=2),
+        trainer_kwargs=dict(max_epochs=2,accelerator="cpu"),
     )
     model = Koopman(observables=observables, regressor=regressor, quiet=True).fit(x)
     assert model.score(x) > 0.95
@@ -814,7 +814,7 @@ def test_accuracy_koopman_nndmd_validity_check(data_for_validty_check):
             normalize=True,
             normalize_mode="equal",
             std_koopman=1 / dt,
-            trainer_kwargs=dict(max_epochs=10),
+            trainer_kwargs=dict(max_epochs=10,accelerator="cpu"),
         )
         model = Koopman(regressor=regressor)
         model.fit(X, dt=1)
@@ -843,7 +843,7 @@ def test_accuracy_nndmd_linear_system():
             lbfgs=True,
             normalize=True,
             normalize_mode="max",
-            trainer_kwargs=dict(max_epochs=3),
+            trainer_kwargs=dict(max_epochs=3,accelerator="cpu"),
         ),
         NNDMD(
             look_forward=1,
@@ -857,7 +857,7 @@ def test_accuracy_nndmd_linear_system():
             lbfgs=True,
             normalize=True,
             normalize_mode="equal",
-            trainer_kwargs=dict(max_epochs=3),
+            trainer_kwargs=dict(max_epochs=3,accelerator="cpu"),
         ),
         NNDMD(
             look_forward=1,
@@ -871,7 +871,7 @@ def test_accuracy_nndmd_linear_system():
             lbfgs=True,
             normalize=False,
             normalize_mode="max",
-            trainer_kwargs=dict(max_epochs=3),
+            trainer_kwargs=dict(max_epochs=3,accelerator="cpu"),
         ),
         NNDMD(
             mode="Dissipative",
@@ -886,7 +886,7 @@ def test_accuracy_nndmd_linear_system():
             lbfgs=True,
             normalize=True,
             normalize_mode="max",
-            trainer_kwargs=dict(max_epochs=3),
+            trainer_kwargs=dict(max_epochs=3,accelerator="cpu"),
         ),
         NNDMD(
             mode="Dissipative",
@@ -901,7 +901,7 @@ def test_accuracy_nndmd_linear_system():
             lbfgs=True,
             normalize=True,
             normalize_mode="equal",
-            trainer_kwargs=dict(max_epochs=3),
+            trainer_kwargs=dict(max_epochs=3,accelerator="cpu"),
         ),
         NNDMD(
             mode="Dissipative",
@@ -917,7 +917,7 @@ def test_accuracy_nndmd_linear_system():
             normalize=True,
             normalize_mode="equal",
             std_koopman=1.0 / 1.0,
-            trainer_kwargs=dict(max_epochs=3),
+            trainer_kwargs=dict(max_epochs=3,accelerator="cpu"),
         ),
     ]
 
