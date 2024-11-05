@@ -221,15 +221,15 @@ Citing PyKoopman
 
 .. code-block:: text
 
-    @article{Pan2024, doi = {10.21105/joss.05881}, 
-    url = {https://doi.org/10.21105/joss.05881}, 
-    year = {2024}, 
-    publisher = {The Open Journal}, 
-    volume = {9}, 
-    number = {94}, 
-    pages = {5881}, 
-    author = {Shaowu Pan and Eurika Kaiser and Brian M. de Silva and J. Nathan Kutz and Steven L. Brunton}, 
-    title = {PyKoopman: A Python Package for Data-Driven Approximation of the Koopman Operator}, 
+    @article{Pan2024, doi = {10.21105/joss.05881},
+    url = {https://doi.org/10.21105/joss.05881},
+    year = {2024},
+    publisher = {The Open Journal},
+    volume = {9},
+    number = {94},
+    pages = {5881},
+    author = {Shaowu Pan and Eurika Kaiser and Brian M. de Silva and J. Nathan Kutz and Steven L. Brunton},
+    title = {PyKoopman: A Python Package for Data-Driven Approximation of the Koopman Operator},
     journal = {Journal of Open Source Software}}
 
 Related packages

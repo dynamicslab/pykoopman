@@ -107,7 +107,7 @@ def test_fit_regressors(data_xy, regressor):
             lbfgs=True,
             normalize=False,
             normalize_mode="max",
-            trainer_kwargs=dict(max_epochs=1,accelerator="cpu"),
+            trainer_kwargs=dict(max_epochs=1, accelerator="cpu"),
         )
     ],
 )
@@ -161,7 +161,7 @@ def test_fit_nndmd_regressor(data_xy, regressor):
             lbfgs=True,
             normalize=False,
             normalize_mode="max",
-            trainer_kwargs=dict(max_epochs=1,accelerator="cpu"),
+            trainer_kwargs=dict(max_epochs=1, accelerator="cpu"),
         )
     ],
 )
