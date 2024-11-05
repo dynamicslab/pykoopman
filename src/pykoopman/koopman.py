@@ -289,7 +289,7 @@ class Koopman(BaseEstimator):
                 # tmp = self.W @ self.lamda**(k+1) @ y[0].reshape(-1,1)
                 y[k + 1] = self.lamda @ y[k]
             x = np.transpose(self.W @ y.T)
-            x = x.astype(self.A.dtype)
+            # x = x.astype(self.A.dtype)
         else:
             # lifted space (not eigen)
             y[0] = self.A @ self.phi(x0).flatten() + self.B @ u[0]
@@ -299,8 +299,10 @@ class Koopman(BaseEstimator):
                 tmp = self.A @ y[k].reshape(-1, 1) + self.B @ u[k + 1].reshape(-1, 1)
                 y[k + 1] = tmp.flatten()
             x = np.transpose(self.C @ y.T)
-            x = x.astype(self.A.dtype)
+            # x = x.astype(self.A.dtype)
 
+        if np.isrealobj(x0):
+            x = np.real(x)
         return x
 
     def get_feature_names(self, input_features=None):
