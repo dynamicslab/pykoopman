@@ -932,18 +932,9 @@ def test_accuracy_nndmd_linear_system():
     X, Y = sys.collect_data(x, n_int, n_traj)
 
     for regressor in list_nndmd_regressors:
-        count = 0
-        while count < 10:
-            # create a model then train
-            model = Koopman(regressor=regressor)
-            model.fit(X.T, Y.T)
+        # create a model then train
+        model = Koopman(regressor=regressor)
+        model.fit(X.T, Y.T)
 
-            # check eigenvalues
-            try:
-                eigenvalues = np.sort(np.real(np.diag(model.lamda)))
-                assert_allclose([0.7, 0.8], eigenvalues, rtol=1e-2, atol=1e-2)
-                break
-            except:
-                count += 1
-
-        assert count == 0
+        eigenvalues = np.sort(np.real(np.diag(model.lamda)))
+        assert_allclose([0.7, 0.8], eigenvalues, rtol=1e-2, atol=1e-2)
