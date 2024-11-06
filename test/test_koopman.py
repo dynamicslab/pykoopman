@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+import torch
 from numpy.testing import assert_allclose
 from pydmd import CDMD
 from pydmd import DMD
@@ -28,6 +29,7 @@ from sklearn.exceptions import NotFittedError
 from sklearn.gaussian_process.kernels import DotProduct
 from sklearn.gaussian_process.kernels import RBF
 from sklearn.utils.validation import check_is_fitted
+
 
 
 def test_default_fit(data_random):
@@ -829,6 +831,7 @@ def test_accuracy_koopman_nndmd_validity_check(data_for_validty_check):
 def test_accuracy_nndmd_linear_system():
     """test if nndmd as regressor for pykoopman.Koopman will produce accurate result
     for linear system"""
+    torch.manual_seed(42)
 
     list_nndmd_regressors = [
         NNDMD(
@@ -937,9 +940,11 @@ def test_accuracy_nndmd_linear_system():
             model.fit(X.T, Y.T)
 
             # check eigenvalues
-            eigenvalues = np.sort(np.real(np.diag(model.lamda)))
             try:
+                eigenvalues = np.sort(np.real(np.diag(model.lamda)))
                 assert_allclose([0.7, 0.8], eigenvalues, rtol=1e-2, atol=1e-2)
                 break
-            except AssertionError:
+            except:
                 count += 1
+
+        assert count == 0
