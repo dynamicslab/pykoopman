@@ -31,7 +31,6 @@ from sklearn.gaussian_process.kernels import RBF
 from sklearn.utils.validation import check_is_fitted
 
 
-
 def test_default_fit(data_random):
     """test if default pykoopman.Koopman will work"""
     x = data_random
