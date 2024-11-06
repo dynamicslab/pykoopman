@@ -158,7 +158,7 @@ class RadialBasisFunction(BaseObservables):
 
         xlift = self._rbf_lifting(x)
         # self.measurement_matrix_ = x.T @ np.linalg.pinv(xlift.T)
-        self.measurement_matrix_ = np.linalg.lstsq(xlift, x)[0].T
+        self.measurement_matrix_ = np.linalg.lstsq(xlift, x, rcond=None)[0].T
 
         return self
 

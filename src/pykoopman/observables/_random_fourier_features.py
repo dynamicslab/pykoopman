@@ -102,7 +102,7 @@ class RandomFourierFeatures(BaseObservables):
             # z[:,:x.shape[1]] = x
             # z[:,x.shape[1]:] = self._rff_lifting(x)
             z = self._rff_lifting(x)
-            self.measurement_matrix_ = np.linalg.lstsq(z, x)[0].T
+            self.measurement_matrix_ = np.linalg.lstsq(z, x, rcond=None)[0].T
 
         return self
 

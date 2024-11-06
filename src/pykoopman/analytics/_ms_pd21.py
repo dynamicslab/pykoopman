@@ -137,7 +137,8 @@ class ModesSelectionPAD21(BaseAnalyzer):
                     :, self.small_to_large_error_eigen_index[:k]
                 ]
                 sparse_measurement_matrix = np.linalg.lstsq(
-                    eigenfunction_evaluated_on_traj_top_k, validate_data
+                    eigenfunction_evaluated_on_traj_top_k, validate_data,
+		    rcond=None
                 )[0]
                 residual = (
                     eigenfunction_evaluated_on_traj_top_k @ sparse_measurement_matrix
@@ -301,7 +302,7 @@ class ModesSelectionPAD21(BaseAnalyzer):
             bool_non_zero = np.linalg.norm(coefs_enet_comp[:, :, i_alpha], axis=0) > 0
             phi_tilde_scaled_reduced = phi_tilde_scaled[:, bool_non_zero]
             coef_enet_comp_reduced_i_alpha = np.linalg.lstsq(
-                phi_tilde_scaled_reduced, X
+                phi_tilde_scaled_reduced, X, rcond=None
             )[0]
             coefs_enet_comp[
                 :, bool_non_zero, i_alpha

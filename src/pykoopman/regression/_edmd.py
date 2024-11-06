@@ -80,7 +80,7 @@ class EDMD(BaseRegressor):
 
         # X1, X2 are row-wise data, so there is a transpose in the end.
         self._coef_ = U.conj().T @ X2T @ V @ np.diag(np.reciprocal(s))
-        # self._coef_ = np.linalg.lstsq(X1, X2)[0].T  # [0:Nlift, 0:Nlift]
+        # self._coef_ = np.linalg.lstsq(X1, X2, rcond=None)[0].T  # [0:Nlift, 0:Nlift]
         self._state_matrix_ = self._coef_
         [self._eigenvalues_, self._eigenvectors_] = scipy.linalg.eig(self.state_matrix_)
         # self._ur = np.eye(self.n_input_features_)
