@@ -554,9 +554,9 @@ class Koopman(BaseEstimator):
                 )
         else:
             if cast_as_real:
-                return metric(y.real, self.predict(x).real, **metric_kws)
+                return metric(y.real, self.predict(x, **metric_kws).real)
             else:
-                return metric(y, self.predict(x), **metric_kws)
+                return metric(y, self.predict(x, **metric_kws))
 
     def _observable(self):
         """Returns the observable transformation."""
