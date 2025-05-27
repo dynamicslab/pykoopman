@@ -181,6 +181,12 @@ class RadialBasisFunction(BaseObservables):
                 input features expected by the transformer.
         """
         check_is_fitted(self, ["n_input_features_", "centers"])
+        if isinstance(x, list):
+            return [self.transform(x_trial) for x_trial in x]
+
+        if x.ndim == 3:
+            return np.array([self.transform(x_trial) for x_trial in x])
+
         x = validate_input(x)
 
         if x.shape[1] != self.n_input_features_:

@@ -107,6 +107,74 @@ def test_default_observable_predict_shape(data_random, regressor):
 @pytest.mark.parametrize(
     "regressor",
     [
+        DMD(svd_rank=10),
+        KDMD(svd_rank=10),
+        PyDMDRegressor(DMD(svd_rank=10)),
+        EDMD(svd_rank=10),
+        NNDMD(
+            mode="Dissipative",
+            look_forward=2,
+            config_encoder=dict(
+                input_size=3, hidden_sizes=[32] * 2, output_size=4, activations="swish"
+            ),
+            config_decoder=dict(
+                input_size=4,
+                hidden_sizes=[32] * 2,
+                output_size=3,
+                activations="linear",
+            ),
+            batch_size=512,
+            lbfgs=True,
+            normalize=False,
+            normalize_mode="max",
+            trainer_kwargs=dict(max_epochs=1, accelerator="cpu"),
+        ),
+    ],
+)
+def test_default_observable_predict_shape_3D(data_random_3D, regressor):
+    """test if pykoopman.Koopman with regressor will give right shape for output"""
+    x = data_random_3D
+    model = Koopman(regressor=regressor).fit(x)
+    assert x.shape == model.predict(x).shape
+
+
+@pytest.mark.parametrize(
+    "regressor",
+    [
+        DMD(svd_rank=10),
+        KDMD(svd_rank=10),
+        PyDMDRegressor(DMD(svd_rank=10)),
+        EDMD(svd_rank=10),
+        NNDMD(
+            mode="Dissipative",
+            look_forward=2,
+            config_encoder=dict(
+                input_size=3, hidden_sizes=[32] * 2, output_size=4, activations="swish"
+            ),
+            config_decoder=dict(
+                input_size=4,
+                hidden_sizes=[32] * 2,
+                output_size=3,
+                activations="linear",
+            ),
+            batch_size=512,
+            lbfgs=True,
+            normalize=False,
+            normalize_mode="max",
+            trainer_kwargs=dict(max_epochs=1, accelerator="cpu"),
+        ),
+    ],
+)
+def test_default_observable_predict_shape_3D_list(data_random_3D, regressor):
+    """test if pykoopman.Koopman with regressor will give right shape for output"""
+    x = [data_random_3D, data_random_3D]
+    model = Koopman(regressor=regressor).fit(x)
+    assert x[0].shape == model.predict(x[0]).shape
+
+
+@pytest.mark.parametrize(
+    "regressor",
+    [
         DMD(svd_rank=5, tlsq_rank=2),
         EDMD(svd_rank=5, tlsq_rank=2),
         PyDMDRegressor(DMD(svd_rank=5, tlsq_rank=2)),
@@ -317,6 +385,81 @@ def test_observables_integration(data_random, observables, regressor):
 
     y = model.predict(x)
     assert y.shape[1] == x.shape[1]
+
+
+@pytest.mark.parametrize(
+    "observables",
+    [
+        Identity(),
+        Polynomial(),
+        TimeDelay(),
+        RandomFourierFeatures(),
+        RadialBasisFunction(),
+        pytest.lazy_fixture("data_custom_observables"),
+    ],
+)
+@pytest.mark.parametrize(
+    "regressor",
+    [
+        DMD(svd_rank=10),
+        EDMD(svd_rank=10),
+        PyDMDRegressor(DMD(svd_rank=10)),
+        FbDMD(svd_rank=10),
+        PyDMDRegressor(FbDMD(svd_rank=10)),
+        CDMD(svd_rank=10),
+        PyDMDRegressor(CDMD(svd_rank=10)),
+        SpDMD(svd_rank=10),
+        PyDMDRegressor(SpDMD(svd_rank=10)),
+        HODMD(svd_rank=10, d=2),
+        PyDMDRegressor(HODMD(svd_rank=10, d=2)),
+        KDMD(svd_rank=10, kernel=RBF(length_scale=50.0)),
+    ],
+)
+def test_observables_integration_3D(data_random_3D, observables, regressor):
+    """test if pykoopman.Koopman will work with different combination of observables
+    and regressors"""
+    x = data_random_3D
+    model = Koopman(observables=observables, regressor=regressor).fit(x)
+    check_is_fitted(model)
+    y = model.predict(x)
+    assert y.shape[-1] == x.shape[-1]
+
+
+@pytest.mark.parametrize(
+    "observables",
+    [
+        Identity(),
+        Polynomial(),
+        TimeDelay(),
+        RandomFourierFeatures(),
+        RadialBasisFunction(),
+        pytest.lazy_fixture("data_custom_observables"),
+    ],
+)
+@pytest.mark.parametrize(
+    "regressor",
+    [
+        DMD(svd_rank=10),
+        EDMD(svd_rank=10),
+        PyDMDRegressor(DMD(svd_rank=10)),
+        FbDMD(svd_rank=10),
+        PyDMDRegressor(FbDMD(svd_rank=10)),
+        CDMD(svd_rank=10),
+        PyDMDRegressor(CDMD(svd_rank=10)),
+        SpDMD(svd_rank=10),
+        PyDMDRegressor(SpDMD(svd_rank=10)),
+        HODMD(svd_rank=10, d=2),
+        PyDMDRegressor(HODMD(svd_rank=10, d=2)),
+        KDMD(svd_rank=10, kernel=RBF(length_scale=50.0)),
+    ],
+)
+def test_observables_integration_3D_list(data_random_3D, observables, regressor):
+    """test if pykoopman.Koopman will work with different combination of observables
+    and regressors"""
+    x = [data_random_3D, data_random_3D]
+    model = Koopman(observables=observables, regressor=regressor).fit(x)
+    check_is_fitted(model)
+    assert x[0].shape[-1] == model.predict(x)[0].shape[-1]
 
 
 @pytest.mark.parametrize(

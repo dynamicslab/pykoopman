@@ -128,6 +128,11 @@ class KDMD(BaseRegressor):
         Args:
             x: numpy.ndarray, shape (n_samples, n_features)
                 Measurement data input.
+                Can be of shape (n_samples, n_features), or (n_trials, n_samples,
+                    n_features), where n_trials is the number of independent trials.
+                Can also be of a list of arrays, where each array is a trajectory
+                    or a 2- or 3-d array of trajectories, provided they have the
+                    same last dimension.
 
             y: numpy.ndarray, shape (n_samples, n_features), optional
                 Measurement data output to be fitted. Defaults to None.
@@ -142,17 +147,17 @@ class KDMD(BaseRegressor):
 
         # if y is not None:
         #    warn("pydmd regressors do not require the y argument when fitting.")
-        self.n_samples_, self.n_input_features_ = x.shape
+        if y is None:
+            X, Y = self._detect_reshape(x)
+        else:
+            X, _ = self._detect_reshape(x, offset=False)
+            Y, _ = self._detect_reshape(y, offset=False)
+        X = X.T
+        Y = Y.T
+
         n_samples = self.n_samples_
         if y is None:
             self._snapshots, self._snapshots_shape = _col_major_2darray(x.T)
-            # self._snapshots.shape[1]
-            X = self._snapshots[:, :-1]
-            Y = self._snapshots[:, 1:]
-        else:
-            # if we have pairs of data
-            X = x.T
-            Y = y.T
 
         # total least square preprocessing on X and Y - features, samples
         self._X, self._Y = compute_tlsq(X, Y, self.tlsq_rank)
@@ -188,11 +193,13 @@ class KDMD(BaseRegressor):
         """
 
         check_is_fitted(self, "coef_")
+        x, _ = self._detect_reshape(x, offset=False)
 
         phi = self._compute_psi(x_col=x.T)
         phi_next = np.diag(self.eigenvalues_) @ phi
         x_next_T = self._unnormalized_modes @ phi_next
-        return np.real(x_next_T).T
+        y = np.real(x_next_T).T
+        return self._return_orig_shape(y)
 
     def _compute_phi(self, x_col):
         """
@@ -411,9 +418,8 @@ class KDMD(BaseRegressor):
 
 
 def _col_major_2darray(X):
-    def _col_major_2darray(X):
-        """
-        Converts the input snapshots into a 2D matrix by column-major ordering.
+    """
+    Converts the input snapshots into a 2D matrix by column-major ordering.
 
         Args:
             X: int or numpy.ndarray
@@ -425,7 +431,7 @@ def _col_major_2darray(X):
 
             snapshots_shape: tuple
                 The shape of the original snapshots.
-        """
+    """
 
     # If the data is already 2D ndarray
     if isinstance(X, np.ndarray) and X.ndim == 2:

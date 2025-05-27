@@ -51,6 +51,11 @@ class EDMDc(BaseRegressor):
         Args:
             x (numpy.ndarray):
                 Measurement data to be fit.
+                Can be of shape (n_samples, n_features), or (n_trials, n_samples,
+                    n_features), where n_trials is the number of independent trials.
+                Can also be of a list of arrays, where each array is a trajectory
+                    or a 2- or 3-d array of trajectories, provided they have the
+                    same last dimension.
             y (numpy.ndarray, optional):
                 Time-shifted measurement data to be fit. Defaults to None.
             u (numpy.ndarray, optional):
@@ -61,21 +66,19 @@ class EDMDc(BaseRegressor):
         Returns:
             self: Fitted EDMDc instance.
         """
-        self.n_samples_, self.n_input_features_ = x.shape
         if y is None:
-            X1 = x[:-1, :]
-            X2 = x[1:, :]
+            X1, X2 = self._detect_reshape(x)
         else:
-            X1 = x
-            X2 = y
+            X1, _ = self._detect_reshape(x, offset=False)
+            X2, _ = self._detect_reshape(y, offset=False)
 
         if u.ndim == 1:
             if len(u) > X1.shape[0]:
-                u = u[:-1]
+                u, _ = self._detect_reshape(u)
             C = u[np.newaxis, :]
         else:
             if u.shape[0] > X1.shape[0]:
-                u = u[:-1, :]
+                u, _ = self._detect_reshape(u)
             C = u
         self.n_control_features_ = C.shape[1]
 
@@ -123,7 +126,10 @@ class EDMDc(BaseRegressor):
                 Prediction of x one timestep in the future.
         """
         check_is_fitted(self, "coef_")
+        u, _ = self._detect_reshape(u, offset=False)
+        x, _ = self._detect_reshape(x, offset=False)
         y = x @ self.state_matrix_.T + u @ self.control_matrix_.T
+        y = self._return_orig_shape(y)
         return y
 
     def _compute_phi(self, x_col):

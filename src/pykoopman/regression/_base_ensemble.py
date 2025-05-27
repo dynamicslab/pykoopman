@@ -92,8 +92,8 @@ class EnsembleBaseRegressor(TransformedTargetRegressor):
         # FIXME: a FunctionTransformer can return a 1D array even when validate
         # is set to True. Therefore, we need to check the number of dimension
         # first.
-        if y_trans.ndim == 2 and y_trans.shape[1] == 1:
-            y_trans = y_trans.squeeze(axis=1)
+        # if y_trans.ndim == 2 and y_trans.shape[1] == 1:
+        #     y_trans = y_trans.squeeze(axis=1)
 
         if self.regressor is None:
             from sklearn.linear_model import LinearRegression

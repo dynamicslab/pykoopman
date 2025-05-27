@@ -101,6 +101,12 @@ class DMDc(BaseRegressor):
         ----------
         x : numpy.ndarray, shape (n_samples, n_features)
             Measurement data to be fit.
+            Can be of shape (n_samples, n_features), or (n_trials, n_samples,
+                n_features), where
+                n_trials is the number of independent trials.
+            Can also be of a list of arrays, where each array is a trajectory
+                or a 2- or 3-d array of trajectories, provided they have the
+                same last dimension.
 
         y : numpy.ndarray, shape (n_samples, n_features), default=None
             Measurement data output to be fitted.
@@ -115,23 +121,19 @@ class DMDc(BaseRegressor):
         -------
         self: returns a fitted ``DMDc`` instance
         """
-        self.n_samples_, self.n_input_features_ = x.shape
 
         if y is None:
-            X1 = x[:-1, :]
-            X2 = x[1:, :]
+            X1, X2 = self._detect_reshape(x)
         else:
-            X1 = x
-            X2 = y
+            X1, _ = self._detect_reshape(x, offset=False)
+            X2, _ = self._detect_reshape(y, offset=False)
+        if u is not None:
+            offset = u.shape[0] > X1.shape[0]
+            u, _ = self._detect_reshape(u, offset=offset)
+        self.n_control_features_ = u.shape[1]
+        self.n_input_features_ = X1.shape[1]
+        C = u
 
-        if u.ndim == 1:
-            if len(u) > X1.shape[0]:
-                u = u[:-1]
-            C = u[np.newaxis, :]
-        else:
-            if u.shape[0] > X1.shape[0]:
-                u = u[:-1, :]
-            C = u
         self.n_control_features_ = C.shape[1]
 
         if self.svd_rank is None:
@@ -177,7 +179,6 @@ class DMDc(BaseRegressor):
 
         assert rout <= r
         Omega = np.vstack([X1.T, C.T])
-
         # SVD of input space
         U, s, Vh = np.linalg.svd(Omega, full_matrices=False)
         Ur = U[:, 0:r]
@@ -299,6 +300,8 @@ class DMDc(BaseRegressor):
             x = x.reshape(1, -1)
         if u.ndim == 1:
             u = u.reshape(1, -1)
+        u, _ = self._detect_reshape(u, offset=False)
+        x, _ = self._detect_reshape(x, offset=False)
         # y = self.coef_ @ np.vstack([x.reshape(1, -1).T, u.reshape(1, -1).T])
         y = (
             x @ self.ur @ self.state_matrix_.T @ self.ur.T
@@ -306,6 +309,7 @@ class DMDc(BaseRegressor):
         )
         # y = x @ self.state_matrix_.T + u @ self.control_matrix_.T
         # y = y.T
+        y = self.return_orig_shape(y)
         return y
 
     def _compute_phi(self, x_col):

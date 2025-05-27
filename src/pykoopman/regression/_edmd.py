@@ -58,6 +58,11 @@ class EDMD(BaseRegressor):
 
         Args:
             x (numpy.ndarray): Measurement data to be fit.
+                Can be of shape (n_samples, n_features), or (n_trials, n_samples,
+                    n_features), where n_trials is the number of independent trials.
+                Can also be of a list of arrays, where each array is a trajectory
+                    or a 2- or 3-d array of trajectories, provided they have the
+                    same last dimension.
             y (numpy.ndarray, optional): Time-shifted measurement data to be fit.
                 Defaults to None.
             dt (scalar, optional): Discrete time-step. Defaults to None.
@@ -65,14 +70,11 @@ class EDMD(BaseRegressor):
         Returns:
             self: Fitted EDMD instance.
         """
-        self.n_samples_, self.n_input_features_ = x.shape
-
         if y is None:
-            X1 = x[:-1, :]
-            X2 = x[1:, :]
+            X1, X2 = self._detect_reshape(x)
         else:
-            X1 = x
-            X2 = y
+            X1, _ = self._detect_reshape(x, offset=False)
+            X2, _ = self._detect_reshape(y, offset=False)
 
         # perform SVD
         X1T, X2T = compute_tlsq(X1.T, X2.T, self.tlsq_rank)
@@ -103,7 +105,9 @@ class EDMD(BaseRegressor):
             y (numpy.ndarray): Prediction of x one timestep in the future.
         """
         check_is_fitted(self, "coef_")
+        x, _ = self._detect_reshape(x, offset=False)
         y = x @ self.ur.conj() @ self.state_matrix_.T @ self.ur.T
+        y = self._return_orig_shape(y)
         return y
 
     def _compute_phi(self, x_col):

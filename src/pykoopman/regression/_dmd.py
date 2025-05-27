@@ -86,6 +86,11 @@ class PyDMDRegressor(BaseRegressor):
         Args:
             x (np.ndarray): Measurement data input. Should be of shape (n_samples,
                 n_features).
+                Can also be of shape (n_trials, n_samples, n_features), where
+                    n_trials is the number of independent trials.
+                Can also be of a list of arrays, where each array is a trajectory
+                or a 3d array of trajectories.
+
             y (np.ndarray, optional): Measurement data output to be fitted. Should be
                 of shape (n_samples, n_features). Defaults to None.
             dt (float, optional): Time interval between `x` and `y`. Defaults to 1.
@@ -94,18 +99,20 @@ class PyDMDRegressor(BaseRegressor):
             self : Returns the instance itself.
         """
 
-        self.n_samples_, self.n_input_features_ = x.shape
-
         if y is None:
             # single trajectory
             self.flag_xy = False
-            X = x[:-1].T
-            Y = x[1:].T
+            X, Y = self._detect_reshape(x)
+            X = X.T
+            Y = Y.T
+
         else:
             # multiple segments of trajectories
             self.flag_xy = True
-            X = x.T
-            Y = y.T
+            X, _ = self._detect_reshape(x, offset=False)
+            Y, _ = self._detect_reshape(y, offset=False)
+            X = X.T
+            Y = Y.T
 
         X, Y = compute_tlsq(X, Y, self.tlsq_rank)
         U, s, V = compute_svd(X, self.svd_rank)
@@ -152,15 +159,22 @@ class PyDMDRegressor(BaseRegressor):
         Args:
             x (np.ndarray): Measurement data upon which to base the prediction.
                 Should be of shape (n_samples, n_features).
-
+                Can also be of shape (n_trials, n_samples, n_features), where
+                n_trials is the number of independent trials.
         Returns:
             np.ndarray: Predicted values of `x` one timestep in the future. The shape
                 is (n_samples, n_features).
         """
+        # if isinstance(x, list):
+        #     raise ValueError("list of arrays is not supported yet")
+        x, _ = self._detect_reshape(x, offset=False)
         if x.ndim == 1:
             x = x.reshape(1, -1)
         check_is_fitted(self, "coef_")
         y = np.linalg.multi_dot([self.ur, self._coef_, self.ur.conj().T, x.T]).T
+        # reshape y back to the original shape
+        y = self._return_orig_shape(y)
+
         return y
 
     def _compute_phi(self, x_col):
