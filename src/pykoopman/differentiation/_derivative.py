@@ -62,7 +62,7 @@ class Derivative(BaseEstimator):
 
         return params
 
-    def __call__(self, x, t):
+    def __call__(self, x, t, axis=0):
         """
         Perform numerical differentiation by calling the ``dxdt`` method.
 
@@ -86,4 +86,4 @@ class Derivative(BaseEstimator):
                 raise ValueError("t must be a positive constant or an array")
             t = arange(x.shape[0]) * t
 
-        return dxdt(x, t, axis=0, **self.kwargs)
+        return dxdt(x, t, axis=axis, **self.kwargs)

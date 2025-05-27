@@ -204,7 +204,7 @@ you can run the following to automatically reformat your staged code
 
 .. code-block:: bash
 
-    pre-commit -a -v
+    pre-commit run -a -v
 
 Note that you will then need to re-stage any changes ``pre-commit`` made to your code.
 

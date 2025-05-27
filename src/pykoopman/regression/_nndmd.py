@@ -1256,6 +1256,7 @@ class NNDMD(BaseRegressor):
             By default, the model is stored on the CPU for inference.
         """
         self._regressor.eval()
+        x, _ = self._detect_reshape(x, offset=False)
         x = self._convert_input_ndarray_to_tensor(x)
 
         with torch.no_grad():
@@ -1267,6 +1268,7 @@ class NNDMD(BaseRegressor):
                 y = self.dm.inverse_transform(y).numpy()
             else:
                 y = self._regressor(x, n).numpy()
+            y = self._return_orig_shape(y)
             return y
 
     def simulate(self, x, n_steps):

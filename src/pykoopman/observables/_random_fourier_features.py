@@ -120,6 +120,12 @@ class RandomFourierFeatures(BaseObservables):
         """
 
         check_is_fitted(self, "n_input_features_")
+        if isinstance(x, list):
+            return [self.transform(x_trial) for x_trial in x]
+
+        if x.ndim == 3:
+            return np.array([self.transform(x_trial) for x_trial in x])
+
         z = np.zeros((x.shape[0], self.n_output_features_))
         z_rff = self._rff_lifting(x)
         if self.include_state:

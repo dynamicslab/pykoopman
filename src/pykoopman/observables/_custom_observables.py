@@ -139,6 +139,12 @@ class CustomObservables(BaseObservables):
         check_is_fitted(self, "n_output_features_")
         x = validate_input(x)
 
+        if isinstance(x, list):
+            return [self.transform(x_trial) for x_trial in x]
+
+        if x.ndim == 3:
+            return np.array([self.transform(x_trial) for x_trial in x])
+
         n_samples, n_features = x.shape
 
         if n_features != self.n_input_features_:

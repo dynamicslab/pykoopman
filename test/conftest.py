@@ -27,6 +27,12 @@ def data_random():
 
 
 @pytest.fixture
+def data_random_3D():
+    x = np.random.randn(10, 50, 3)
+    return x
+
+
+@pytest.fixture
 def data_random_complex():
     x = np.random.randn(50, 10) + 1j * np.random.randn(50, 10)
     return x

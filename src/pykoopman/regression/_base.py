@@ -4,6 +4,7 @@ from __future__ import annotations
 from abc import ABC
 from abc import abstractmethod
 
+import numpy as np
 from sklearn.base import BaseEstimator
 
 
@@ -53,6 +54,75 @@ class BaseRegressor(BaseEstimator, ABC):
         ):
             raise AttributeError("regressor does not have a callable predict method")
         self.regressor = regressor
+
+    def _detect_reshape(self, X, offset=True):
+        """
+        Detect the shape of the input data and reshape it accordingly to return
+        both X and Y in the correct shape.
+        """
+        s1 = -1 if offset else None
+        s2 = 1 if offset else None
+        if isinstance(X, np.ndarray):
+            if X.ndim == 1:
+                X = X.reshape(-1, 1)
+
+            if X.ndim == 2:
+                self.n_samples_, self.n_input_features_ = X.shape
+                self.n_trials_ = 1
+                return X[:s1], X[s2:]
+            elif X.ndim == 3:
+                self.n_trials_, self.n_samples_, self.n_input_features_ = X.shape
+                X, Y = X[:, :s1, :], X[:, s2:, :]
+                return X.reshape(-1, X.shape[2]), Y.reshape(
+                    -1, Y.shape[2]
+                )  # time*trials, features
+
+        elif isinstance(X, list):
+            assert all(isinstance(x, np.ndarray) for x in X)
+            self.n_trials_tot, self.n_samples_tot, self.n_input_features_tot = (
+                [],
+                [],
+                [],
+            )
+            X_tot, Y_tot = [], []
+            for x in X:
+                x, y = self._detect_reshape(x)
+                X_tot.append(x)
+                Y_tot.append(y)
+                self.n_trials_tot.append(self.n_trials_)
+                self.n_samples_tot.append(self.n_samples_)
+                self.n_input_features_tot.append(self.n_input_features_)
+            X = np.concatenate(X_tot, axis=0)
+            Y = np.concatenate(Y_tot, axis=0)
+
+            self.n_trials_ = sum(self.n_trials_tot)
+            self.n_samples_ = sum(self.n_samples_tot)
+            self.n_input_features_ = sum(self.n_input_features_tot)
+
+            return X, Y
+
+    def _return_orig_shape(self, X):
+        """
+        X will be a 2d array of shape (n_samples * n_trials, n_features).
+        This function will return the original shape of X.
+        """
+        if not hasattr(self, "n_trials_tot"):
+            X = X.reshape(self.n_trials_, -1, self.n_input_features_)
+            if X.shape[0] == 1:
+                X = X[0]
+            return X
+
+        else:
+            X_tot = []
+            prev_t = 0
+            for i in range(len(self.n_trials_tot)):
+                X_i = X[prev_t : prev_t + self.n_trials_tot[i] * self.n_samples_tot[i]]
+                X_i = X_i.reshape(
+                    self.n_trials_tot[i], -1, self.n_input_features_tot[i]
+                )
+                X_tot.append(X_i)
+                prev_t += self.n_trials_tot[i] * self.n_samples_tot[i]
+            return X_tot
 
     def fit(self, x, y=None):
         raise NotImplementedError

@@ -141,6 +141,12 @@ class Polynomial(PolynomialFeatures, BaseObservables):
             ValueError: If the input data is not valid or the shape of `x` does not
             match training shape.
         """
+        if isinstance(x, list):
+            return [self.transform(x_trial) for x_trial in x]
+
+        if x.ndim == 3:
+            return np.array([self.transform(x_trial) for x_trial in x])
+
         check_is_fitted(self, "n_input_features_")
 
         x = check_array(x, order="F", dtype=FLOAT_DTYPES, accept_sparse=("csr", "csc"))

@@ -21,6 +21,7 @@ from .regression import BaseRegressor
 from .regression import DMDc
 from .regression import EDMDc
 from .regression import EnsembleBaseRegressor
+from .regression import HAVOK
 from .regression import NNDMD
 from .regression import PyDMDRegressor
 
@@ -146,9 +147,23 @@ class Koopman(BaseEstimator):
 
         if y is None:  # or isinstance(self.regressor, PyDMDRegressor):
             # if there is only 1 trajectory OR regressor is PyDMD
-            regressor = self.regressor
+            y_flag = True
+            # regressor = self.regressor
+            x, y = self._detect_reshape(x, offset=True)
+            if isinstance(self.regressor, HAVOK):
+                regressor = self.regressor
+                y_flag = False
+            else:
+                regressor = EnsembleBaseRegressor(
+                    regressor=self.regressor,
+                    func=self.observables.transform,
+                    inverse_func=self.observables.inverse,
+                )
+            # regressor = self.regressor
         elif isinstance(self.regressor, NNDMD):
             regressor = self.regressor
+            y_flag = False
+
         else:
             # multiple 1-step-trajectories
             regressor = EnsembleBaseRegressor(
@@ -157,14 +172,17 @@ class Koopman(BaseEstimator):
                 inverse_func=self.observables.inverse,
             )
             # if x is a list, we need to further change trajectories into 1-step-traj
-            if isinstance(x, list):
-                x_tmp = []
-                y_tmp = []
-                for traj_dat in x:
-                    x_tmp.append(traj_dat[:-1])
-                    y_tmp.append(traj_dat[1:])
-                x = np.hstack(x_tmp)
-                y = np.hstack(y_tmp)
+            x, _ = self._detect_reshape(x, offset=False)
+            y, _ = self._detect_reshape(y, offset=False)
+            y_flag = False
+            # if isinstance(x, list):
+            #     x_tmp = []
+            #     y_tmp = []
+            #     for traj_dat in x:
+            #         x_tmp.append(traj_dat[:-1])
+            #         y_tmp.append(traj_dat[1:])
+            #     x = np.hstack(x_tmp)
+            #     y = np.hstack(y_tmp)
 
         steps = [
             ("observables", self.observables),
@@ -199,7 +217,7 @@ class Koopman(BaseEstimator):
         # compute amplitudes
         if isinstance(x, list):
             self._amplitudes = None
-        elif y is None:
+        elif y_flag:
             if hasattr(self.observables, "n_consumed_samples"):
                 # g0 = self.observables.transform(
                 #     x[0 : 1 + self.observables.n_consumed_samples]
@@ -239,6 +257,8 @@ class Koopman(BaseEstimator):
                 Predicted state one timestep in the future.
         """
 
+        x = validate_input(x)
+
         check_is_fitted(self, "n_output_features_")
         x_next = self.observables.inverse(self._step(x, u))
         return x_next
@@ -276,7 +296,6 @@ class Koopman(BaseEstimator):
             x0 = x0.T
         else:
             raise TypeError("Check your initial condition shape!")
-
         # x = empty((n_steps, self.n_input_features_), dtype=self.A.dtype)
         y = empty((n_steps, self.A.shape[0]), dtype=self.W.dtype)
 
@@ -428,7 +447,6 @@ class Koopman(BaseEstimator):
         # if not isinstance(self.observables, RadialBasisFunction):
         #     raise ValueError("this type of self.observable has no C")
         # return self._pipeline.steps[0][1].measurement_matrix_
-
         measure_mat = self._pipeline.steps[0][1].measurement_matrix_
         ur = self._pipeline.steps[-1][1].ur
         C = measure_mat @ ur
@@ -571,3 +589,49 @@ class Koopman(BaseEstimator):
         # the _regressor.fit to update the model coefficients.
         # call this function with _regressor()
         return self._pipeline.steps[1][1]
+
+    def _detect_reshape(self, X, offset=True):
+        """
+        Detect the shape of the input data and reshape it accordingly to return
+        both X and Y in the correct shape.
+        """
+        s1 = -1 if offset else None
+        s2 = 1 if offset else None
+        if isinstance(X, np.ndarray):
+            if X.ndim == 1:
+                X = X.reshape(-1, 1)
+
+            if X.ndim == 2:
+                self.n_samples_, self.n_input_features_ = X.shape
+                self.n_trials_ = 1
+                return X[:s1], X[s2:]
+            elif X.ndim == 3:
+                self.n_trials_, self.n_samples_, self.n_input_features_ = X.shape
+                X, Y = X[:, :s1, :], X[:, s2:, :]
+                return X.reshape(-1, X.shape[2]), Y.reshape(
+                    -1, Y.shape[2]
+                )  # time*trials, features
+
+        elif isinstance(X, list):
+            assert all(isinstance(x, np.ndarray) for x in X)
+            self.n_trials_tot, self.n_samples_tot, self.n_input_features_tot = (
+                [],
+                [],
+                [],
+            )
+            X_tot, Y_tot = [], []
+            for x in X:
+                x, y = self._detect_reshape(x)
+                X_tot.append(x)
+                Y_tot.append(y)
+                self.n_trials_tot.append(self.n_trials_)
+                self.n_samples_tot.append(self.n_samples_)
+                self.n_input_features_tot.append(self.n_input_features_)
+            X = np.concatenate(X_tot, axis=0)
+            Y = np.concatenate(Y_tot, axis=0)
+
+            self.n_trials_ = sum(self.n_trials_tot)
+            self.n_samples_ = sum(self.n_samples_tot)
+            self.n_input_features_ = sum(self.n_input_features_tot)
+
+            return X, Y

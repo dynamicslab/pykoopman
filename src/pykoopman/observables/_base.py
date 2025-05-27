@@ -79,9 +79,15 @@ class BaseObservables(TransformerMixin, BaseEstimator):
             ValueError: If the shape of the input does not match the expected shape.
         """
         check_is_fitted(self, ["n_input_features_", "measurement_matrix_"])
+        if isinstance(y, list):
+            return [self.inverse(y_trial) for y_trial in y]
+        if y.ndim == 3:
+            return np.array([self.inverse(y_trial) for y_trial in y])
+
         if y.ndim == 1:
             y = y.reshape(1, -1)
-        if y.shape[1] != self.n_output_features_:
+
+        if y.shape[-1] != self.n_output_features_:
             raise ValueError(
                 "Wrong number of input features."
                 f"Expected y.shape[1] = {self.n_output_features_}; "

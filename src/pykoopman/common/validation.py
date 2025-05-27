@@ -40,11 +40,27 @@ def validate_input(x, t=T_DEFAULT):
 
 def check_array(x, **kwargs):
     if np.iscomplexobj(x):
-        return skl_check_array(x.real, **kwargs) + 1j * skl_check_array(
-            x.imag, **kwargs
-        )
+        if x.ndim == 3:
+            # Handle 3D arrays by processing each 2D slice
+            result = np.zeros_like(x)
+            for i in range(x.shape[0]):
+                result[i] = skl_check_array(x[i].real, **kwargs) + 1j * skl_check_array(
+                    x[i].imag, **kwargs
+                )
+            return result
+        else:
+            return skl_check_array(x.real, **kwargs) + 1j * skl_check_array(
+                x.imag, **kwargs
+            )
     else:
-        return skl_check_array(x, **kwargs)
+        if x.ndim == 3:
+            # Handle 3D arrays by processing each 2D slice
+            result = np.zeros_like(x)
+            for i in range(x.shape[0]):
+                result[i] = skl_check_array(x[i], **kwargs)
+            return result
+        else:
+            return skl_check_array(x, **kwargs)
 
 
 def drop_nan_rows(arr, *args):

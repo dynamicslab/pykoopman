@@ -122,11 +122,17 @@ class TimeDelay(BaseObservables):
             y (array-like): The transformed data, shape (n_samples - delay * n_delays,
             n_output_features).
         """
-
         check_is_fitted(self, "n_input_features_")
+
+        if isinstance(x, list):
+            return [self.transform(x_trial) for x_trial in x]
+
+        if x.ndim == 3:
+            return np.array([self.transform(x_trial) for x_trial in x])
+
         x = validate_input(x)
 
-        if x.shape[1] != self.n_input_features_:
+        if x.shape[-1] != self.n_input_features_:
             raise ValueError(
                 "Wrong number of input features. "
                 f"Expected x.shape[1] = {self.n_input_features_}; "
@@ -151,7 +157,6 @@ class TimeDelay(BaseObservables):
             y[i - self._n_consumed_samples, self.n_input_features_ :] = x[
                 self._delay_inds(i), :
             ].flatten()
-
         return y
 
     def get_feature_names(self, input_features=None):

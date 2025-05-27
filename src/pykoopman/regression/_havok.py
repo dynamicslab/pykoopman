@@ -88,6 +88,11 @@ class HAVOK(BaseRegressor):
         Args:
             x (numpy.ndarray):
                 Measurement data to be fit.
+                Can be of shape (n_samples, n_features), or (n_trials, n_samples,
+                    n_features), where n_trials is the number of independent trials.
+                Can also be of a list of arrays, where each array is a trajectory
+                    or a 2- or 3-d array of trajectories, provided they have the
+                    same last dimension.
             y (not used):
                 Time-shifted measurement data to be fit. Ignored.
             dt (scalar):
@@ -104,9 +109,10 @@ class HAVOK(BaseRegressor):
             raise ValueError("havok regressor requires a timestep dt when fitting.")
 
         self.dt_ = dt
-        self.n_samples_, self.n_input_features_ = x.shape
         self.n_control_features_ = 1
 
+        orig_shape = x.shape if isinstance(x, np.ndarray) else None
+        x, _ = self._detect_reshape(x, offset=False)  # time*trials, features
         # Create time vector
         t = np.arange(0, self.dt_ * self.n_samples_, self.dt_)
 
@@ -129,8 +135,14 @@ class HAVOK(BaseRegressor):
         sr = s[: self.svd_rank]
 
         # calculate time derivative dxdt of only the first rank-1 & normalize
-        dVr = self.differentiator(Vr[:, :-1], t)
-        # this line actually makes vh and dvh transposed
+        if len(orig_shape) == 2:
+            dVr = self.differentiator(Vr[:, :-1], t)
+
+        else:
+            Vrt = Vr.reshape(orig_shape[0], orig_shape[1], -1)
+            dVr = self.differentiator(Vrt[:, :-1], t, axis=1)
+            dVr = dVr.reshape(Vr.shape)  # TODO: check if this is correct
+
         dVr, t, V = drop_nan_rows(dVr, t, Vh.T)
 
         # regression on intrinsic variables v
@@ -166,6 +178,7 @@ class HAVOK(BaseRegressor):
         #         U[:, : self.svd_rank - 1].T,
         #     ]
         # )
+        return self
 
     def predict(self, x, u, t):
         """
@@ -187,6 +200,7 @@ class HAVOK(BaseRegressor):
         """
         # if t[0] != 0:
         #    raise ValueError("the time vector must start at 0.")
+        x, _ = self._detect_reshape(x, offset=False)
 
         check_is_fitted(self, "coef_")
         y0 = (
@@ -202,7 +216,7 @@ class HAVOK(BaseRegressor):
             np.zeros((self.n_input_features_, self.n_control_features_)),
         )
         tout, ypred, xpred = lsim(sys, U=u, T=t, X0=y0.T)
-        return ypred
+        return self._return_orig_shape(ypred)
 
     def _compute_phi(self, x_col):
         """
