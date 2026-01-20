@@ -8,6 +8,7 @@ docs/examples
 # virtual environment
 venv
 .venv
+_old
 
 # eggs
 .eggs

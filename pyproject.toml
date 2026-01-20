@@ -38,10 +38,6 @@ dependencies = [
     "torchvision ~= 0.16.0",
     "torchaudio ~= 2.1.0",
     "lightning ~= 2.0.9",
-]
-
-[project.optional-dependencies]
-dev = [
     "pytest <= 7.4.4",
     "pytest-cov ~= 4.1.0",
     "pytest-lazy-fixture ~= 0.6.3",
@@ -57,9 +53,7 @@ dev = [
     "sphinx_rtd_theme",
     "pre-commit",
     "sphinx-nbexamples",
-    "jupyter_contrib_nbextensions",
 ]
-
 
 
 [project.urls]
@@ -69,3 +63,8 @@ dev = [
 [tool.setuptools_scm]
 #[tool.setuptools.dynamic]
 #dependencies = { file = ["requirements.txt"] }
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
