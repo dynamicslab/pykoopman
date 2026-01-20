@@ -1,6 +1,6 @@
 # PyKoopman
 
-[![Build](https://github.com/dynamicslab/pykoopman/actions/workflows/run-tests.yml/badge.svg)](https://github.com/dynamicslab/pykoopman/actions?query=workflow%3ATests) [![Docs](https://readthedocs.org/projects/pykoopman/badge/?version=master)](https://pykoopman.readthedocs.io/en/master/?badge=master) [![PyPI](https://badge.fury.io/py/pykoopman.svg)](https://badge.fury.io/py/pykoopman) [![Codecov](https://codecov.io/github/dynamicslab/pykoopman/coverage.svg)](https://app.codecov.io/gh/dynamicslab/pykoopman) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8060893.svg)](https://doi.org/10.5281/zenodo.8060893) [![JOSS](https://joss.theoj.org/papers/10.21105/joss.05881/status.svg)](https://doi.org/10.21105/joss.05881)
+[![Build](https://github.com/dynamicslab/pykoopman/actions/workflows/run-tests.yml/badge.svg)](https://github.com/dynamicslab/pykoopman/actions?query=workflow%3ATests) [![Docs](https://readthedocs.org/projects/pykoopman/badge/?version=master)](https://pykoopman.readthedocs.io/en/master/?badge=master) [![PyPI](https://badge.fury.io/py/pykoopman.svg)](https://badge.fury.io/py/pykoopman) [![Codecov](https://codecov.io/github/dynamicslab/pykoopman/coverage.svg)](https://app.codecov.io/gh/dynamicslab/pykoopman) [![JOSS](https://joss.theoj.org/papers/10.21105/joss.05881/status.svg)](https://doi.org/10.21105/joss.05881)
 
 **PyKoopman** is a Python package for computing data-driven approximations to the Koopman operator.
 
