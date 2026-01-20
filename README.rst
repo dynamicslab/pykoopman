@@ -120,7 +120,7 @@ Installation
 
 Language
 ^^^^^^^^^^^^^^^^^^^^
-- Python == 3.10
+- Python >= 3.11
 
 
 Installing with pip
@@ -132,44 +132,39 @@ If you are using Linux or macOS you can install PyKoopman with pip:
 
   pip install pykoopman
 
-Installing from source
-^^^^^^^^^^^^^^^^^^^^^^
+Installing from source (recommended)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+We recommend using `uv <https://docs.astral.sh/uv/>`_ for environment management.
+
 First clone this repository:
 
 .. code-block:: bash
 
   git clone https://github.com/dynamicslab/pykoopman
+  cd pykoopman
 
-Second, it is highly recommended to use `venv` to get a local python environment
-
-.. code-block:: bash
-
-  python -m venv venv
-  source ./venv/bin/activate
-
-In windows, you activate virtual environment in a different way
+Create a virtual environment with Python 3.11 and install the package:
 
 .. code-block:: bash
 
-  .\venv\Scripts\activate.ps1
+  uv venv --python 3.11
+  uv pip install -e .
 
-Then, to install the package, run
+Alternatively, you can use the traditional ``venv`` approach:
 
 .. code-block:: bash
 
-  python -m pip install -e .
-
-If you do not have root access, you should add the ``--user`` option to the above lines.
+  python -m venv .venv
+  source ./.venv/bin/activate   # On Windows: .\.venv\Scripts\activate.ps1
+  pip install -e .
 
 
 Installing with GPU support
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-After you download the Github package, go to the directory, type
-
-.. code-block:: bash
-
-  python -m pip install -r requirements-dev.txt
+The default installation uses the CPU-only version of PyTorch. If you need GPU support,
+please refer to the `uv PyTorch integration guide <https://docs.astral.sh/uv/guides/integration/pytorch/>`_
+for instructions on installing PyTorch with CUDA support.
 
 Documentation
 -------------
@@ -186,7 +181,7 @@ via
 
 .. code-block:: bash
 
-    python -m pip install -e .[dev]
+    python -m pip install -e .
 
 This will allow you to run unit tests and automatically format your code. To be accepted your code should conform to PEP8 and pass all unit tests. Code can be tested by invoking
 
@@ -214,7 +209,7 @@ If you find a bug in the code or want to request a new feature, please open an i
 
 Known issues:
 
-- Python 3.12 might cause unexpected problems.
+- Python 3.12 and 3.13 are not officially tested. We recommend Python 3.11.
 
 Citing PyKoopman
 ----------------

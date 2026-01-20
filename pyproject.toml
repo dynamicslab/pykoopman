@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pykoopman"
-version = "1.1.1"
+version = "1.2.0"
 authors = [
     { name = "Shaowu Pan", email = "shawnpan@uw.edu" },
     { name = "Eurika Kaiser", email = "eurika@uw.edu" },
@@ -16,10 +16,10 @@ authors = [
 ]
 description = "Python package for data-driven approximations to the Koopman operator."
 readme = "README.rst"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
@@ -29,19 +29,15 @@ dependencies = [
     "matplotlib >=3.6.0",
     "derivative ~= 0.6.0",
     "scikit-learn >= 1.1.3, <= 1.1.3",
-    "numpy >=1.20, <= 1.26",
-    "scipy >1.6.0, <= 1.11.2",
-    "pydmd >0.4, <= 0.4.1",
+    "numpy >= 1.20, <= 1.26",
+    "scipy > 1.6.0, <= 1.11.2",
+    "pydmd > 0.4, <= 0.4.1",
     "optht ~= 0.2.0",
     "prettytable >3.0.0, <= 3.9.0",
     "torch ~= 2.1.0",
     "torchvision ~= 0.16.0",
     "torchaudio ~= 2.1.0",
     "lightning ~= 2.0.9",
-]
-
-[project.optional-dependencies]
-dev = [
     "pytest <= 7.4.4",
     "pytest-cov ~= 4.1.0",
     "pytest-lazy-fixture ~= 0.6.3",
@@ -57,15 +53,9 @@ dev = [
     "sphinx_rtd_theme",
     "pre-commit",
     "sphinx-nbexamples",
-    "jupyter_contrib_nbextensions",
 ]
-
 
 
 [project.urls]
 "Homepage" = "https://github.com/dynamicslab/pykoopman"
 "Bug Tracker" = "https://github.com/dynamicslab/pykoopman/issues"
-
-[tool.setuptools_scm]
-#[tool.setuptools.dynamic]
-#dependencies = { file = ["requirements.txt"] }

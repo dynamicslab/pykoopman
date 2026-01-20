@@ -1,3 +1,0 @@
-torch == 2.1.0+cu121
-torchvision
-lightning

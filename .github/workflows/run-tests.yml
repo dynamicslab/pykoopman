@@ -8,10 +8,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python 3.10.13
+      - name: Set up Python 3.11
         uses: actions/setup-python@v3
         with:
-          python-version: 3.10.13
+          python-version: "3.11"
       - name: Linting
         run: |
           pip install pre-commit
@@ -22,7 +22,7 @@ jobs:
     strategy:
       max-parallel: 8
       matrix:
-        python-version: [3.10.13]
+        python-version: ["3.11"]
 
     steps:
     - uses: actions/checkout@v3
@@ -32,7 +32,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        pip install -e .[dev]
+        pip install -e .
 #        pip install -r requirements-dev.txt
     - name: Test with pytest
       run: |
