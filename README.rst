@@ -148,7 +148,7 @@ Create a virtual environment with Python 3.11 and install the package:
 .. code-block:: bash
 
   uv venv --python 3.11
-  uv pip install -e ".[dev]"
+  uv pip install -e .
 
 Alternatively, you can use the traditional ``venv`` approach:
 

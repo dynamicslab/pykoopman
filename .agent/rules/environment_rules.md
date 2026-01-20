@@ -11,7 +11,7 @@ activation:
 - **Tooling**: ALWAYS use **`uv`** for environment management.
 - **Python Version**: Target **Python 3.11**.
   - `uv venv --python 3.11`
-  - `uv pip install -e ".[dev]"`
+  - `uv pip install -e .`
 
 ## 2. Dependency Management (CRITICAL)
 - **Strict Pinning**:
