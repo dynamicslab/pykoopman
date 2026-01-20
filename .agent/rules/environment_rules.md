@@ -1,14 +1,12 @@
 ---
-type: rule
+trigger: always_on
 description: Strict environment and dependency rules for PyKoopman development (Python 3.11, uv, pinned numpy/sklearn).
-activation:
-  type: always-on
 ---
 
 # PyKoopman Project Rules
 
 ## 1. Environment Management
-- **Tooling**: ALWAYS use **`uv`** for environment management.
+- **Tooling**: ALWAYS use **`uv`** for Python environment management.
 - **Python Version**: Target **Python 3.11**.
   - `uv venv --python 3.11`
   - `uv pip install -e .`
