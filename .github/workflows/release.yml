@@ -8,14 +8,14 @@ on:
 jobs:
   release:
     name: Deploy release to PyPI
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v3
         with:
-          python-version: \"3.11.14\"
+          python-version: \"3.11\"
       - name: Install dependencies
         run: pip install wheel build
       - name: Build package
