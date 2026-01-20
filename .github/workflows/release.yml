@@ -8,7 +8,7 @@ on:
 jobs:
   release:
     name: Deploy release to PyPI
-    runs-on: linux
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
