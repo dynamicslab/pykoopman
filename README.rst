@@ -156,7 +156,7 @@ Alternatively, you can use the traditional ``venv`` approach:
 
   python -m venv .venv
   source ./.venv/bin/activate   # On Windows: .\.venv\Scripts\activate.ps1
-  pip install -e ".[dev]"
+  pip install -e .
 
 
 Installing with GPU support
@@ -181,7 +181,7 @@ via
 
 .. code-block:: bash
 
-    python -m pip install -e .[dev]
+    python -m pip install -e .
 
 This will allow you to run unit tests and automatically format your code. To be accepted your code should conform to PEP8 and pass all unit tests. Code can be tested by invoking
 
