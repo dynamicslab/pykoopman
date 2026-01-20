@@ -8,7 +8,7 @@ project = "pykoopman"  # package name
 
 # no need to edit below this line
 
-copyright = f"2023, {author}"
+copyright = f"2026, {author}"
 
 module = importlib.import_module(project)
 version = release = getattr(module, "__version__")
@@ -26,7 +26,6 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx.ext.mathjax",
-    "sphinx_nbexamples",
     "sphinx.ext.intersphinx",
 ]
 
@@ -63,15 +62,6 @@ html_show_copyright = True
 
 default_role = "any"
 html_sourcelink_suffix = ""
-
-example_gallery_config = dict(
-    dont_preprocess=True,
-    examples_dirs=["../examples"],
-    gallery_dirs=["examples"],
-    pattern=".+.ipynb",
-    urls="https://github.com/dynamicslab/pykoopman/blob/master/examples",
-)
-
 
 intersphinx_mapping = {
     "derivative": ("https://derivative.readthedocs.io/en/latest/", None)
