@@ -29,3 +29,11 @@ description: Strict environment and dependency rules for PyKoopman development (
   - `README.rst`
   - `.readthedocs.yaml`
   - `.github/workflows/*.yml`
+- `.github/workflows/*.yml`
+
+## 5. GitHub Actions Workflows
+- **Runner**: Use **`ubuntu-24.04`** (required for compatibility).
+- **Python Setup**:
+  - Use `actions/setup-python@v3`.
+  - **Context**: `python-version` must be specified as a **number** (e.g., `3.11`), **NOT a string** (e.g., `"3.11"`). This is critical for the release workflow.
+- **Triggering**: Prefer `push: tags` with `workflow_dispatch` for manual overrides.
