@@ -421,11 +421,11 @@ class torus_dynamics:
         for k in range(self.sparsity):
             loopbreak = 0
             while loopbreak != 1:
-                self.J[k, 0] = np.ceil(
-                    np.random.rand(1) * self.n_states / (self.freq_max + 1)
+                self.J[k, 0] = int(
+                    np.ceil(np.random.rand() * self.n_states / (self.freq_max + 1))
                 )
-                self.J[k, 1] = np.ceil(
-                    np.random.rand(1) * self.n_states / (self.freq_max + 1)
+                self.J[k, 1] = int(
+                    np.ceil(np.random.rand() * self.n_states / (self.freq_max + 1))
                 )
                 if xhat[self.J[k, 0], self.J[k, 1]] == 0.0:
                     loopbreak = 1
