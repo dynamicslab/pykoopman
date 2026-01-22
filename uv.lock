@@ -2788,7 +2788,7 @@ wheels = [
 
 [[package]]
 name = "pykoopman"
-version = "1.2.0"
+version = "1.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "derivative" },
@@ -2812,7 +2812,6 @@ dependencies = [
     { name = "setuptools-scm-git-archive" },
     { name = "sphinx" },
     { name = "sphinx-codeautolink" },
-    { name = "sphinx-nbexamples" },
     { name = "sphinx-rtd-theme" },
     { name = "sphinxcontrib-apidoc" },
     { name = "torch" },
@@ -2843,7 +2842,6 @@ requires-dist = [
     { name = "setuptools-scm-git-archive" },
     { name = "sphinx", specifier = ">=3,<=7.0.0" },
     { name = "sphinx-codeautolink" },
-    { name = "sphinx-nbexamples" },
     { name = "sphinx-rtd-theme" },
     { name = "sphinxcontrib-apidoc" },
     { name = "torch", specifier = "~=2.1.0" },
@@ -3438,20 +3436,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/47/cf/96065111f706555ca
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7b/e2/a7232766639b8a447e5e1884f6f33bd704d213bc5d4eb376f81cd5a0cb1d/sphinx_codeautolink-0.17.5-py3-none-any.whl", hash = "sha256:a84595ad3a12da93f82796e638f27e239d07b388037f3d3f69d65fc7ea6e05bf", size = 35399, upload-time = "2025-07-09T15:22:33.85Z" },
 ]
-
-[[package]]
-name = "sphinx-nbexamples"
-version = "0.4.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "ipykernel" },
-    { name = "ipython" },
-    { name = "jupyter-client" },
-    { name = "nbconvert" },
-    { name = "pillow" },
-    { name = "sphinx" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/ca/fe/a99c857f11cf3adc9a550ff6f7dfbd56da3e9842fa782d9ef34299d95c6b/sphinx-nbexamples-0.4.1.tar.gz", hash = "sha256:5de50d2ca1a21f3dc20d7b2d8a86ae02d8207a23c94f460ac700d79046bd0617", size = 961753, upload-time = "2021-06-28T13:45:08.542Z" }
 
 [[package]]
 name = "sphinx-rtd-theme"
