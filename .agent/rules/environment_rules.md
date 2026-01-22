@@ -53,3 +53,8 @@ description: Strict environment and dependency rules for PyKoopman development (
   - *Note*: `torus_dynamics` tests in `common` are skipped due to persistent backend conflicts in `pytest` environments despite code correctness.
 - **Coverage & Extensions**: Be cautious when running full coverage (`--cov`) if the environment includes conflicting C-extensions (e.g., `PyO3` via `pydantic`/`fastapi`). Targeted coverage runs (e.g., `pytest test/common --cov=pykoopman.common`) are more stable.
 - **Input Validation**: `pykoopman` classes (e.g., `forced_duffing`, `slow_manifold`) often require strict input shapes (e.g., `(n_states, n_traj)`). Always verify array dimensions in tests to avoid `IndexError`.
+
+## 9. Code Quality & Pre-commit
+- **Line Length**: Strict **88 character** limit (enforced by `flake8`/`black`). Ensure comments and code do not exceed this.
+- **Unused Imports**: Remove all unused imports. `flake8` will fail commits if any are present (e.g., `F401`).
+- **Variable Usage**: Remove unused variables (e.g., `F841`). Do not assign variables if they are not used (use `_` or remove assignment).
