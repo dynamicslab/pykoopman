@@ -173,9 +173,9 @@ def rk4(t, x, u, _dt=0.01, func=vdp_osc):
     """
     # 4th order Runge-Kutta
     k1 = func(t, x, u)
-    k2 = func(t, x + k1 * _dt / 2, u)
-    k3 = func(t, x + k2 * _dt / 2, u)
-    k4 = func(t, x + k1 * _dt, u)
+    k2 = func(t + _dt / 2, x + k1 * _dt / 2, u)
+    k3 = func(t + _dt / 2, x + k2 * _dt / 2, u)
+    k4 = func(t + _dt, x + k3 * _dt, u)
     return x + (_dt / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
 
 

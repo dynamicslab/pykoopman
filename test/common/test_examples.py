@@ -90,6 +90,37 @@ def test_vdp_osc_rk4():
     assert not np.array_equal(x, x_next)
 
 
+def test_rk4_is_fourth_order_accurate():
+    # dx/dt = -x with x(0) = 1 has the exact solution x(T) = exp(-T). Halving
+    # the step of a fourth-order scheme should reduce the global error by
+    # roughly a factor of 2**4.
+    def decay(t, x, u):
+        return -x
+
+    T = 1.0
+    errors = []
+    for dt in (0.1, 0.05):
+        x = np.array([[1.0]])
+        t = 0.0
+        for _ in range(int(round(T / dt))):
+            x = rk4(t, x, 0.0, dt, decay)
+            t += dt
+        errors.append(abs(x[0, 0] - np.exp(-T)))
+
+    observed_order = np.log2(errors[0] / errors[1])
+    assert 3.8 < observed_order < 4.2
+
+
+def test_rk4_evaluates_stages_at_intermediate_times():
+    # For dx/dt = 3 t**2 the RK4 update reduces to Simpson's rule, which is
+    # exact for this integrand: x(1.5) - x(1.0) = 1.5**3 - 1.0**3 = 2.375.
+    def quadratic_rate(t, x, u):
+        return 3.0 * t**2 * np.ones_like(x)
+
+    x_next = rk4(1.0, np.array([[0.0]]), 0.0, 0.5, quadratic_rate)
+    assert np.isclose(x_next[0, 0], 2.375)
+
+
 def test_square_and_sine_wave():
     # Just smoke tests to ensure they run/return floats
     val_sq = square_wave(10)
