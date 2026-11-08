@@ -17,6 +17,7 @@ description: Strict environment and dependency rules for PyKoopman development (
   - `scikit-learn`: **`== 1.1.3`** (Strict pin required).
   - `scipy`: **`> 1.6.0, <= 1.11.2`**.
   - `pydmd`: **`> 0.4, <= 0.4.1`**.
+  - `setuptools`: **`< 82`** while `lightning` < 2.4 or `torch` < 2.2 is pinned (setuptools 82 removed `pkg_resources`, which lightning 2.0 to 2.3 import at import time and torch 2.1 imports in `torch.utils.cpp_extension`).
 - **GPU Support**: Use `uv` PyTorch integration guide. Do not rely on default resolution.
 
 ## 3. Testing
