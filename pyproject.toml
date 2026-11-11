@@ -48,7 +48,7 @@ dependencies = [
     "setuptools_scm ~= 8.0.2",
     "setuptools_scm_git_archive",
     "jupyter >= 1.0.0",
-    "notebook >7.0.0, <=7.0.4",
+    "notebook>7.0.0,<=7.6.3",
     "nbsphinx",
     "sphinx-codeautolink",
     "sphinx >= 3,<=7.0.0",
