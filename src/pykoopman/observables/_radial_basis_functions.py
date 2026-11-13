@@ -156,9 +156,16 @@ class RadialBasisFunction(BaseObservables):
                     self.centers[feat, :] * (xminmax[1] - xminmax[0]) + xminmax[0]
                 )
 
-        xlift = self._rbf_lifting(x)
-        # self.measurement_matrix_ = x.T @ np.linalg.pinv(xlift.T)
-        self.measurement_matrix_ = np.linalg.lstsq(xlift, x)[0].T
+        if self.include_state:
+            self.measurement_matrix_ = np.zeros(
+                (self.n_input_features_, self.n_output_features_)
+            )
+            self.measurement_matrix_[:, : self.n_input_features_] = np.eye(
+                self.n_input_features_
+            )
+        else:
+            xlift = self._rbf_lifting(x)
+            self.measurement_matrix_ = np.linalg.lstsq(xlift, x)[0].T
 
         return self
 
