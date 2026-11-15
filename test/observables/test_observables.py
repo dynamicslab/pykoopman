@@ -14,6 +14,7 @@ from pykoopman.observables import Polynomial
 from pykoopman.observables import RadialBasisFunction
 from pykoopman.observables import RandomFourierFeatures
 from pykoopman.observables import TimeDelay
+from pytest_lazy_fixtures import lf
 from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
 
@@ -32,7 +33,7 @@ def data_small():
         TimeDelay(),
         RadialBasisFunction(),
         RandomFourierFeatures(include_state=False, gamma=0.01, D=2),
-        pytest.lazy_fixture("data_custom_observables"),
+        lf("data_custom_observables"),
     ],
 )
 def test_if_fitted(observables, data_random):
@@ -64,7 +65,7 @@ def test_if_fitted(observables, data_random):
         TimeDelay(),
         RadialBasisFunction(),
         RandomFourierFeatures(include_state=False, gamma=0.01, D=2),
-        pytest.lazy_fixture("data_custom_observables"),
+        lf("data_custom_observables"),
     ],
 )
 @pytest.mark.parametrize(
@@ -75,7 +76,7 @@ def test_if_fitted(observables, data_random):
         Polynomial(),
         TimeDelay(),
         RadialBasisFunction(),
-        pytest.lazy_fixture("data_custom_observables"),
+        lf("data_custom_observables"),
     ],
 )
 def test_if_fitted_two_obs(observables_1, observables_2, data_random):
@@ -97,7 +98,7 @@ def test_if_fitted_two_obs(observables_1, observables_2, data_random):
         TimeDelay(),
         RadialBasisFunction(),
         RandomFourierFeatures(include_state=False, gamma=0.01, D=2),
-        pytest.lazy_fixture("data_custom_observables"),
+        lf("data_custom_observables"),
     ],
 )
 @pytest.mark.parametrize(
@@ -108,7 +109,7 @@ def test_if_fitted_two_obs(observables_1, observables_2, data_random):
         TimeDelay(),
         RadialBasisFunction(),
         RandomFourierFeatures(include_state=False, gamma=0.01, D=2),
-        pytest.lazy_fixture("data_custom_observables"),
+        lf("data_custom_observables"),
     ],
 )
 @pytest.mark.parametrize(
@@ -119,7 +120,7 @@ def test_if_fitted_two_obs(observables_1, observables_2, data_random):
         TimeDelay(),
         RadialBasisFunction(),
         RandomFourierFeatures(include_state=False, gamma=0.01, D=2),
-        pytest.lazy_fixture("data_custom_observables"),
+        lf("data_custom_observables"),
     ],
 )
 def test_if_fitted_three_obs(observables_1, observables_2, observables_3, data_random):
@@ -144,7 +145,7 @@ def test_if_fitted_three_obs(observables_1, observables_2, observables_3, data_r
         Polynomial(degree=3, include_bias=False),
         RadialBasisFunction(),
         RandomFourierFeatures(include_state=True, gamma=0.01, D=2),
-        pytest.lazy_fixture("data_custom_observables"),
+        lf("data_custom_observables"),
     ],
 )
 def test_inverse(observables, data_random):
@@ -168,7 +169,7 @@ def test_inverse(observables, data_random):
         Polynomial(degree=3, include_bias=False),
         RadialBasisFunction(),
         RandomFourierFeatures(include_state=True, gamma=0.01, D=2),
-        pytest.lazy_fixture("data_custom_observables"),
+        lf("data_custom_observables"),
     ],
 )
 @pytest.mark.parametrize(
@@ -182,7 +183,7 @@ def test_inverse(observables, data_random):
         Polynomial(degree=3, include_bias=False),
         RandomFourierFeatures(include_state=True, gamma=0.01, D=2),
         RadialBasisFunction(),
-        pytest.lazy_fixture("data_custom_observables"),
+        lf("data_custom_observables"),
     ],
 )
 def test_inverse_two_obs(observables_1, observables_2, data_random):
@@ -207,7 +208,7 @@ def test_inverse_two_obs(observables_1, observables_2, data_random):
         Polynomial(degree=3, include_bias=False),
         RadialBasisFunction(),
         RandomFourierFeatures(include_state=True, gamma=0.01, D=2),
-        pytest.lazy_fixture("data_custom_observables"),
+        lf("data_custom_observables"),
     ],
 )
 @pytest.mark.parametrize(
@@ -221,7 +222,7 @@ def test_inverse_two_obs(observables_1, observables_2, data_random):
         RadialBasisFunction(),
         Polynomial(degree=3, include_bias=False),
         RandomFourierFeatures(include_state=True, gamma=0.01, D=2),
-        pytest.lazy_fixture("data_custom_observables"),
+        lf("data_custom_observables"),
     ],
 )
 @pytest.mark.parametrize(
@@ -236,7 +237,7 @@ def test_inverse_two_obs(observables_1, observables_2, data_random):
         RadialBasisFunction(),
         RandomFourierFeatures(include_state=True, gamma=0.01, D=2),
         RandomFourierFeatures(include_state=False, gamma=0.01, D=2),
-        pytest.lazy_fixture("data_custom_observables"),
+        lf("data_custom_observables"),
     ],
 )
 def test_inverse_three_obs(observables_1, observables_2, observables_3, data_random):
@@ -276,7 +277,7 @@ def test_time_delay_inverse(data_random):
         TimeDelay(delay=1, n_delays=2),
         RadialBasisFunction(),
         RandomFourierFeatures(include_state=True, gamma=0.01, D=2),
-        pytest.lazy_fixture("data_custom_observables"),
+        lf("data_custom_observables"),
     ],
 )
 @pytest.mark.parametrize(
@@ -311,7 +312,7 @@ def test_time_delay_inverse_two_obs(observables_1, observables_2, data_random):
         Polynomial(include_bias=False),
         Polynomial(degree=3, include_bias=False),
         TimeDelay(delay=1, n_delays=2),
-        pytest.lazy_fixture("data_custom_observables"),
+        lf("data_custom_observables"),
     ],
 )
 @pytest.mark.parametrize(
@@ -402,7 +403,7 @@ def test_time_delay_transform_matches_input(data_random):
             ["x(t)", "y(t)", "x(t-2dt)", "y(t-2dt)", "x(t-4dt)", "y(t-4dt)"],
         ),
         (
-            pytest.lazy_fixture("data_custom_observables"),
+            lf("data_custom_observables"),
             ["x0", "x1", "x0", "x1", "x0^2", "x1^2", "0", "0", "x0 x1"],
             ["x", "y", "x", "y", "x^2", "y^2", "0", "0", "x y"],
         ),
@@ -431,7 +432,7 @@ def test_feature_names(
         Identity(),
         Polynomial(),
         TimeDelay(),
-        pytest.lazy_fixture("data_custom_observables"),
+        lf("data_custom_observables"),
     ],
 )
 def test_complex_data(data_random_complex, observables):

@@ -8,12 +8,13 @@ from pykoopman import KoopmanContinuous
 from pykoopman import observables
 from pykoopman import regression
 from pykoopman.differentiation import Derivative
+from pytest_lazy_fixtures import lf
 from sklearn.utils.validation import check_is_fitted
 
 
 @pytest.mark.parametrize(
     "data",
-    [pytest.lazy_fixture("data_random"), pytest.lazy_fixture("data_random_complex")],
+    [lf("data_random"), lf("data_random_complex")],
 )
 def test_derivative_integration(data):
     x = data

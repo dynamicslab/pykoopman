@@ -121,6 +121,12 @@ If you are using Linux or macOS you can install PyKoopman with pip:
 pip install pykoopman
 ```
 
+The tutorial notebooks also need Jupyter, which is not installed with PyKoopman:
+
+```bash
+pip install jupyter
+```
+
 ### Installing from source (recommended)
 We recommend using [uv](https://docs.astral.sh/uv/) for environment management.
 
@@ -164,10 +170,10 @@ pull request. To get started we recommend installing the packages in "developer 
 via
 
 ```bash
-python -m pip install -e .
+python -m pip install -e ".[dev]"
 ```
 
-This will allow you to run unit tests and automatically format your code. To be accepted your code should conform to PEP8 and pass all unit tests. Code can be tested by invoking
+The `dev` extra adds the test, documentation and notebook tools, so you can run the unit tests and format your code (`.[test]` is enough for the tests alone). With uv, `uv sync --python 3.11 --extra dev` sets up the same environment and `uv run pytest` runs the tests. To be accepted your code should conform to PEP8 and pass all unit tests. Code can be tested by invoking
 
 ```bash
 pytest
@@ -182,7 +188,7 @@ git add path/to/changed/file.py
 you can run the following to automatically reformat your staged code
 
 ```bash
-pre-commit -a -v
+pre-commit run -a -v
 ```
 
 Note that you will then need to re-stage any changes `pre-commit` made to your code.
