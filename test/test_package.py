@@ -73,3 +73,64 @@ def test_setuptools_capped_while_lightning_needs_pkg_resources():
         assert setuptools.marker is None
         for v in ("82.0.0", "84.2.1", "100.0.0"):
             assert not setuptools.specifier.contains(v), v
+
+
+# Test, documentation, lint and notebook tools. As runtime requirements they
+# would pin the pytest, Sphinx and Jupyter of every environment that installs
+# pykoopman, so they belong in the extras under [project.optional-dependencies].
+TOOLING = frozenset(
+    canonicalize_name(name)
+    for name in (
+        "black",
+        "flake8",
+        "flake8-builtins-unleashed",
+        "ipykernel",
+        "ipython",
+        "ipywidgets",
+        "jupyter",
+        "jupyterlab",
+        "nbsphinx",
+        "notebook",
+        "pre-commit",
+        "pytest",
+        "pytest-cov",
+        "pytest-lazy-fixture",
+        "pytest-lazy-fixtures",
+        "setuptools-scm",
+        "setuptools-scm-git-archive",
+        "sphinx",
+        "sphinx-codeautolink",
+        "sphinx-rtd-theme",
+        "sphinxcontrib-apidoc",
+    )
+)
+
+
+def _project_table():
+    with PYPROJECT.open("rb") as f:
+        return tomllib.load(f)["project"]
+
+
+def _names(lines):
+    return {canonicalize_name(Requirement(line).name) for line in lines}
+
+
+def test_runtime_dependencies_exclude_tooling():
+    misplaced = _names(_project_table()["dependencies"]) & TOOLING
+    assert not misplaced, f"move to an extra: {sorted(misplaced)}"
+
+
+def test_extras_provide_test_and_docs_tooling():
+    extras = _project_table().get("optional-dependencies", {})
+    # CI installs .[test] and .readthedocs.yaml installs .[docs].
+    test = _names(extras.get("test", []))
+    docs = _names(extras.get("docs", []))
+    assert {"pytest", "pytest-cov", "pytest-lazy-fixtures"} <= test
+    assert {"sphinx", "nbsphinx", "sphinx-codeautolink", "sphinxcontrib-apidoc"} <= docs
+    assert "sphinx-rtd-theme" in docs
+    # nbsphinx needs IPython's ipython3 lexer and ipywidgets for the stored
+    # widget outputs of the tutorial notebooks.
+    assert {"ipython", "ipywidgets"} <= docs
+    # pytest-lazy-fixture breaks test collection on pytest 8 and newer.
+    for extra, lines in extras.items():
+        assert "pytest-lazy-fixture" not in _names(lines), extra

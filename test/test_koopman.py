@@ -25,6 +25,7 @@ from pykoopman.regression import EDMD
 from pykoopman.regression import KDMD
 from pykoopman.regression import NNDMD
 from pykoopman.regression import PyDMDRegressor
+from pytest_lazy_fixtures import lf
 from sklearn.exceptions import NotFittedError
 from sklearn.gaussian_process.kernels import DotProduct
 from sklearn.gaussian_process.kernels import RBF
@@ -288,7 +289,7 @@ def test_score_complex_data(data_random_complex, regressor):
         TimeDelay(),
         RandomFourierFeatures(),
         RadialBasisFunction(),
-        pytest.lazy_fixture("data_custom_observables"),
+        lf("data_custom_observables"),
     ],
 )
 @pytest.mark.parametrize(
@@ -326,7 +327,7 @@ def test_observables_integration(data_random, observables, regressor):
         TimeDelay(),
         RandomFourierFeatures(),
         RadialBasisFunction(),
-        pytest.lazy_fixture("data_custom_observables"),
+        lf("data_custom_observables"),
     ],
 )
 def test_observables_integration_with_nndmd(data_random, observables):

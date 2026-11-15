@@ -8,10 +8,11 @@ description: Strict environment and dependency rules for PyKoopman development (
 ## 1. Environment Management
 - **Tooling**: ALWAYS use **`uv`** for Python environment management.
 - **Python Version**: Target **Python 3.11**.
-  - `uv venv --python 3.11`
-  - `uv pip install -e .`
+  - `uv sync --python 3.11 --extra dev` creates `.venv` with pykoopman and its test, docs and notebook tools, and removes packages left over from older layouts (such as `pytest-lazy-fixture`).
+  - `uv pip install -e .` installs only the runtime dependencies.
 
 ## 2. Dependency Management (CRITICAL)
+- **Runtime vs tooling**: `[project].dependencies` lists only what `import pykoopman` needs. Test, docs, lint and notebook tools belong in `[project.optional-dependencies]` (`test`, `docs`, `dev`), and `test/test_package.py` enforces this.
 - **Strict Pinning**:
   - `numpy`: **`>= 1.20, <= 1.26`** (STRICTLY 1.x series. Numpy 2.0+ is incompatible).
   - `scikit-learn`: **`== 1.1.3`** (Strict pin required).
@@ -21,8 +22,8 @@ description: Strict environment and dependency rules for PyKoopman development (
 - **GPU Support**: Use `uv` PyTorch integration guide. Do not rely on default resolution.
 
 ## 3. Testing
-- Unit Tests: `uv run pytest`
-- Notebooks: `uv run papermill docs/notebook.ipynb nul` (Avoid `jupyter_contrib_nbextensions`).
+- Unit Tests: `uv run pytest` after the `uv sync` above. The `test` extra provides pytest, pytest-cov and pytest-lazy-fixtures (`from pytest_lazy_fixtures import lf`). Do not reintroduce `pytest-lazy-fixture`, which breaks test collection on pytest 8 and newer. `pyproject.toml` also disables it with `-p no:lazy-fixture` in case an old environment still has it.
+- Notebooks: `uv run --with papermill papermill docs/<notebook>.ipynb nul` (papermill is not a project dependency; avoid `jupyter_contrib_nbextensions`).
 
 ## 4. Configuration Consistency
 - Updates to Python version must be applied atomically across:
@@ -41,7 +42,7 @@ description: Strict environment and dependency rules for PyKoopman development (
   - Test workflows use standard triggers (`push`, `pull_request`).
 
 ## 6. ReadTheDocs Configuration
-- **Python Install**: Use `path: .` (no extras) in `.readthedocs.yaml`.
+- **Python Install**: Install the package with the `docs` extra through `extra_requirements: [docs]` under `python.install` in `.readthedocs.yaml`. Do not write `path: .[docs]`, which Read the Docs rejects.
 - **Sphinx Extensions**: Use `nbsphinx` for notebooks. **Do NOT use** `sphinx-nbexamples` (incompatible with Python 3.11+).
 - **OS**: `ubuntu-22.04` is acceptable for RTD builds.
 

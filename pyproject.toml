@@ -35,25 +35,36 @@ dependencies = [
     "optht ~= 0.2.0",
     "prettytable >3.0.0, <= 3.9.0",
     "torch ~= 2.1.0",
-    "torchvision ~= 0.16.0",
-    "torchaudio ~= 2.1.0",
     "lightning ~= 2.0.9",
     # setuptools 82 removed pkg_resources, which lightning < 2.4 imports at
     # import time and torch 2.1 imports in torch.utils.cpp_extension.
     "setuptools < 82",
-    "pytest <= 7.4.4",
-    "pytest-cov ~= 4.1.0",
-    "pytest-lazy-fixture ~= 0.6.3",
-    "flake8-builtins-unleashed ~= 1.3.1",
-    "setuptools_scm ~= 8.0.2",
-    "setuptools_scm_git_archive",
-    "jupyter >= 1.0.0",
-    "notebook >7.0.0, <=7.0.4",
+]
+
+# Tools for contributors and for the docs build. Keep them out of the runtime
+# dependencies above, where they would pin the pytest, Sphinx and Jupyter of
+# every environment that installs pykoopman (test/test_package.py checks this).
+[project.optional-dependencies]
+test = [
+    "pytest >= 9.0.3",
+    "pytest-cov >= 7.0",
+    "pytest-lazy-fixtures >= 1.4",
+]
+docs = [
+    "sphinx >= 3, <= 7.0.0",
     "nbsphinx",
     "sphinx-codeautolink",
-    "sphinx >= 3,<=7.0.0",
     "sphinxcontrib-apidoc",
     "sphinx_rtd_theme",
+    # nbsphinx uses these to highlight the IPython code cells of the tutorial
+    # notebooks and to render their stored widget outputs (progress bars).
+    "ipython",
+    "ipywidgets",
+]
+dev = [
+    "pykoopman[test,docs]",
+    "jupyter >= 1.0.0",
+    "notebook >= 7.5.6",
     "pre-commit",
 ]
 
@@ -61,3 +72,8 @@ dependencies = [
 [project.urls]
 "Homepage" = "https://github.com/dynamicslab/pykoopman"
 "Bug Tracker" = "https://github.com/dynamicslab/pykoopman/issues"
+
+[tool.pytest.ini_options]
+# pytest-lazy-fixture (without the "s"), left over in environments created for
+# pykoopman 1.2.2 or earlier, breaks test collection on pytest 8 and newer.
+addopts = "-p no:lazy-fixture"
