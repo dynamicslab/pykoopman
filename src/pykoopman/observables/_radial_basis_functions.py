@@ -251,6 +251,11 @@ class RadialBasisFunction(BaseObservables):
         Notes:
             This method should not be called directly. It is used internally by the
             'transform' method.
+
+            For 'polyharmonic' with polyharmonic_coeff > 0, a sample that coincides
+            with a center (r = 0) is given the limit value 0 of r**k * log(r). With
+            polyharmonic_coeff = 0 the basis reduces to log(r), which diverges at
+            r = 0, and the entry stays -inf.
         """
         n_samples = x.shape[0]
         y = empty(
@@ -281,6 +286,12 @@ class RadialBasisFunction(BaseObservables):
                     y_ = r_squared ** (self.polyharmonic_coeff / 2) * np.log(
                         np.sqrt(r_squared)
                     )
+                    # r**k * log(r) tends to 0 as r -> 0 when k > 0, but numpy
+                    # evaluates it as 0 * (-inf) = nan on a center. For k = 0 the
+                    # basis is log(r), which has no finite value at r = 0, so the
+                    # -inf is kept there.
+                    if self.polyharmonic_coeff > 0:
+                        y_[r_squared == 0] = 0
                 case _:
                     # if none of the above cases match:
                     raise ValueError("provided rbf_type not available")
