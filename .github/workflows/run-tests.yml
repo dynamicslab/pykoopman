@@ -20,9 +20,13 @@ jobs:
     needs: Linting
     runs-on: ubuntu-24.04
     strategy:
+      fail-fast: false
       max-parallel: 8
       matrix:
         python-version: ["3.11"]
+        # PyDMDRegressor reads private pydmd attributes, so test the oldest and
+        # the newest pydmd release that pyproject.toml admits.
+        pydmd-version: ["0.4.1", "2025.8.1"]
 
     steps:
     - uses: actions/checkout@v3
@@ -32,7 +36,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        pip install -e ".[test]"
+        pip install -e ".[test]" "pydmd==${{ matrix.pydmd-version }}"
     - name: Test with pytest
       run: |
         pytest test --cov=./ --cov-report=xml
