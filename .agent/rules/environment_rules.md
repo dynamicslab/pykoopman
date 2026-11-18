@@ -17,7 +17,7 @@ description: Strict environment and dependency rules for PyKoopman development (
   - `numpy`: **`>= 1.20, <= 1.26`** (STRICTLY 1.x series. Numpy 2.0+ is incompatible).
   - `scikit-learn`: **`== 1.1.3`** (Strict pin required).
   - `scipy`: **`> 1.6.0, <= 1.11.2`**.
-  - `pydmd`: **`> 0.4, <= 0.4.1`**.
+  - `pydmd`: **`> 0.4, <= 2025.8.1`**. `PyDMDRegressor` reads private pydmd attributes, so raise the cap only after running the test suite on the newer release. CI tests only the oldest and the newest admitted release, so replace the newest entry of the `pydmd-version` matrix in `.github/workflows/run-tests.yml` and of `PYDMD_TESTED` in `test/test_package.py` with the new release. `test/test_package.py` fails if the cap differs from the newest entry of `PYDMD_TESTED`.
   - `setuptools`: **`< 82`** while `lightning` < 2.4 or `torch` < 2.2 is pinned (setuptools 82 removed `pkg_resources`, which lightning 2.0 to 2.3 import at import time and torch 2.1 imports in `torch.utils.cpp_extension`).
 - **GPU Support**: Use `uv` PyTorch integration guide. Do not rely on default resolution.
 
