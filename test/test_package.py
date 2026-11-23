@@ -12,6 +12,7 @@ from pathlib import Path
 from packaging.requirements import Requirement
 from packaging.specifiers import SpecifierSet
 from packaging.utils import canonicalize_name
+from packaging.version import Version
 
 PYPROJECT = Path(__file__).resolve().parents[1] / "pyproject.toml"
 
@@ -115,6 +116,11 @@ def _names(lines):
     return {canonicalize_name(Requirement(line).name) for line in lines}
 
 
+def _dependencies():
+    requirements = [Requirement(line) for line in _project_table()["dependencies"]]
+    return {canonicalize_name(r.name): r for r in requirements}
+
+
 def test_runtime_dependencies_exclude_tooling():
     misplaced = _names(_project_table()["dependencies"]) & TOOLING
     assert not misplaced, f"move to an extra: {sorted(misplaced)}"
@@ -134,3 +140,26 @@ def test_extras_provide_test_and_docs_tooling():
     # pytest-lazy-fixture breaks test collection on pytest 8 and newer.
     for extra, lines in extras.items():
         assert "pytest-lazy-fixture" not in _names(lines), extra
+
+
+# PyDMDRegressor reads private attributes of the pydmd object it wraps, so
+# pyproject.toml caps pydmd at the newest release the test suite has been run
+# on. The Linux job in .github/workflows/run-tests.yml runs the suite on the
+# oldest and the newest admitted release, which are listed here. Releases in
+# between are admitted but not tested in CI.
+PYDMD_TESTED = ("0.4.1", "2025.8.1")
+
+
+def test_pydmd_requirement_admits_tested_releases():
+    specifier = _dependencies()["pydmd"].specifier
+    for v in PYDMD_TESTED:
+        assert specifier.contains(v), f"pydmd {v} is excluded by {specifier}"
+
+
+def test_pydmd_capped_at_newest_tested_release():
+    # Without this cap, or with a higher one, pip may install a pydmd release
+    # whose private attributes no test run has checked.
+    specifier = _dependencies()["pydmd"].specifier
+    caps = [Version(s.version) for s in specifier if s.operator == "<="]
+    newest = max(Version(v) for v in PYDMD_TESTED)
+    assert caps == [newest], f"pydmd should be capped at {newest}, got {specifier}"

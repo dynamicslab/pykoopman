@@ -31,7 +31,10 @@ dependencies = [
     "scikit-learn >= 1.1.3, <= 1.1.3",
     "numpy >= 1.20, <= 1.26",
     "scipy > 1.6.0, <= 1.11.2",
-    "pydmd > 0.4, <= 0.4.1",
+    # PyDMDRegressor reads private attributes of the pydmd object it wraps, so
+    # raise this cap only after running the tests on the newer pydmd release
+    # (test/test_package.py lists the releases that CI tests).
+    "pydmd > 0.4, <= 2025.8.1",
     "optht ~= 0.2.0",
     "prettytable >3.0.0, <= 3.9.0",
     "torch ~= 2.1.0",
